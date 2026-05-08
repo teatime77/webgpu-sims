@@ -16,10 +16,16 @@ export class ParticleSim {
 
     private particleBuffer!: GPUBuffer;
     private baseMeshBuffer!: GPUBuffer;
-    private uniformBuffer!: GPUBuffer;
+    private cameraBuffer!: GPUBuffer;
 
     async init(engine: WebGPUEngine) {
         const { device, format } = engine;
+
+        // 3. カメラ用ユニフォームバッファ (mat4x4が2つで128バイト)
+        this.cameraBuffer = device.createBuffer({
+            size: 128,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
 
         // 1. パーティクルデータの初期化
         const initialData = new Float32Array(this.numParticles * 8);
@@ -50,28 +56,32 @@ export class ParticleSim {
         new Float32Array(this.baseMeshBuffer.getMappedRange()).set(sphereData);
         this.baseMeshBuffer.unmap();
 
-        // 3. ユニフォームバッファ
-        this.uniformBuffer = device.createBuffer({
-            size: 16,
+        // ★ 修正: カメラ用バッファを 128バイト (64x2) で確保
+        this.cameraBuffer = device.createBuffer({
+            size: 128, 
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
         // 4. Builderの構築
         this.computePass = new ComputePassBuilder(device, computeShader, 'main_compute')
-            .setGroup(0)
-            // コンピュートは binding(1) の particles しか使っていない
-            .addStorage(this.particleBuffer, 1);
+         .setGroup(0)
+         .addStorage(this.particleBuffer, 1); // Computeはカメラを使わない
 
-        this.renderPass = new RenderPassBuilder(device, renderShader, format, { depthFormat: 'depth24plus' })
-            .setGroup(0)
-            // レンダーは binding(1) と binding(2) を使っている
-            .addStorage(this.particleBuffer, 1)
-            .addStorage(this.baseMeshBuffer, 2);
+         this.renderPass = new RenderPassBuilder(device, renderShader, format, { depthFormat: 'depth24plus' })
+         .setGroup(0)
+         .addUniform(this.cameraBuffer, 0) // ★ ここでカメラバッファを0番に登録
+         .addStorage(this.particleBuffer, 1)
+         .addStorage(this.baseMeshBuffer, 2);
     }
 
-    update(engine: WebGPUEngine) {
-        const timeData = new Float32Array([performance.now() / 1000]);
-        engine.device.queue.writeBuffer(this.uniformBuffer, 0, timeData);
+    update(engine: WebGPUEngine, matrices: { viewProjection: number[], view: number[] }) {
+        const device = engine.device;
+
+        // ★ 重要: 書き込み先が this.cameraBuffer になっているか確認
+        // viewProjection (64バイト) を 0バイト目から書き込む
+        device.queue.writeBuffer(this.cameraBuffer, 0, new Float32Array(matrices.viewProjection));
+        // view (64バイト) を 64バイト目から書き込む
+        device.queue.writeBuffer(this.cameraBuffer, 64, new Float32Array(matrices.view));
 
         const commandEncoder = engine.device.createCommandEncoder();
         

@@ -1,4 +1,5 @@
 // src/main.ts
+import { OrbitCamera } from './core/camera';
 import { WebGPUEngine } from './core/engine/WebGPUEngine';
 import { ParticleSim } from './materials/test/ParticleSim';
 
@@ -8,11 +9,23 @@ async function bootstrap() {
 
     engine.addCanvas('main-canvas');
 
+    const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+
+    // ★ カメラのインスタンス化
+    const camera = new OrbitCamera(canvas);
+    camera.distance = 5.0; // 今回のパーティクルは±1の範囲にいるので少し近づける
+
     const sim = new ParticleSim();
     await sim.init(engine);
 
     function frame() {
-        sim.update(engine);
+        const aspect = canvas.width / canvas.height;
+        // ★ 毎フレーム、マウス操作が反映された最新の行列を取得
+        const matrices = camera.getMatrices(aspect);
+
+        // ★ シミュレーションに行列を渡す
+        sim.update(engine, matrices);
+
         requestAnimationFrame(frame);
     }
     frame();

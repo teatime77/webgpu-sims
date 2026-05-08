@@ -1,9 +1,15 @@
 // src/materials/test/particle_render.wgsl
 
+// ★ 1. カメラ用のUniform構造体を定義 (16 x 4 bytes = 64bytes が2つで計128bytes)
+struct Camera {
+    viewProjection: mat4x4<f32>,
+    view: mat4x4<f32>,
+};
+@group(0) @binding(0) var<uniform> camera: Camera;
+
 struct Particle { pos: vec4<f32>, vel: vec4<f32> };
 @group(0) @binding(1) var<storage, read> particles: array<Particle>;
 
-// ★ 修正: array<f32> として受け取り、16バイトアライメント問題を回避
 @group(0) @binding(2) var<storage, read> baseMesh: array<f32>;
 
 struct Varying {
@@ -13,20 +19,19 @@ struct Varying {
 
 @vertex
 fn vs_main(@builtin(vertex_index) v_idx: u32, @builtin(instance_index) i_idx: u32) -> Varying {
-    // ★ 修正: V1と同じ方法で、6つのfloatを自力で切り出す
     let offset = v_idx * 6u;
     let v_pos = vec3<f32>(baseMesh[offset], baseMesh[offset + 1u], baseMesh[offset + 2u]);
     let v_norm = vec3<f32>(baseMesh[offset + 3u], baseMesh[offset + 4u], baseMesh[offset + 5u]);
 
     let p = particles[i_idx];
-    var out: Varying;
-    
     let world_pos = v_pos + p.pos.xyz;
     
-    // WebGPUのZ座標クリッピング (0.0 ~ 1.0) を回避するため、
-    // 全体を少し縮小してZを奥に押し込む簡易的な投影
-    out.pos = vec4<f32>(world_pos.x * 0.5, world_pos.y * 0.5, world_pos.z * 0.5 + 0.5, 1.0);
-    out.normal = v_norm;
+    var out: Varying;
+    // ★ 2. カメラの viewProjection 行列を掛けて画面上の位置を計算
+    out.pos = camera.viewProjection * vec4<f32>(world_pos, 1.0);
+    
+    // ★ 3. 法線にも view 行列を掛けて、カメラから見た光の当たり方に補正する
+    out.normal = (camera.view * vec4<f32>(v_norm, 0.0)).xyz;
     
     return out;
 }
