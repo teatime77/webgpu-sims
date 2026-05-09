@@ -3,6 +3,7 @@ import { OrbitCamera } from './core/camera';
 import { WebGPUEngine } from './core/engine/WebGPUEngine';
 import { ParticleSim } from './materials/test/ParticleSim';
 import { CaptureTool } from './core/utils/CaptureTool';
+import { HydrogenOrbitalSim } from './materials/physics/qm/hydrogen_orbital/hydrogen_orbital';
 
 async function bootstrap() {
     const engine = new WebGPUEngine();
@@ -16,7 +17,8 @@ async function bootstrap() {
     const camera = new OrbitCamera(canvas);
     camera.distance = 5.0; // 今回のパーティクルは±1の範囲にいるので少し近づける
 
-    const sim = new ParticleSim();
+    // const sim = new ParticleSim();
+    const sim = new HydrogenOrbitalSim();
     await sim.init(engine);
 
     // キャプチャツールを初期化 (プレフィックス名を指定)

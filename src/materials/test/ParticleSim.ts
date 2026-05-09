@@ -101,7 +101,7 @@ export class ParticleSim {
             .addUniform(this.paramsBuffer, 3); // binding(3) 追加
     }
 
-    update(engine: WebGPUEngine, matrices: { viewProjection: number[], view: number[] }) {
+    update(engine: WebGPUEngine, matrices: { viewProjection: number[], view: number[] }, cameraDistance?: number) {
         const device = engine.device;
 
         // ★ 重要: 書き込み先が this.cameraBuffer になっているか確認

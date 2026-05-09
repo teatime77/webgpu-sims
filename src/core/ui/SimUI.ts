@@ -2,6 +2,7 @@
 
 export class SimUI {
     private container: HTMLElement;
+    private hud: HTMLElement;
 
     constructor() {
         // HMR(ホットリロード)時にUIが重複して増えないように古いものを削除
@@ -22,6 +23,22 @@ export class SimUI {
         this.container.style.border = '1px solid #444';
         this.container.style.zIndex = '1000';
         document.body.appendChild(this.container);
+
+        // ★HUD用の要素を作成
+        this.hud = document.createElement('div');
+        this.hud.style.padding = '8px';
+        this.hud.style.marginBottom = '8px';
+        this.hud.style.borderBottom = '1px solid #444';
+        this.hud.style.color = '#0af'; // 少し目立つ色
+        this.hud.style.fontSize = '14px';
+        this.hud.style.fontWeight = 'bold';
+        this.hud.style.fontFamily = 'monospace';
+        this.container.prepend(this.hud);
+    }
+
+    // ★HUDのテキストを更新するメソッド
+    updateHUD(text: string) {
+        this.hud.textContent = text;
     }
 
     /**
@@ -66,6 +83,47 @@ export class SimUI {
         row.appendChild(lbl);
         row.appendChild(slider);
         row.appendChild(valDisp);
+        this.container.appendChild(row);
+    }
+
+    /**
+     * ドロップダウンリスト（Select）を追加します
+     */
+    addSelect(label: string, options: {value: number, text: string}[], initial: number, onChange: (val: number) => void) {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '8px';
+        row.style.padding = '4px 0';
+
+        const lbl = document.createElement('label');
+        lbl.textContent = label;
+        lbl.style.minWidth = '80px';
+        lbl.style.fontSize = '13px';
+
+        const select = document.createElement('select');
+        select.style.flex = '1';
+        select.style.background = '#333';
+        select.style.color = '#fff';
+        select.style.border = '1px solid #555';
+        select.style.padding = '4px';
+        select.style.borderRadius = '4px';
+        
+        options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value.toString();
+            o.textContent = opt.text;
+            select.appendChild(o);
+        });
+        
+        select.value = initial.toString();
+        
+        select.addEventListener('change', () => {
+            onChange(Number(select.value));
+        });
+
+        row.appendChild(lbl);
+        row.appendChild(select);
         this.container.appendChild(row);
     }
 }
