@@ -1,27 +1,23 @@
-// src/materials/physics/qm/hydrogen_orbital/hydrogen_orbital_comp.wgsl
+// ==========================================
+// AUTO-GENERATED SKELETON FOR NODE: hydrogen_orbital_comp
+// DO NOT MODIFY STRUCTS AND BINDINGS
+// ==========================================
 
-struct Params {
+struct ParamsStruct {
     orbitalMode: f32,
     samplingStep: f32,
     brightness: f32,
     colorMix: f32,
     resetFlag: f32,
-    pad1: f32, // 16バイト境界に合わせるためのパディング
-    pad2: f32,
-    pad3: f32,
 };
-@group(0) @binding(0) var<uniform> params: Params;
 
-struct Particle {
-    pos: vec4<f32>, // pos.w は未使用
-};
-// 1,000,000個のパーティクル位置を保持するストレージバッファ
-@group(0) @binding(1) var<storage, read_write> particles: array<Particle>;
+@group(0) @binding(0) var<uniform> params: ParamsStruct;
+@group(0) @binding(1) var<storage, read_write> particles: array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read_write> rng: array<u32>;
 
-// 乱数生成用の状態バッファ
-@group(0) @binding(2) var<storage, read_write> rngState: array<u32>;
+// --- YOUR COMPUTE LOGIC BELOW ---
 
-// PCG乱数生成器
+// PCG 乱数ジェネレータ
 fn pcg_hash(input: u32) -> u32 {
     var state = input * 747796405u + 2891336453u;
     var word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
@@ -29,76 +25,57 @@ fn pcg_hash(input: u32) -> u32 {
 }
 
 fn rand_f32(idx: u32) -> f32 {
-    let hash = pcg_hash(rngState[idx]);
-    rngState[idx] = hash;
-    return f32(hash) / f32(0xffffffffu);
+    rng[idx] = pcg_hash(rng[idx]);
+    return f32(rng[idx]) / f32(0xffffffffu);
 }
 
-// 確率密度関数 psi_sq = |psi|^2
-fn orbital_density(mode: i32, p: vec3<f32>) -> f32 {
-    let r = max(length(p), 1e-5);
-    let ct = p.z / r;
-    let cos_theta = clamp(ct, -1.0, 1.0);
-    let pi = 3.14159265359;
-    
-    var psi = 0.0;
+// 波動関数の確率密度 |ψ|^2
+fn get_density(pos: vec3<f32>) -> f32 {
+    let r = length(pos);
+    let z = pos.z;
+    let mode = i32(params.orbitalMode + 0.5);
+
     if (mode == 0) { // 1s
-        psi = (1.0 / sqrt(pi)) * exp(-r);
+        return exp(-2.0 * r);
     } else if (mode == 1) { // 2p_z
-        psi = (1.0 / (4.0 * sqrt(2.0 * pi))) * r * exp(-0.5 * r) * cos_theta;
-    } else { // 3d_z2
-        psi = (1.0 / (81.0 * sqrt(6.0 * pi))) * r * r * exp(-r / 3.0) * (3.0 * cos_theta * cos_theta - 1.0);
+        return pow(r * exp(-0.5 * r) * (z / r), 2.0);
+    } else if (mode == 2) { // 3d_z2
+        let costheta = z / r;
+        return pow(pow(r, 2.0) * exp(-r / 3.0) * (3.0 * pow(costheta, 2.0) - 1.0), 2.0);
     }
-    return psi * psi;
+    return 0.0;
 }
 
-// メトロポリス・ヘイスティングス法によるサンプリング
-@compute @workgroup_size(64)
-fn main_compute(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(64, 1, 1)
+fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx = id.x;
     if (idx >= arrayLength(&particles)) { return; }
 
-    // リセットフラグが立っている場合、現在の位置を無視してランダムに飛ぶ
+    // ★ リセットフラグが立っている場合、空間全体にランダムに散布（グローバル・ジャンプ）
     if (params.resetFlag > 0.5) {
-        let rx = (rand_f32(idx) - 0.5) * 15.0;
-        let ry = (rand_f32(idx) - 0.5) * 15.0;
-        let rz = (rand_f32(idx) - 0.5) * 15.0;
-        particles[idx].pos = vec4<f32>(rx, ry, rz, 1.0);
-        return; 
+        let rx = (rand_f32(idx) - 0.5) * 30.0;
+        let ry = (rand_f32(idx) - 0.5) * 30.0;
+        let rz = (rand_f32(idx) - 0.5) * 30.0;
+        particles[idx] = vec4<f32>(rx, ry, rz, 1.0);
+        return;
     }
-    
-    let mode = i32(round(params.orbitalMode));
-    
-    // 現在の位置
-    var current_pos = particles[idx].pos.xyz;
-    if (length(current_pos) > 10.0 || length(current_pos) < 1e-5) {
-        current_pos = vec3<f32>(rand_f32(idx), rand_f32(idx), rand_f32(idx)) * 2.0 - 1.0;
-    }
-    
-    // 現在の確率密度
-    let current_p = orbital_density(mode, current_pos);
-    
-    // 候補点の生成（乱数移動）
-    let step = params.samplingStep;
-    let proposed_pos = current_pos + vec3<f32>(
-        rand_f32(idx) * 2.0 - 1.0,
-        rand_f32(idx) * 2.0 - 1.0,
-        rand_f32(idx) * 2.0 - 1.0
-    ) * step;
-    
-    // 候補点の確率密度
-    let proposed_p = orbital_density(mode, proposed_pos);
-    
-    // 受容確率の計算 A = min(1, p_proposed / p_current)
-    var accept_ratio = 1.0;
-    if (current_p > 1e-18) {
-        accept_ratio = clamp(proposed_p / current_p, 0.0, 1.0);
-    }
-    
-    // 候補点を受容するか判定
-    if (rand_f32(idx) < accept_ratio) {
-        particles[idx].pos = vec4<f32>(proposed_pos, 1.0);
-    } else {
-        particles[idx].pos = vec4<f32>(current_pos, 1.0);
+
+    // --- メトロポリス・ヘイスティングス法 ---
+    let current_pos = particles[idx].xyz;
+    let p_current = get_density(current_pos);
+
+    // 周辺へのランダムな移動提案
+    let step = params.samplingStep * 5.0;
+    let proposal = current_pos + vec3<f32>(
+        (rand_f32(idx) - 0.5) * step,
+        (rand_f32(idx) - 0.5) * step,
+        (rand_f32(idx) - 0.5) * step
+    );
+
+    let p_proposal = get_density(proposal);
+
+    // 受理判定
+    if (p_proposal > p_current || rand_f32(idx) < (p_proposal / p_current)) {
+        particles[idx] = vec4<f32>(proposal, 1.0);
     }
 }
