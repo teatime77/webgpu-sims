@@ -1,0 +1,71 @@
+// src/core/ui/SimUI.ts
+
+export class SimUI {
+    private container: HTMLElement;
+
+    constructor() {
+        // HMR(ホットリロード)時にUIが重複して増えないように古いものを削除
+        const existing = document.getElementById('sim-ui-container');
+        if (existing) existing.remove();
+
+        // V1のデザインを踏襲したフローティングコンテナ
+        this.container = document.createElement('div');
+        this.container.id = 'sim-ui-container';
+        this.container.style.position = 'absolute'; // fixedからabsoluteに変更(キャンバス基準)
+        this.container.style.top = '10px';
+        this.container.style.right = '10px';
+        this.container.style.background = 'rgba(20, 20, 25, 0.85)';
+        this.container.style.color = 'white';
+        this.container.style.padding = '12px';
+        this.container.style.borderRadius = '8px';
+        this.container.style.fontFamily = 'sans-serif';
+        this.container.style.border = '1px solid #444';
+        this.container.style.zIndex = '1000';
+        document.body.appendChild(this.container);
+    }
+
+    /**
+     * V1の ui.range に相当するメソッド
+     */
+    addRange(label: string, min: number, max: number, step: number, initial: number, onChange: (val: number) => void) {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '8px';
+        row.style.padding = '4px 0';
+
+        const lbl = document.createElement('label');
+        lbl.textContent = label;
+        lbl.style.minWidth = '80px';
+        lbl.style.fontSize = '13px';
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = min.toString();
+        slider.max = max.toString();
+        slider.step = step.toString();
+        slider.value = initial.toString();
+        slider.style.flex = '1';
+
+        const valDisp = document.createElement('span');
+        // ステップ数から小数点以下の表示桁数を計算 (V1の decimalsFromStep 相当)
+        const dec = Math.max(0, -Math.floor(Math.log10(step)));
+        valDisp.textContent = initial.toFixed(dec);
+        valDisp.style.minWidth = '40px';
+        valDisp.style.textAlign = 'right';
+        valDisp.style.fontFamily = 'monospace';
+        valDisp.style.fontSize = '12px';
+
+        // スライダーを動かした瞬間にコールバックを発火 (live: true に相当)
+        slider.addEventListener('input', () => {
+            const val = parseFloat(slider.value);
+            valDisp.textContent = val.toFixed(dec);
+            onChange(val); // 外部に値を渡す
+        });
+
+        row.appendChild(lbl);
+        row.appendChild(slider);
+        row.appendChild(valDisp);
+        this.container.appendChild(row);
+    }
+}

@@ -89,4 +89,15 @@ export class WebGPUEngine {
         }
         return view;
     }
+
+    /**
+     * 登録されているすべてのキャンバス要素とそのIDを取得します（キャプチャ用）
+     */
+    getCanvases(): { id: string, canvas: HTMLCanvasElement }[] {
+        const result: { id: string, canvas: HTMLCanvasElement }[] = [];
+        for (const [id, context] of this.contexts.entries()) {
+            result.push({ id, canvas: context.canvas as HTMLCanvasElement });
+        }
+        return result;
+    }
 }

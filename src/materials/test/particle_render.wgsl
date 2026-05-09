@@ -1,6 +1,5 @@
 // src/materials/test/particle_render.wgsl
 
-// ★ 1. カメラ用のUniform構造体を定義 (16 x 4 bytes = 64bytes が2つで計128bytes)
 struct Camera {
     viewProjection: mat4x4<f32>,
     view: mat4x4<f32>,
@@ -11,6 +10,16 @@ struct Particle { pos: vec4<f32>, vel: vec4<f32> };
 @group(0) @binding(1) var<storage, read> particles: array<Particle>;
 
 @group(0) @binding(2) var<storage, read> baseMesh: array<f32>;
+
+// ★ 追加: Computeと同じ構造体を binding(3) に登録
+struct Params {
+    speedScale: f32,
+    colorR: f32,
+    colorG: f32,
+    colorB: f32,
+};
+@group(0) @binding(3) var<uniform> params: Params;
+
 
 struct Varying {
     @builtin(position) pos: vec4<f32>,
@@ -39,5 +48,9 @@ fn vs_main(@builtin(vertex_index) v_idx: u32, @builtin(instance_index) i_idx: u3
 @fragment
 fn fs_main(in: Varying) -> @location(0) vec4<f32> {
     let light = dot(normalize(vec3<f32>(1.0, 1.0, 1.0)), in.normal) * 0.5 + 0.5;
-    return vec4<f32>(light, light * 0.7, 0.2, 1.0);
+    
+    // ★ 修正: UIから送られてきた色をベースカラーにする
+    let baseColor = vec3<f32>(params.colorR, params.colorG, params.colorB);
+    
+    return vec4<f32>(baseColor * light, 1.0);
 }

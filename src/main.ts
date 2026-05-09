@@ -2,6 +2,7 @@
 import { OrbitCamera } from './core/camera';
 import { WebGPUEngine } from './core/engine/WebGPUEngine';
 import { ParticleSim } from './materials/test/ParticleSim';
+import { CaptureTool } from './core/utils/CaptureTool';
 
 async function bootstrap() {
     const engine = new WebGPUEngine();
@@ -17,6 +18,9 @@ async function bootstrap() {
 
     const sim = new ParticleSim();
     await sim.init(engine);
+
+    // キャプチャツールを初期化 (プレフィックス名を指定)
+    new CaptureTool(engine, 'particle');
 
     function frame() {
         const aspect = canvas.width / canvas.height;
