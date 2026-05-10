@@ -51,12 +51,12 @@ async function main() {
         }
 
         // 2. バインディング (Bindings) の生成
-        for (const bind of node.bindings) {
+        for (const [idx, bind] of node.bindings.entries()) {
             const res = schema.resources[bind.resource];
             if (!res) continue;
 
             const group = bind.group || 0;
-            const bindingNum = bind.binding;
+            const bindingNum = bind.binding ?? idx;
             const varName = bind.varName || bind.resource;
 
             if (res.type === 'uniform') {
