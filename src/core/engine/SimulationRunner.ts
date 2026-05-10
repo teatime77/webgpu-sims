@@ -53,19 +53,19 @@ export class SimulationRunner {
         this.uniforms = new UniformManager(this.device);
     }
 
-    /** V1.5のスキーマ(設計図)を読み込み、GPUリソースを自動生成する */
+    /** Load the V1.5 schema (blueprint) and automatically generate GPU resources */
     async loadSchema(schema: SimulationSchema) {
-        // 1. リソースの構築
+        // 1. Build resources
         for (const [id, def] of Object.entries<ResourceDef>(schema.resources)) {
             if (def.type === 'uniform') {
-                // UniformManager にパディング計算を任せる
+                // Delegate padding calculation to UniformManager
                 if (def.fields) this.uniforms.register(id, def.fields);
             } 
             else if (def.type === 'storage') {
                 const count = def.bufferCount || 1;
                 const buffers: GPUBuffer[] = [];
                 
-                // WGSLフォーマットから1要素のバイトサイズを計算
+                // Calculate byte size of a single element from WGSL format
                 let elementSize = 4; // f32, u32, i32
                 if (def.format === 'vec2<f32>') elementSize = 8;
                 else if (def.format === 'vec3<f32>' || def.format === 'vec4<f32>') elementSize = 16;
@@ -84,13 +84,13 @@ export class SimulationRunner {
             }
         }
 
-        // 2. スキーマ内の初期化ロジック (ParticleSim.ts の init) を実行
+        // 2. Execute initialization logic in the schema (e.g., init in ParticleSim.ts)
         if (schema.init) {
             await schema.init(this);
         }
     }
 
-    // --- main.ts やスキーマから呼ばれるインターフェース群 ---
+    // --- Interfaces called from main.ts or schemas ---
 
     getFormat(): GPUTextureFormat {
         return navigator.gpu.getPreferredCanvasFormat();
@@ -131,7 +131,7 @@ export class SimulationRunner {
         if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
 
         if (!this.initializedCanvases.has(canvasId)) {
-            // DOMにキャンバスが存在しない場合は自動生成する
+            // Automatically create a canvas if it does not exist in the DOM
             if (!document.getElementById(canvasId)) {
                 const container = document.getElementById('sub-canvases') || document.body;
                 

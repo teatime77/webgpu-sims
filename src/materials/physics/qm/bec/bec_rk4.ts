@@ -15,7 +15,7 @@ export default defineSimulation({
     name: "2D BEC Phase Transition V1.5 (RK4)",
     
     // ========================================================================
-    // 1. Resources: RK4用の中間バッファ K1, K2, K3 を追加
+    // 1. Resources: Add intermediate buffers K1, K2, K3 for RK4
     // ========================================================================
     resources: {
         BecParams: { 
@@ -30,7 +30,7 @@ export default defineSimulation({
         },
         Psi: { type: 'storage', format: 'vec2<f32>', count: GW * GW, bufferCount: 2 },
         
-        // RK4用の勾配バッファ (K4は最終パスで直接計算して適用するためメモリ確保不要)
+        // Gradient buffers for RK4 (K4 is calculated and applied directly in the final pass, so no memory allocation is needed)
         K1: { type: 'storage', format: 'vec2<f32>', count: GW * GW },
         K2: { type: 'storage', format: 'vec2<f32>', count: GW * GW },
         K3: { type: 'storage', format: 'vec2<f32>', count: GW * GW },
@@ -42,7 +42,7 @@ export default defineSimulation({
     },
 
     // ========================================================================
-    // 2. Nodes: RK4の4つのステップをノードとして定義
+    // 2. Nodes: Define the 4 steps of RK4 as nodes
     // ========================================================================
     nodes: [
         {
@@ -78,7 +78,7 @@ export default defineSimulation({
             ]
         },
         
-        // --- RK4 パス ---
+        // --- RK4 Pass ---
         {
             id: 'bec_rk4_k1', type: 'compute',
             bindings: [
@@ -180,7 +180,7 @@ export default defineSimulation({
     },
 
     // ========================================================================
-    // 4. Script: RK4のシーケンスを実行
+    // 4. Script: Execute RK4 sequence
     // ========================================================================
     script: function* (runner) {
         const dispatchXY = GW / 8;
@@ -190,7 +190,7 @@ export default defineSimulation({
             const buf = runner.getUniformBuffer('BecParams');
             const paramData = new Float32Array([
                 GW, GW, state.temperature, state.dt,
-                state.g, state.omega, state.particleNumber, 7.0, // domainHalfは元の7.0のままでOK
+                state.g, state.omega, state.particleNumber, 7.0, // domainHalf remains 7.0 as original
                 time, dispatchXY * dispatchXY,
                 0.0, 0.0
             ]);
@@ -211,7 +211,7 @@ export default defineSimulation({
             time += state.dt;
             updateParams();            
 
-            // RK4の4ステップを順番に実行
+            // Execute the 4 steps of RK4 in sequence
             runner.compute('bec_rk4_k1', dispatchXY, dispatchXY);
             runner.render('bec_debug_k1', 6, 1, false, 'canvas-k1');
 
@@ -224,12 +224,12 @@ export default defineSimulation({
             runner.compute('bec_rk4_finish', dispatchXY, dispatchXY);
             runner.render('bec_debug_prenorm', 6, 1, false, 'canvas-prenorm');
 
-            // 規格化
+            // Normalization
             runner.compute('bec_norm_partial', dispatchXY, dispatchXY);
             runner.compute('bec_norm_total', 1);
             runner.compute('bec_norm_apply', dispatchXY, dispatchXY);
             
-            // 描画
+            // Rendering
             runner.render('bec_render', 6, 1, false);
             runner.render('bec_debug_render', 6, 1, false, 'debug-canvas');
 

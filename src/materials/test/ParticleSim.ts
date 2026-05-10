@@ -6,7 +6,7 @@ export default defineSimulation({
     name: "Particle Physics V1.5",
     
     // ========================================================================
-    // 1. リソースの宣言 (V1完全互換)
+    // 1. Resource declarations (Fully V1 compatible)
     // ========================================================================
     resources: {
         Camera: { 
@@ -26,8 +26,8 @@ export default defineSimulation({
     },
 
     // ========================================================================
-    // 2. ノードの宣言 (V1完全互換)
-    // これがあるおかげで、Node.jsジェネレータが完璧なWGSLスケルトンを作れます
+    // 2. Node declarations (Fully V1 compatible)
+    // This allows the Node.js generator to create a perfect WGSL skeleton
     // ========================================================================
     nodes: [
         {
@@ -53,7 +53,7 @@ export default defineSimulation({
     ],
 
     // ========================================================================
-    // 3. TSによる初期化ロジック (V2の柔軟性を吸収)
+    // 3. Initialization logic in TS (Absorbs the flexibility of V2)
     // ========================================================================
     init: async (engine) => {
         const paramData = new Float32Array([1.0, 1.0, 0.7, 0.2]);
@@ -62,12 +62,12 @@ export default defineSimulation({
         const numParticles = 20000 / 2;
         const initialData = new Float32Array(20000 * 4);
         for (let i = 0; i < numParticles; i++) {
-            // 位置 (pos)
+            // Position (pos)
             initialData[i * 8 + 0] = (Math.random() - 0.5) * 2;
             initialData[i * 8 + 1] = (Math.random() - 0.5) * 2;
             initialData[i * 8 + 2] = (Math.random() - 0.5) * 2;
 
-            // ★ 追加: 速度 (vel) の初期値を与える
+            // ★ Added: Provide initial values for velocity (vel)
             initialData[i * 8 + 4] = (Math.random() - 0.5) * 0.02;
             initialData[i * 8 + 5] = (Math.random() - 0.5) * 0.02;
             initialData[i * 8 + 6] = (Math.random() - 0.5) * 0.02;
@@ -78,15 +78,15 @@ export default defineSimulation({
     },
 
     // ========================================================================
-    // 4. TSジェネレータによる実行制御 (V1のブラックボックスDSLを撤廃！)
+    // 4. Execution control via TS generator (Abolished V1's black-box DSL!)
     // ========================================================================
     script: function* (engine) {
-        // AIも人間も一目で分かる、標準的なTypeScriptのループ
+        // Standard TypeScript loop, immediately understandable by both AI and humans
         while (true) {
             engine.compute('particle_compute', Math.ceil(20000 / 64));
             engine.render('particle_render', 3840, 10000, true);
             
-            yield 'frame'; // 1フレーム終了の合図
+            yield 'frame'; // Signal the end of 1 frame
         }
     }
 });

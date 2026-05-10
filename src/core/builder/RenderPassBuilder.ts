@@ -1,10 +1,10 @@
 // src/core/builder/RenderPassBuilder.ts
 
 export interface RenderPassOptions {
-    topology?: GPUPrimitiveTopology; // 'triangle-list', 'line-list', 'point-list'
-    depthFormat?: GPUTextureFormat;  // 深度テストを使う場合は 'depth24plus' 等を指定
-    blendMode?: 'opaque' | 'alpha' | 'add' | 'normal'; // 簡易的なブレンド指定
-    // ※V2の基本戦略はVertex Pullingなので、vertexLayoutsは省略（必要に応じて追加可能）
+    topology?: GPUPrimitiveTopology; // e.g., 'triangle-list', 'line-list', 'point-list'
+    depthFormat?: GPUTextureFormat;  // Specify 'depth24plus' etc. if using depth testing
+    blendMode?: 'opaque' | 'alpha' | 'add' | 'normal'; // Simple blend mode specification
+    // * Since V2's basic strategy is Vertex Pulling, vertexLayouts are omitted (can be added if necessary)
 }
 
 export class RenderPassBuilder {
@@ -24,13 +24,13 @@ export class RenderPassBuilder {
         this.device = device;
         const topology = options.topology || 'triangle-list';
 
-        // 1. シェーダモジュールの作成（VSとFSを1ファイルに書く前提）
+        // 1. Create shader module (assuming VS and FS are written in a single file)
         const module = device.createShaderModule({
             label: 'Render Module',
             code: shaderCode
         });
 
-        // 2. ブレンドステートの決定
+        // 2. Determine blend state
         let blendState: GPUBlendState | undefined = undefined;
         if (options.blendMode === 'alpha') {
             blendState = {
@@ -44,7 +44,7 @@ export class RenderPassBuilder {
             };
         }
 
-        // 3. デプスステンシルステートの決定
+        // 3. Determine depth stencil state
         let depthStencil: GPUDepthStencilState | undefined = undefined;
         if (options.depthFormat) {
             depthStencil = {
@@ -54,14 +54,14 @@ export class RenderPassBuilder {
             };
         }
 
-        // 4. パイプラインの作成 (layout: 'auto' でバインディングを自動解決)
+        // 4. Create pipeline (auto layout resolves bindings automatically)
         this.pipeline = device.createRenderPipeline({
             label: `Render Pipeline`,
             layout: 'auto',
             vertex: {
                 module,
                 entryPoint: 'vs_main',
-                buffers: [] // ★ Vertex Pulling専用設計なので空配列
+                buffers: [] // ★ Empty array because it is specifically designed for Vertex Pulling
             },
             fragment: {
                 module,
@@ -73,13 +73,13 @@ export class RenderPassBuilder {
             },
             primitive: { 
                 topology: topology,
-                cullMode: 'none' // 必要に応じて 'back' 等に変更可能にする
+                cullMode: 'none' // Can be changed to 'back' etc. as needed
             },
             depthStencil: depthStencil
         });
     }
 
-    // --- ComputePassBuilderと全く同じインターフェース ---
+    // --- Exact same interface as ComputePassBuilder ---
     setGroup(groupIndex: number): this {
         this.currentGroupIndex = groupIndex;
         this.currentBindingIndex = 0;
@@ -89,30 +89,30 @@ export class RenderPassBuilder {
         return this;
     }
 
-    // 第2引数 explicitBinding を追加
+    // Added second argument explicitBinding
     addUniform(buffer: GPUBuffer, explicitBinding?: number): this {
         const binding = explicitBinding ?? this.currentBindingIndex;
         this.bindGroupEntries.get(this.currentGroupIndex)!.push({
             binding: binding,
             resource: { buffer }
         });
-        this.currentBindingIndex = binding + 1; // 次の自動採番に備える
+        this.currentBindingIndex = binding + 1; // Prepare for the next automatic numbering
         return this;
     }
 
-    // 第2引数 explicitBinding を追加
+    // Added second argument explicitBinding
     addStorage(buffer: GPUBuffer, explicitBinding?: number): this {
         const binding = explicitBinding ?? this.currentBindingIndex;
         this.bindGroupEntries.get(this.currentGroupIndex)!.push({
             binding: binding,
             resource: { buffer }
         });
-        this.currentBindingIndex = binding + 1; // 次の自動採番に備える
+        this.currentBindingIndex = binding + 1; // Prepare for the next automatic numbering
         return this;
     }
 
     /**
-     * レンダーパスを実行します。
+     * Executes the render pass.
      */
     draw(passEncoder: GPURenderPassEncoder, vertexCount: number, instanceCount: number = 1) {
         passEncoder.setPipeline(this.pipeline);

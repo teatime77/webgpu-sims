@@ -19,12 +19,12 @@ async function bootstrap() {
     camera.distance = 5.0;
 
     // ========================================================
-    // ★ URL パラメータの解析（深いディレクトリ階層に対応）
+    // ★ Parse URL parameters (supporting deep directory hierarchies)
     // ========================================================
     const urlParams = new URLSearchParams(window.location.search);
     const schemaPath = urlParams.get('schema') || 'test/ParticleSim';
 
-    // パスの一番最後の '/' を基準に、ディレクトリとファイル名を正確に分離
+    // Accurately separate directory and filename based on the last '/' in the path
     const lastSlashIdx = schemaPath.lastIndexOf('/');
     const directory = lastSlashIdx !== -1 ? schemaPath.substring(0, lastSlashIdx) : 'test';
     const schemaName = lastSlashIdx !== -1 ? schemaPath.substring(lastSlashIdx + 1) : schemaPath;
@@ -32,16 +32,16 @@ async function bootstrap() {
     new CaptureTool(engine, schemaName.toLowerCase());
 
     // ========================================================
-    // ★ シミュレーションスキーマの動的ロード (Vite 準拠)
+    // ★ Dynamic loading of simulation schema (Vite compliant)
     // ========================================================
     const modules = import.meta.glob('./materials/**/*.ts');
 
     let sim: SimulationSchema;
     try {
-        // 1. 指定されたパスをそのまま探す (例: ./materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts)
+        // 1. Search for the specified path exactly (e.g., ./materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts)
         let targetPath = `./materials/${schemaPath}.ts`;
         
-        // 2. 見つからなければ後方互換性のため 'Sim.ts' を付けて探す (例: ./materials/test/ParticleSim.ts)
+        // 2. If not found, append 'Sim.ts' for backward compatibility (e.g., ./materials/test/ParticleSim.ts)
         if (!modules[targetPath]) {
             targetPath = `./materials/${schemaPath}Sim.ts`;
         }
@@ -64,10 +64,10 @@ async function bootstrap() {
     const format = runner.getFormat();
 
     // ========================================================
-    // ★ パスの構築 (Builder)
+    // ★ Build passes (Builder)
     // ========================================================
     for (const node of sim.nodes) {
-        // ★ 修正: category ではなく、抽出した directory を使う
+        // ★ Fix: Use the extracted directory instead of category
         const shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
         const shader = await (await fetch(shaderUrl)).text();
         
@@ -84,14 +84,14 @@ async function bootstrap() {
             });
             runner.passes.set(node.id, builder);
         } else {
-            // スキーマから topology, blendMode, depthTest を取得
+            // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
             const builder = new RenderPassBuilder(device, shader, format, { 
                 topology: node.topology || 'triangle-list',
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
             });
-            builder.hasDepth = hasDepth; // ループ内で使うためのフラグ
+            builder.hasDepth = hasDepth; // Flag for use inside the loop
 
             const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
             groups.forEach(g => {
