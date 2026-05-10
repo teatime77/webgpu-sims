@@ -11,12 +11,6 @@ async function bootstrap() {
     if (!await engine.init()) return;
 
     engine.addCanvas('main-canvas');
-    engine.addCanvas('debug-canvas');
-    // main.ts の初期化部分に追加
-    engine.addCanvas('canvas-k1');
-    engine.addCanvas('canvas-k2');
-    engine.addCanvas('canvas-k3');
-    engine.addCanvas('canvas-prenorm');
 
     const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
     const device = engine.device;

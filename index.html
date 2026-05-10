@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebGPU STEM Labs</title>
     <style>
-      body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #111; }
+      body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; background-color: #111; color: white; font-family: sans-serif; padding: 20px; box-sizing: border-box; }
       canvas { border: 1px solid #444; border-radius: 8px; }
+      .sub-canvas-wrapper { text-align: center; }
+      .sub-canvas-label { font-size: 14px; margin-bottom: 4px; }
+      .debug-canvas { border: 1px solid red; }
     </style>
   </head>
   <body>
     <canvas id="main-canvas" width="512" height="512"></canvas>
-    <canvas id="debug-canvas" width="512" height="512" style="border: 1px solid red;"></canvas>
 
-  <div style="display: flex; gap: 10px; margin-top: 10px;">
-      <div>K1<br><canvas id="canvas-k1" width="192" height="192"></canvas></div>
-      <div>K2<br><canvas id="canvas-k2" width="192" height="192"></canvas></div>
-      <div>K3<br><canvas id="canvas-k3" width="192" height="192"></canvas></div>
-      <div>Pre-Norm<br><canvas id="canvas-prenorm" width="192" height="192"></canvas></div>
-  </div>    
+    <!-- 動的に追加されるキャンバスのコンテナ -->
+    <div id="sub-canvases" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;"></div>
   
     <script type="module" src="/src/main.ts"></script>
   </body>

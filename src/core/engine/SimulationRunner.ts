@@ -45,6 +45,7 @@ export class SimulationRunner {
     private engine: WebGPUEngine;
     public passes: Map<string, ComputePassBuilder | RenderPassBuilder> = new Map();
     public currentCommandEncoder: GPUCommandEncoder | null = null;
+    private initializedCanvases = new Set<string>(['main-canvas']);
 
     constructor(engine: WebGPUEngine) {
         this.engine = engine;
@@ -126,21 +127,51 @@ export class SimulationRunner {
         cPass.end();
     }
 
-    render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, canvas = 'main-canvas') {
+    render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, canvasId = 'main-canvas') {
         if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
+
+        if (!this.initializedCanvases.has(canvasId)) {
+            // DOMにキャンバスが存在しない場合は自動生成する
+            if (!document.getElementById(canvasId)) {
+                const container = document.getElementById('sub-canvases') || document.body;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'sub-canvas-wrapper';
+                
+                const label = document.createElement('div');
+                label.innerText = canvasId;
+                label.className = 'sub-canvas-label';
+                
+                const newCanvas = document.createElement('canvas');
+                newCanvas.id = canvasId;
+                newCanvas.width = 256;
+                newCanvas.height = 256;
+                if (canvasId != 'main-canvas') {
+                    newCanvas.className = 'debug-canvas';
+                }
+                
+                wrapper.appendChild(label);
+                wrapper.appendChild(newCanvas);
+                container.appendChild(wrapper);
+            }
+
+            this.engine.addCanvas(canvasId);
+            this.initializedCanvases.add(canvasId);
+        }
+
         const builder = this.passes.get(id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
         
         const passDesc: GPURenderPassDescriptor = {
             colorAttachments: [{
-                view: this.engine.getContext(canvas).getCurrentTexture().createView(),
+                view: this.engine.getContext(canvasId).getCurrentTexture().createView(),
                 clearValue: { r: 0.0, g: 0.0, b: 0.01, a: 1.0 },
                 loadOp: 'clear', storeOp: 'store'
             }]
         };
         if (useDepth) {
             passDesc.depthStencilAttachment = {
-                view: this.engine.getDepthView(canvas),
+                view: this.engine.getDepthView(canvasId),
                 depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store'
             };
         }
