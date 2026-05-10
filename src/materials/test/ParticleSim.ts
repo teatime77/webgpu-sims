@@ -1,7 +1,8 @@
 // src/materials/test/ParticleSim.ts
 import { makeGeodesicPolyhedron } from '../../core/primitive';
+import { defineSimulation } from '../../core/engine/SimulationRunner';
 
-export default {
+export default defineSimulation({
     name: "Particle Physics V1.5",
     
     // ========================================================================
@@ -54,10 +55,9 @@ export default {
     // ========================================================================
     // 3. TSによる初期化ロジック (V2の柔軟性を吸収)
     // ========================================================================
-    init: async (engine: any) => {
-        engine.updateVariables('Params', {
-            speedScale: 1.0, colorR: 1.0, colorG: 0.7, colorB: 0.2
-        });
+    init: async (engine) => {
+        const paramData = new Float32Array([1.0, 1.0, 0.7, 0.2]);
+        engine.device.queue.writeBuffer(engine.getUniformBuffer('Params'), 0, paramData);
 
         const numParticles = 20000 / 2;
         const initialData = new Float32Array(20000 * 4);
@@ -80,13 +80,13 @@ export default {
     // ========================================================================
     // 4. TSジェネレータによる実行制御 (V1のブラックボックスDSLを撤廃！)
     // ========================================================================
-    script: function* ({ call, swap }: any) {
+    script: function* (engine) {
         // AIも人間も一目で分かる、標準的なTypeScriptのループ
         while (true) {
-            yield call('particle_compute');
-            yield call('particle_render');
+            engine.compute('particle_compute', Math.ceil(20000 / 64));
+            engine.render('particle_render', 3840, 10000, true);
             
             yield 'frame'; // 1フレーム終了の合図
         }
     }
-};
+});

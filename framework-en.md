@@ -38,7 +38,8 @@ An asynchronous function that executes exactly once when the simulation loads. I
 The "soul" of the simulation. This is written as a **TypeScript generator function (`function*`)** that dictates the exact order of GPU operations.
 
 * **Transparent Control Flow**: Standard TypeScript constructs like `while(true)` loops are used. Inside the loop, the script yields commands (e.g., `yield call('node_id')`, `yield swap('resource')`).
-* **`yield 'frame'`**: This acts as a synchronization barrier. It signals to the engine that all commands for the current iteration have been recorded and should be submitted to the GPU, subsequently returning control to the browser for screen rendering.
+* **Transparent Control Flow**: Standard TypeScript constructs like `while(true)` loops are used. Inside the loop, the script calls execution methods on the runner (e.g., `runner.compute('node_id')`, `runner.render('node_id')`, `runner.swap('resource')`).
+* **`yield 'frame'`**: This acts as a synchronization barrier. It signals to the engine that all commands for the current iteration have been recorded and should be submitted to the GPU.
 
 ---
 
@@ -65,7 +66,7 @@ Each `node` is encapsulated by a specific builder class (`ComputePassBuilder` or
 The engine drives the simulation by iterating through the generator object.
 
 1. **Encoder Initialization**: At the start of a frame, a fresh `GPUCommandEncoder` is instantiated.
-2. **Command Recording**: As the generator yields `call('node_id')`, the corresponding Builder class records either a `beginComputePass` or `beginRenderPass` into the encoder, along with its dynamically resolved bind groups and dispatch/draw sizes.
+2. **Command Recording**: As the script calls `runner.compute('node_id')` or `runner.render('node_id')`, the corresponding Builder class records either a `beginComputePass` or `beginRenderPass` into the encoder, along with its dynamically resolved bind groups and dispatch/draw sizes.
 3. **Queue Submission**: When the generator yields `'frame'`, the engine calls `finish()` on the command encoder. The resulting command buffer is then dispatched via `device.queue.submit()`.
 
 ### 2.4. Memory Alignment and Data Transfer Safety
@@ -90,7 +91,7 @@ The engine parses the `resources` section of the schema to provision and manage 
 
 * **Ping-Pong Buffer Management**: When a resource specifies `bufferCount: 2`, the engine automatically allocates an array of two distinct physical buffers.
 * **History Pointers**: The engine maintains internal state indices (e.g., `[0, 1]`) to track which buffer is the "current" (write) buffer and which is the "history" (read) buffer.
-* When the generator script yields `swap('resource_name')`, the engine simply flips these internal indices (e.g., from `[0, 1]` to `[1, 0]`). This instantly swaps the roles of the physical buffers without requiring any expensive memory copying operations.
+* When the generator script calls `runner.swap('resource_name')`, the engine simply flips these internal indices (e.g., from `[0, 1]` to `[1, 0]`). This instantly swaps the roles of the physical buffers without requiring any expensive memory copying operations.
 
 
 
@@ -107,7 +108,7 @@ Each `node` defined in the schema is encapsulated by a specialized builder class
 The execution loop is driven by the engine iterating through the TypeScript generator function (`script`) defined in the schema. This provides a transparent and sequential control flow over asynchronous GPU operations.
 
 1. **Command Encoder Initialization**: At the beginning of each frame, the engine creates a fresh `GPUCommandEncoder`.
-2. **Command Recording**: As the generator yields a `call('node_id')` instruction, the corresponding builder class records either a `beginComputePass` or `beginRenderPass` onto the encoder. It binds the dynamically resolved `GPUBindGroup`s and specifies the dispatch sizes or vertex counts.
+2. **Command Recording**: As the generator executes a `runner.compute(...)` or `runner.render(...)` instruction, the corresponding builder class records either a `beginComputePass` or `beginRenderPass` onto the encoder. It binds the dynamically resolved `GPUBindGroup`s and specifies the dispatch sizes or vertex counts.
 3. **Queue Submission**: The execution barrier is the `yield 'frame'` instruction. When the generator yields this, it signals the end of the current iteration. The engine calls `finish()` on the command encoder and submits the resulting command buffer to `device.queue.submit()`. This dispatches all recorded operations to the GPU for execution, and control is returned to the browser's requestAnimationFrame loop.
 
 #### 4. Memory Alignment and Data Transfer Safety

@@ -3,7 +3,7 @@
 export interface RenderPassOptions {
     topology?: GPUPrimitiveTopology; // 'triangle-list', 'line-list', 'point-list'
     depthFormat?: GPUTextureFormat;  // 深度テストを使う場合は 'depth24plus' 等を指定
-    blendMode?: 'opaque' | 'alpha' | 'add'; // 簡易的なブレンド指定
+    blendMode?: 'opaque' | 'alpha' | 'add' | 'normal'; // 簡易的なブレンド指定
     // ※V2の基本戦略はVertex Pullingなので、vertexLayoutsは省略（必要に応じて追加可能）
 }
 
@@ -13,6 +13,7 @@ export class RenderPassBuilder {
     private bindGroupEntries: Map<number, GPUBindGroupEntry[]> = new Map();
     private currentGroupIndex: number = 0;
     private currentBindingIndex: number = 0;
+    hasDepth : boolean = true;
 
     constructor(
         device: GPUDevice, 

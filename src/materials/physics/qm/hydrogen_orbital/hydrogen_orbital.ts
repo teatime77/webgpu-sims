@@ -1,5 +1,6 @@
 // src/materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts
 import { SimUI } from '../../../../core/ui/SimUI';
+import { defineSimulation } from '../../../../core/engine/SimulationRunner';
 
 // シミュレーションの状態を保持するオブジェクト
 const state = {
@@ -10,10 +11,9 @@ const state = {
     needsReset: true     // ★ false から true に変更（ロード直後にバーンインさせる）
 };
 
-let runnerRef: any = null;
 const NUM_PARTICLES = 1000000;
 
-export default {
+export default defineSimulation({
     name: "Hydrogen Orbital V1.5",
 
     // ========================================================
@@ -23,7 +23,10 @@ export default {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            fields: { orbitalMode: 'f32', samplingStep: 'f32', brightness: 'f32', colorMix: 'f32', resetFlag: 'f32' } 
+            fields: { 
+                orbitalMode: 'f32', samplingStep: 'f32', brightness: 'f32', colorMix: 'f32', 
+                resetFlag: 'f32', pad1: 'f32', pad2: 'f32', pad3: 'f32' 
+            } 
         },
         ParticleData: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },
         RngState: { type: 'storage', format: 'u32', count: NUM_PARTICLES }
@@ -59,9 +62,7 @@ export default {
     // ========================================================
     // 3. 初期化ロジック (UIと乱数シード)
     // ========================================================
-    init: async (runner: any) => {
-        runnerRef = runner; // スクリプトから参照するために保持
-
+    init: async (runner) => {
         // 乱数状態バッファの初期化
         const rngState = new Uint32Array(NUM_PARTICLES);
         for (let i = 0; i < NUM_PARTICLES; i++) {
@@ -87,7 +88,7 @@ export default {
     // ========================================================
     // 4. 実行ジェネレータ (MCMCバーンインのオーケストレーション)
     // ========================================================
-    script: function* ({ call }: any) {
+    script: function* (runner) {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         while (true) {
@@ -95,41 +96,37 @@ export default {
             if (state.needsReset) currentResetFlag = 1.0;
 
             // UIの最新値をGPUへ転送
-            runnerRef.updateVariables('Params', {
-                orbitalMode: state.orbitalMode,
-                samplingStep: state.samplingStep,
-                brightness: state.brightness,
-                colorMix: state.colorMix,
-                resetFlag: currentResetFlag
-            });
+            const paramData = new Float32Array([
+                state.orbitalMode, state.samplingStep, state.brightness, state.colorMix,
+                currentResetFlag, 0.0, 0.0, 0.0
+            ]);
+            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
 
             if (state.needsReset) {
                 // 1. 全パーティクルをランダム再配置 (resetFlag = 1.0)
-                yield { type: 'compute', builder: call('hydrogen_orbital_comp'), x: dispatchX };
+                runner.compute('hydrogen_orbital_comp', dispatchX);
                 
                 // 2. フラグを0に戻す
-                runnerRef.updateVariables('Params', { resetFlag: 0.0 });
+                const resetParamData = new Float32Array([
+                    state.orbitalMode, state.samplingStep, state.brightness, state.colorMix,
+                    0.0, 0.0, 0.0, 0.0
+                ]);
+                runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, resetParamData);
                 
                 // 3. 高速バーンイン (1フレーム内で16回計算を回して即座に収束させる)
                 for (let i = 0; i < 16; i++) {
-                    yield { type: 'compute', builder: call('hydrogen_orbital_comp'), x: dispatchX };
+                    runner.compute('hydrogen_orbital_comp', dispatchX);
                 }
                 state.needsReset = false;
             } else {
                 // 通常サンプリング
-                yield { type: 'compute', builder: call('hydrogen_orbital_comp'), x: dispatchX };
+                runner.compute('hydrogen_orbital_comp', dispatchX);
             }
 
             // 描画 (point-listなので頂点数はNUM_PARTICLES)
-            yield { 
-                type: 'render', 
-                builder: call('hydrogen_orbital_render'), 
-                vertexCount: NUM_PARTICLES, 
-                instanceCount: 1,
-                hasDepth: false 
-            };
+            runner.render('hydrogen_orbital_render', NUM_PARTICLES, 1, false);
             
             yield 'frame';
         }
     }
-};
+});

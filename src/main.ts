@@ -4,7 +4,7 @@ import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/utils/CaptureTool';
 import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
-import { SimulationRunner } from './core/engine/SimulationRunner';
+import { SimulationRunner, type SimulationSchema, type ResourceBinding, type PassCommand } from './core/engine/SimulationRunner';
 
 async function bootstrap() {
     const engine = new WebGPUEngine();
@@ -42,7 +42,7 @@ async function bootstrap() {
     // ========================================================
     const modules = import.meta.glob('./materials/**/*.ts');
 
-    let sim: any;
+    let sim: SimulationSchema;
     try {
         // 1. 指定されたパスをそのまま探す (例: ./materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts)
         let targetPath = `./materials/${schemaPath}.ts`;
@@ -56,7 +56,7 @@ async function bootstrap() {
             throw new Error(`Path not found in glob: ${targetPath}`);
         }
 
-        const simModule: any = await modules[targetPath]();
+        const simModule = await modules[targetPath]() as { default: SimulationSchema };
         sim = simModule.default;
     } catch (e) {
         console.error(`Failed to load schema: ${schemaPath}`, e);
@@ -72,7 +72,6 @@ async function bootstrap() {
     // ========================================================
     // ★ パスの構築 (Builder)
     // ========================================================
-    const passes = new Map<string, any>();
     for (const node of sim.nodes) {
         // ★ 修正: category ではなく、抽出した directory を使う
         const shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
@@ -80,16 +79,16 @@ async function bootstrap() {
         
         if (node.type === 'compute') {
             const builder = new ComputePassBuilder(device, shader, 'main');
-            const groups = new Set<number>(node.bindings.map((b: any) => b.group || 0));
+            const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
             groups.forEach(g => {
                 builder.setGroup(g);
-                node.bindings.filter((b: any) => (b.group || 0) === g).forEach((b: any) => {
+                node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
                     const res = sim.resources[b.resource];
                     if (res.type === 'uniform') builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     else builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
                 });
             });
-            passes.set(node.id, builder);
+            runner.passes.set(node.id, builder);
         } else {
             // スキーマから topology, blendMode, depthTest を取得
             const hasDepth = node.depthTest !== false;
@@ -98,34 +97,29 @@ async function bootstrap() {
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
             });
-            (builder as any).hasDepth = hasDepth; // ループ内で使うためのフラグ
+            builder.hasDepth = hasDepth; // ループ内で使うためのフラグ
 
-            const groups = new Set<number>(node.bindings.map((b: any) => b.group || 0));
+            const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
             groups.forEach(g => {
                 builder.setGroup(g);
-                node.bindings.filter((b: any) => (b.group || 0) === g).forEach((b: any) => {
+                node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
                     const res = sim.resources[b.resource];
                     if (res.type === 'uniform') builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     else builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
                 });
             });
-            passes.set(node.id, builder);
+            runner.passes.set(node.id, builder);
         }
     }
 
-    const context = {
-        call: (id: string) => passes.get(id),
-        swap: (id: string) => runner.swap(id),
-    };
-
-    const it = sim.script(context);
+    const it = sim.script(runner);
 
     function frame() {
         const aspect = canvas.width / canvas.height;
         const matrices = camera.getMatrices(aspect);
         runner.updateVariables('Camera', matrices);
 
-        const commandEncoder = device.createCommandEncoder();
+        runner.currentCommandEncoder = device.createCommandEncoder();
 
         while (true) {
             const result = it.next();
@@ -133,46 +127,10 @@ async function bootstrap() {
             
             const val = result.value;
             if (val === 'frame') break;
-
-            // ★ 修正: オブジェクト形式で動的なディスパッチ・描画数を受け取る
-            let passInfo = val;
-            if (val instanceof ComputePassBuilder) {
-                // 古い ParticleSim の互換性フォールバック
-                passInfo = { type: 'compute', builder: val, x: Math.ceil(20000 / 64) };
-            } else if (val instanceof RenderPassBuilder) {
-                passInfo = { type: 'render', builder: val, vertexCount: 3840, instanceCount: 10000, hasDepth: true };
-            }
-
-            if (passInfo.type === 'compute') {
-                const cPass = commandEncoder.beginComputePass();
-                passInfo.builder.dispatch(cPass, passInfo.x, passInfo.y || 1, passInfo.z || 1);
-                cPass.end();
-            } else if (passInfo.type === 'render') {
-                // ★ スキーマからキャンバスIDを取得（デフォルトは main-canvas）
-                const targetCanvas = passInfo.canvas || 'main-canvas'; 
-                
-                const passDesc: GPURenderPassDescriptor = {
-                    colorAttachments: [{
-                        view: engine.getContext(targetCanvas).getCurrentTexture().createView(),
-                        clearValue: { r: 0.0, g: 0.0, b: 0.01, a: 1.0 },
-                        loadOp: 'clear', storeOp: 'store'
-                    }]
-                };
-                
-                if (passInfo.hasDepth) {
-                    passDesc.depthStencilAttachment = {
-                        view: engine.getDepthView(targetCanvas),
-                        depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store'
-                    };
-                }
-                
-                const rPass = commandEncoder.beginRenderPass(passDesc);
-                passInfo.builder.draw(rPass, passInfo.vertexCount, passInfo.instanceCount || 1);
-                rPass.end();
-            }
         }
 
-        device.queue.submit([commandEncoder.finish()]);
+        device.queue.submit([runner.currentCommandEncoder.finish()]);
+        runner.currentCommandEncoder = null;
         requestAnimationFrame(frame);
     }
 

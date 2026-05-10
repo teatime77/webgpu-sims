@@ -2,12 +2,49 @@
 import { WebGPUEngine } from './WebGPUEngine';
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
+import type { ResourceDef } from './SimulationBase';
+import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
+import type { RenderPassBuilder } from '../builder/RenderPassBuilder';
+
+export interface ResourceBinding {
+    group?: number;
+    binding?: number;
+    resource: string;
+    historyLevel?: number;
+    varName?: string;
+    access?: string;
+}
+
+export interface NodeDef {
+    id: string;
+    type: 'compute' | 'render';
+    topology?: GPUPrimitiveTopology;
+    blendMode?: 'opaque' | 'alpha' | 'add' | 'normal';
+    depthTest?: boolean;
+    bindings: ResourceBinding[];
+}
+
+export type PassCommand = 'frame' | undefined;
+
+export function defineSimulation(schema: SimulationSchema): SimulationSchema {
+    return schema;
+}
+
+export interface SimulationSchema {
+    name?: string;
+    resources: Record<string, ResourceDef>;
+    nodes: NodeDef[];
+    init?: (runner: SimulationRunner) => void | Promise<void>;
+    script: (runner: SimulationRunner) => Generator<PassCommand, void, unknown> | Iterator<PassCommand, void, unknown>;
+}
 
 export class SimulationRunner {
     public device: GPUDevice;
     public uniforms: UniformManager;
     public storages: Map<string, ResourceWrapper> = new Map();
     private engine: WebGPUEngine;
+    public passes: Map<string, ComputePassBuilder | RenderPassBuilder> = new Map();
+    public currentCommandEncoder: GPUCommandEncoder | null = null;
 
     constructor(engine: WebGPUEngine) {
         this.engine = engine;
@@ -16,12 +53,12 @@ export class SimulationRunner {
     }
 
     /** V1.5のスキーマ(設計図)を読み込み、GPUリソースを自動生成する */
-    async loadSchema(schema: any) {
+    async loadSchema(schema: SimulationSchema) {
         // 1. リソースの構築
-        for (const [id, def] of Object.entries<any>(schema.resources)) {
+        for (const [id, def] of Object.entries<ResourceDef>(schema.resources)) {
             if (def.type === 'uniform') {
                 // UniformManager にパディング計算を任せる
-                this.uniforms.register(id, def.fields);
+                if (def.fields) this.uniforms.register(id, def.fields);
             } 
             else if (def.type === 'storage') {
                 const count = def.bufferCount || 1;
@@ -79,5 +116,36 @@ export class SimulationRunner {
 
     swap(id: string) {
         this.storages.get(id)?.swap();
+    }
+
+    compute(id: string, x: number, y = 1, z = 1) {
+        if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
+        const builder = this.passes.get(id) as ComputePassBuilder;
+        const cPass = this.currentCommandEncoder.beginComputePass();
+        builder.dispatch(cPass, x, y, z);
+        cPass.end();
+    }
+
+    render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, canvas = 'main-canvas') {
+        if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
+        const builder = this.passes.get(id) as RenderPassBuilder;
+        const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
+        
+        const passDesc: GPURenderPassDescriptor = {
+            colorAttachments: [{
+                view: this.engine.getContext(canvas).getCurrentTexture().createView(),
+                clearValue: { r: 0.0, g: 0.0, b: 0.01, a: 1.0 },
+                loadOp: 'clear', storeOp: 'store'
+            }]
+        };
+        if (useDepth) {
+            passDesc.depthStencilAttachment = {
+                view: this.engine.getDepthView(canvas),
+                depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store'
+            };
+        }
+        const rPass = this.currentCommandEncoder.beginRenderPass(passDesc);
+        builder.draw(rPass, vertexCount, instanceCount);
+        rPass.end();
     }
 }

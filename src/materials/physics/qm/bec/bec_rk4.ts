@@ -1,5 +1,6 @@
 // src/materials/physics/qm/bec/bec_rk4.ts
 import { SimUI } from '../../../../core/ui/SimUI';
+import { defineSimulation } from '../../../../core/engine/SimulationRunner';
 
 const GW = 192;
 const state = {
@@ -10,9 +11,7 @@ const state = {
     particleNumber: 2.5
 };
 
-let runnerRef: any = null;
-
-export default {
+export default defineSimulation({
     name: "2D BEC Phase Transition V1.5 (RK4)",
     
     // ========================================================================
@@ -169,8 +168,7 @@ export default {
     // ========================================================================
     // 3. Init
     // ========================================================================
-    init: async (runner: any) => {
-        runnerRef = runner;
+    init: async (runner) => {
         const rng = new Uint32Array(GW * GW).map(() => Math.random() * 0xFFFFFFFF);
         runner.writeStorage('RngState', rng);
 
@@ -184,29 +182,29 @@ export default {
     // ========================================================================
     // 4. Script: RK4のシーケンスを実行
     // ========================================================================
-    script: function* ({ call, swap }: any) {
+    script: function* (runner) {
         const dispatchXY = GW / 8;
         let time = 0.0;
 
         const updateParams = () => {
-            const buf = runnerRef.getUniformBuffer('BecParams');
+            const buf = runner.getUniformBuffer('BecParams');
             const paramData = new Float32Array([
                 GW, GW, state.temperature, state.dt,
                 state.g, state.omega, state.particleNumber, 7.0, // domainHalfは元の7.0のままでOK
                 time, dispatchXY * dispatchXY,
                 0.0, 0.0
             ]);
-            runnerRef.device.queue.writeBuffer(buf, 0, paramData);
+            runner.device.queue.writeBuffer(buf, 0, paramData);
         };
 
         updateParams();
         
-        yield { type: 'compute', builder: call('bec_init'), x: dispatchXY, y: dispatchXY };
-        yield { type: 'compute', builder: call('bec_norm_partial'), x: dispatchXY, y: dispatchXY };
-        yield { type: 'compute', builder: call('bec_norm_total'), x: 1 };
-        yield { type: 'compute', builder: call('bec_norm_apply'), x: dispatchXY, y: dispatchXY };
+        runner.compute('bec_init', dispatchXY, dispatchXY);
+        runner.compute('bec_norm_partial', dispatchXY, dispatchXY);
+        runner.compute('bec_norm_total', 1);
+        runner.compute('bec_norm_apply', dispatchXY, dispatchXY);
         
-        swap('Psi');
+        runner.swap('Psi');
         yield 'frame';
 
         while (true) {
@@ -214,33 +212,29 @@ export default {
             updateParams();            
 
             // RK4の4ステップを順番に実行
-            yield { type: 'compute', builder: call('bec_rk4_k1'), x: dispatchXY, y: dispatchXY };
-            yield { type: 'render', builder: call('bec_debug_k1'), vertexCount: 6, instanceCount: 1, hasDepth: false, canvas: 'canvas-k1' };
+            runner.compute('bec_rk4_k1', dispatchXY, dispatchXY);
+            runner.render('bec_debug_k1', 6, 1, false, 'canvas-k1');
 
-            yield { type: 'compute', builder: call('bec_rk4_k2'), x: dispatchXY, y: dispatchXY };
-            yield { type: 'render', builder: call('bec_debug_k2'), vertexCount: 6, instanceCount: 1, hasDepth: false, canvas: 'canvas-k2' };
+            runner.compute('bec_rk4_k2', dispatchXY, dispatchXY);
+            runner.render('bec_debug_k2', 6, 1, false, 'canvas-k2');
 
-            yield { type: 'compute', builder: call('bec_rk4_k3'), x: dispatchXY, y: dispatchXY };
-            yield { type: 'render', builder: call('bec_debug_k3'), vertexCount: 6, instanceCount: 1, hasDepth: false, canvas: 'canvas-k3' };
+            runner.compute('bec_rk4_k3', dispatchXY, dispatchXY);
+            runner.render('bec_debug_k3', 6, 1, false, 'canvas-k3');
 
-            yield { type: 'compute', builder: call('bec_rk4_finish'), x: dispatchXY, y: dispatchXY };
-            yield { type: 'render', builder: call('bec_debug_prenorm'), vertexCount: 6, instanceCount: 1, hasDepth: false, canvas: 'canvas-prenorm' };
+            runner.compute('bec_rk4_finish', dispatchXY, dispatchXY);
+            runner.render('bec_debug_prenorm', 6, 1, false, 'canvas-prenorm');
 
             // 規格化
-            yield { type: 'compute', builder: call('bec_norm_partial'), x: dispatchXY, y: dispatchXY };
-            yield { type: 'compute', builder: call('bec_norm_total'), x: 1 };
-            yield { type: 'compute', builder: call('bec_norm_apply'), x: dispatchXY, y: dispatchXY };
+            runner.compute('bec_norm_partial', dispatchXY, dispatchXY);
+            runner.compute('bec_norm_total', 1);
+            runner.compute('bec_norm_apply', dispatchXY, dispatchXY);
             
             // 描画
-            yield { type: 'render', builder: call('bec_render'), vertexCount: 6, instanceCount: 1, hasDepth: false };
-            yield { 
-                type: 'render', builder: call('bec_debug_render'), 
-                vertexCount: 6, instanceCount: 1, hasDepth: false, 
-                canvas: 'debug-canvas' 
-            };
+            runner.render('bec_render', 6, 1, false);
+            runner.render('bec_debug_render', 6, 1, false, 'debug-canvas');
 
-            swap('Psi');
+            runner.swap('Psi');
             yield 'frame';
         }
     }
-};
+});
