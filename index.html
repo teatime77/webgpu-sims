@@ -10,8 +10,16 @@
     </style>
   </head>
   <body>
-    <canvas id="main-canvas" width="800" height="600"></canvas>
-    
+    <canvas id="main-canvas" width="512" height="512"></canvas>
+    <canvas id="debug-canvas" width="512" height="512" style="border: 1px solid red;"></canvas>
+
+  <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <div>K1<br><canvas id="canvas-k1" width="192" height="192"></canvas></div>
+      <div>K2<br><canvas id="canvas-k2" width="192" height="192"></canvas></div>
+      <div>K3<br><canvas id="canvas-k3" width="192" height="192"></canvas></div>
+      <div>Pre-Norm<br><canvas id="canvas-prenorm" width="192" height="192"></canvas></div>
+  </div>    
+  
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

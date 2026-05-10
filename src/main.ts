@@ -11,6 +11,13 @@ async function bootstrap() {
     if (!await engine.init()) return;
 
     engine.addCanvas('main-canvas');
+    engine.addCanvas('debug-canvas');
+    // main.ts の初期化部分に追加
+    engine.addCanvas('canvas-k1');
+    engine.addCanvas('canvas-k2');
+    engine.addCanvas('canvas-k3');
+    engine.addCanvas('canvas-prenorm');
+
     const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
     const device = engine.device;
 
@@ -141,18 +148,20 @@ async function bootstrap() {
                 passInfo.builder.dispatch(cPass, passInfo.x, passInfo.y || 1, passInfo.z || 1);
                 cPass.end();
             } else if (passInfo.type === 'render') {
+                // ★ スキーマからキャンバスIDを取得（デフォルトは main-canvas）
+                const targetCanvas = passInfo.canvas || 'main-canvas'; 
+                
                 const passDesc: GPURenderPassDescriptor = {
                     colorAttachments: [{
-                        view: engine.getContext('main-canvas').getCurrentTexture().createView(),
+                        view: engine.getContext(targetCanvas).getCurrentTexture().createView(),
                         clearValue: { r: 0.0, g: 0.0, b: 0.01, a: 1.0 },
                         loadOp: 'clear', storeOp: 'store'
                     }]
                 };
                 
-                // デプステストが有効な場合のみアタッチ
                 if (passInfo.hasDepth) {
                     passDesc.depthStencilAttachment = {
-                        view: engine.getDepthView('main-canvas'),
+                        view: engine.getDepthView(targetCanvas),
                         depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store'
                     };
                 }
