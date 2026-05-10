@@ -86,7 +86,15 @@ async function main() {
 
         // 3. 関数本体のスケルトン生成
         if (node.type === 'compute') {
-            code += `@compute @workgroup_size(64, 1, 1)\n`;
+            let wgX: string | number = 64, wgY: string | number = 1, wgZ: string | number = 1;
+            if (typeof node.workgroupSize === 'number' || typeof node.workgroupSize === 'string') {
+                wgX = node.workgroupSize;
+            } else if (Array.isArray(node.workgroupSize)) {
+                wgX = node.workgroupSize[0] ?? 64;
+                wgY = node.workgroupSize[1] ?? 1;
+                wgZ = node.workgroupSize[2] ?? 1;
+            }
+            code += `@compute @workgroup_size(${wgX}, ${wgY}, ${wgZ})\n`;
             code += `fn main(@builtin(global_invocation_id) id: vec3<u32>) {\n`;
             code += `    let idx = id.x;\n`;
             code += `    // TODO: Write compute logic for ${node.id}\n`;

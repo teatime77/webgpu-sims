@@ -33,6 +33,7 @@ export default defineSimulation({
         {
             id: 'particle_compute',
             type: 'compute',
+            workgroupSize: 64,
             bindings: [
                 { group: 0, binding: 0, resource: 'Params', varName: 'params' },
                 { group: 0, binding: 1, resource: 'ParticleData', varName: 'particles', access: 'read_write' }

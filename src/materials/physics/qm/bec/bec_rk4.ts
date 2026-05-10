@@ -47,6 +47,7 @@ export default defineSimulation({
     nodes: [
         {
             id: 'bec_init', type: 'compute',
+            workgroupSize: [8, 8, 1],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 0, varName: 'psiOut', access: 'read_write' },
@@ -55,6 +56,7 @@ export default defineSimulation({
         },
         {
             id: 'bec_norm_partial', type: 'compute',
+            workgroupSize: [8, 8, 1],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 0, varName: 'psiR', access: 'read' },
@@ -71,6 +73,7 @@ export default defineSimulation({
         },
         {
             id: 'bec_norm_apply', type: 'compute',
+            workgroupSize: [8, 8, 1],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 0, varName: 'psiN', access: 'read_write' },
@@ -81,6 +84,7 @@ export default defineSimulation({
         // --- RK4 Pass ---
         {
             id: 'bec_rk4_k1', type: 'compute',
+            workgroupSize: [8, 8, 1],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },
@@ -89,6 +93,7 @@ export default defineSimulation({
         },
         {
             id: 'bec_rk4_k2', type: 'compute',
+            workgroupSize: [8, 8, 1],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },
@@ -98,6 +103,7 @@ export default defineSimulation({
         },
         {
             id: 'bec_rk4_k3', type: 'compute',
+            workgroupSize: [8, 8, 1],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },
@@ -107,6 +113,7 @@ export default defineSimulation({
         },
         {
             id: 'bec_rk4_finish', type: 'compute',
+            workgroupSize: [8, 8, 1],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },

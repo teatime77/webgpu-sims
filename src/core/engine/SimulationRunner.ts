@@ -18,6 +18,7 @@ export interface ResourceBinding {
 export interface NodeDef {
     id: string;
     type: 'compute' | 'render';
+    workgroupSize?: number | string | (number | string)[];
     topology?: GPUPrimitiveTopology;
     blendMode?: 'opaque' | 'alpha' | 'add' | 'normal';
     depthTest?: boolean;

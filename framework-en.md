@@ -23,6 +23,7 @@ This section defines the GPU memory buffers required by the simulation.
 Nodes define the atomic compute and render passes that will execute on the GPU.
 
 * **`id`**: Corresponds directly to a specific WGSL shader file (e.g., `Particle_comp.wgsl`).
+* **`workgroupSize`**: (Optional, Compute nodes only) Defines the `@workgroup_size(x, y, z)` for the compute shader. It can be a single number or string (e.g., `64` translates to `[64, 1, 1]`) or an array of up to three elements (e.g., `[8, 8, 1]`). If omitted, defaults to `64`. This configuration is automatically reflected when generating the WGSL skeleton.
 * **`bindings`**: Maps the buffers defined in `resources` to the `@group(0) @binding(n)` slots in the WGSL code.
 * Setting `historyLevel: 1` instructs the engine to automatically bind the "previous" state of a ping-pong buffer.
 
