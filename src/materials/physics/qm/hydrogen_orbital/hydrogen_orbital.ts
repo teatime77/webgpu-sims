@@ -1,6 +1,6 @@
 // src/materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts
 import { SimUI } from '../../../../core/ui/SimUI';
-import { defineSimulation } from '../../../../core/engine/SimulationRunner';
+import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
 
 // Object to hold simulation state
 const state = {
@@ -13,7 +13,7 @@ const state = {
 
 const NUM_PARTICLES = 1000000;
 
-export default defineSimulation({
+const schema: SimulationSchema = {
     name: "Hydrogen Orbital V1.5",
 
     // ========================================================
@@ -129,4 +129,6 @@ export default defineSimulation({
             yield 'frame';
         }
     }
-});
+};
+
+export default schema;

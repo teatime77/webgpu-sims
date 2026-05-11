@@ -1,6 +1,6 @@
 // src/materials/physics/qm/bec/bec_rk4.ts
 import { SimUI } from '../../../../core/ui/SimUI';
-import { defineSimulation } from '../../../../core/engine/SimulationRunner';
+import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
 
 const GW = 192;
 const state = {
@@ -11,7 +11,7 @@ const state = {
     particleNumber: 2.5
 };
 
-export default defineSimulation({
+const schema: SimulationSchema = {
     name: "2D BEC Phase Transition V1.5 (RK4)",
     
     // ========================================================================
@@ -244,4 +244,6 @@ export default defineSimulation({
             yield 'frame';
         }
     }
-});
+};
+
+export default schema;

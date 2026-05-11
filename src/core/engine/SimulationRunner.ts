@@ -27,10 +27,6 @@ export interface NodeDef {
 
 export type PassCommand = 'frame' | undefined;
 
-export function defineSimulation(schema: SimulationSchema): SimulationSchema {
-    return schema;
-}
-
 export interface SimulationSchema {
     name?: string;
     resources: Record<string, ResourceDef>;

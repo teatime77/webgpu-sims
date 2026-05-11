@@ -1,7 +1,8 @@
 // tools/generate_skeleton.ts
 import * as fs from 'fs';
 import * as path from 'path';
-import { pathToFileURL } from 'url'; // ★ この行を追加
+import { pathToFileURL } from 'url';
+import type { SimulationSchema } from '../src/core/engine/SimulationRunner';
 
 async function main() {
     const targetFile = process.argv[2];
@@ -13,26 +14,29 @@ async function main() {
     const fullPath = path.resolve(targetFile);
     const dirName = path.dirname(fullPath);
     
-    // ★ 修正: Windows対策として絶対パスを file:// URL に変換して読み込む
+    // Convert absolute path to file:// URL for Windows compatibility
     const module = await import(pathToFileURL(fullPath).href);
     
-    const schema = module.default || module.schema;
+    const schema: SimulationSchema = module.default || module.schema;
         
     if (!schema || !schema.nodes || !schema.resources) {
         console.error("Invalid schema format. Expected 'resources' and 'nodes'.");
         process.exit(1);
     }
 
-    console.log(`Generating skeleton for: ${schema.name} (v${schema.version})`);
+    console.log(`Generating skeleton for: ${schema.name}`);
 
-    // 各ノードごとに .wgsl ファイルを生成する
+    // Generate a .wgsl file for each node (pass) defined in the schema
     for (const node of schema.nodes) {
         let code = `// ==========================================\n`;
         code += `// AUTO-GENERATED SKELETON FOR NODE: ${node.id}\n`;
         code += `// DO NOT MODIFY STRUCTS AND BINDINGS\n`;
         code += `// ==========================================\n\n`;
 
-        // 1. 構造体 (Structs) の生成
+        // 1. Generate Structs
+        // AI instruction: Padding is automatically calculated by the UniformManager in TypeScript,
+        // so explicit padding fields (like pad1, pad2) are NOT strictly required in WGSL structs,
+        // but defining them correctly aligns with WebGPU's strict alignment rules.
         const generatedStructs = new Set<string>();
         for (const bind of node.bindings) {
             const res = schema.resources[bind.resource];
@@ -44,13 +48,12 @@ async function main() {
                 for (const [fieldName, fieldType] of Object.entries(res.fields)) {
                     code += `    ${fieldName}: ${fieldType},\n`;
                 }
-                // ※パディングはエンジンが自動計算するためWGSL側にはダミーpadは書き出さなくてもOKですが、
-                // WebGPUの厳密なアライメントに合わせてAIに書かせるための雛形になります。
                 code += `};\n\n`;
             }
         }
 
-        // 2. バインディング (Bindings) の生成
+        // 2. Generate Bindings
+        // AI instruction: These bindings exactly match the "bindings" array in the SimulationSchema.
         for (const [idx, bind] of node.bindings.entries()) {
             const res = schema.resources[bind.resource];
             if (!res) continue;
@@ -63,8 +66,8 @@ async function main() {
                 code += `@group(${group}) @binding(${bindingNum}) var<uniform> ${varName}: ${bind.resource}Struct;\n`;
             } 
             else if (res.type === 'storage') {
-                // 🚨安全対策: Renderパスでは強制的に 'read' にする (WebGPUエラー回避)
-                let access = bind.access || res.access || 'read';
+                // Safety Measure: Force 'read' access for render passes to avoid WebGPU validation errors.
+                let access = bind.access || 'read';
                 if (node.type === 'render') access = 'read';
                 
                 const isAtomic = res.format?.includes('atomic');
@@ -82,9 +85,10 @@ async function main() {
 
         code += `\n// ==========================================\n`;
         code += `// IMPLEMENT YOUR LOGIC BELOW\n`;
+        code += `// AI: Focus only on implementing the core logic for vs_main, fs_main, or compute main.\n`;
         code += `// ==========================================\n\n`;
 
-        // 3. 関数本体のスケルトン生成
+        // 3. Generate the Skeleton for the main function
         if (node.type === 'compute') {
             let wgX: string | number = 64, wgY: string | number = 1, wgZ: string | number = 1;
             if (typeof node.workgroupSize === 'number' || typeof node.workgroupSize === 'string') {
@@ -118,7 +122,7 @@ async function main() {
             code += `}\n`;
         }
 
-        // ファイル書き出し (例: src/materials/cfd/step_velocity.wgsl)
+        // Output file (e.g., src/materials/cfd/step_velocity.wgsl)
         const outFileName = `${node.id}.wgsl`;
         const outFilePath = path.join(dirName, outFileName);
         fs.writeFileSync(outFilePath, code, 'utf-8');

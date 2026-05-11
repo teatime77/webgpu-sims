@@ -1,8 +1,8 @@
 // src/materials/test/ParticleSim.ts
 import { makeGeodesicPolyhedron } from '../../core/primitive';
-import { defineSimulation } from '../../core/engine/SimulationRunner';
+import type { SimulationSchema } from '../../core/engine/SimulationRunner';
 
-export default defineSimulation({
+const schema: SimulationSchema = {
     name: "Particle Physics V1.5",
     
     // ========================================================================
@@ -90,4 +90,6 @@ export default defineSimulation({
             yield 'frame'; // Signal the end of 1 frame
         }
     }
-});
+};
+
+export default schema;
