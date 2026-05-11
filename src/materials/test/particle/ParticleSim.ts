@@ -1,6 +1,6 @@
 // src/materials/test/ParticleSim.ts
-import { makeGeodesicPolyhedron } from '../../core/primitive';
-import type { SimulationSchema } from '../../core/engine/SimulationRunner';
+import { makeGeodesicPolyhedron } from '../../../core/primitive';
+import type { SimulationSchema } from '../../../core/engine/SimulationRunner';
 
 const schema: SimulationSchema = {
     name: "Particle Physics V1.5",
