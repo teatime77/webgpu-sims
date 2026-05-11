@@ -30,13 +30,15 @@ Nodes define the atomic compute and render passes that will execute on the GPU.
 
 * **Pipeline States**: For render passes, this section defines the graphics pipeline configurations, such as `topology` (e.g., `'point-list'`), `blendMode`, and `depthTest`.
 
-### ③ Initialization (`init`)
+### ③ UI Definitions (`uis`)
 
-An asynchronous function that executes exactly once when the simulation loads. It handles CPU-side setup, such as generating initial random seeds, writing initial distributions to GPU buffers, and constructing the User Interface (UI) panels.
+An array defining the user interface controls (e.g., sliders, dropdowns). By linking these definitions to a local `state` object, the framework automatically constructs the UI panels and binds the inputs to the simulation's parameters without needing imperative UI boilerplate.
 
 ### ④ The Execution Script (`script`)
 
-The "soul" of the simulation. This is written as a **TypeScript generator function (`function*`)** that dictates the exact order of GPU operations.
+The "soul" of the simulation. This is written as a **TypeScript generator function (`function*`)** that dictates both the initialization and the exact order of GPU operations.
+
+* **Initialization**: The first part of the script handles CPU-side setup, such as generating initial random seeds and writing initial distributions to GPU buffers (e.g., `runner.writeStorage(...)`).
 
 * **Transparent Control Flow**: Standard TypeScript constructs like `while(true)` loops are used. Inside the loop, the script yields commands (e.g., `yield call('node_id')`, `yield swap('resource')`).
 * **Transparent Control Flow**: Standard TypeScript constructs like `while(true)` loops are used. Inside the loop, the script calls execution methods on the runner (e.g., `runner.compute('node_id')`, `runner.render('node_id')`, `runner.swap('resource')`).

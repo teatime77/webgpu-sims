@@ -5,6 +5,7 @@ import { ResourceWrapper } from './ResourceWrapper';
 import type { ResourceDef } from './SimulationBase';
 import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
 import type { RenderPassBuilder } from '../builder/RenderPassBuilder';
+import { makeUIs } from '../ui/SimUI';
 
 export interface ResourceBinding {
     group?: number;
@@ -25,14 +26,44 @@ export interface NodeDef {
     bindings: ResourceBinding[];
 }
 
+export interface RangeDef {
+    type : "range",
+    obj:any,
+    name:string,
+    label: string, 
+    min: number, 
+    max: number, 
+    step: number, 
+    initial?: number
+}
+
+export interface SelectDef {
+    type : "select",
+    obj:any,
+    name:string,
+    label: string, 
+    options: {value: number, text: string}[], 
+    initial?: number,
+    reset? : boolean
+}
+
+export interface ButtonDef {
+    type : "button",
+    obj:any,
+    name:string,
+    label: string, 
+}
+
+export type UIDef = RangeDef | SelectDef | ButtonDef;
+
 export type PassCommand = 'frame' | undefined;
 
 export interface SimulationSchema {
     name?: string;
     resources: Record<string, ResourceDef>;
     nodes: NodeDef[];
-    init?: (runner: SimulationRunner) => void | Promise<void>;
-    script: (runner: SimulationRunner) => Generator<PassCommand, void, unknown> | Iterator<PassCommand, void, unknown>;
+    uis? : UIDef[];
+    script: (runner: SimulationRunner) => Generator<PassCommand, void, unknown>;
 }
 
 export class SimulationRunner {
@@ -43,6 +74,7 @@ export class SimulationRunner {
     public passes: Map<string, ComputePassBuilder | RenderPassBuilder> = new Map();
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
+    public generator? : Generator<PassCommand, void, unknown>;
 
     constructor(engine: WebGPUEngine) {
         this.engine = engine;
@@ -79,11 +111,6 @@ export class SimulationRunner {
                 }
                 this.storages.set(id, new ResourceWrapper(id, buffers, count));
             }
-        }
-
-        // 2. Execute initialization logic in the schema (e.g., init in ParticleSim.ts)
-        if (schema.init) {
-            await schema.init(this);
         }
     }
 

@@ -170,26 +170,23 @@ const schema: SimulationSchema = {
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 0, varName: 'data', access: 'read' }
             ]
         }        
-    ],
+    ]
+    ,
+    uis:[
+        { type: "range", obj:state, name:"temperature", label: "Temperature", min: 0.0, max: 3.0, step: 0.01 },
+        { type: "range", obj:state, name:"g", label: "Interaction (g)", min: 0.0, max: 80.0, step: 0.5 },
+        { type: "range", obj:state, name:"omega", label:"Trap ω", min: 0.15, max: 1.2, step: 0.01 },
+        { type: "range", obj:state, name:"particleNumber", label: "Norm ∫|ψ|²", min: 0.5, max: 8.0, step: 0.05 },
 
-    // ========================================================================
-    // 3. Init
-    // ========================================================================
-    init: async (runner) => {
-        const rng = new Uint32Array(GW * GW).map(() => Math.random() * 0xFFFFFFFF);
-        runner.writeStorage('RngState', rng);
-
-        const ui = new SimUI();
-        ui.addRange("Temperature", 0.0, 3.0, 0.01, state.temperature, v => state.temperature = v);
-        ui.addRange("Interaction (g)", 0.0, 80.0, 0.5, state.g, v => state.g = v);
-        ui.addRange("Trap ω", 0.15, 1.2, 0.01, state.omega, v => state.omega = v);
-        ui.addRange("Norm ∫|ψ|²", 0.5, 8.0, 0.05, state.particleNumber, v => state.particleNumber = v);
-    },
-
+    ]
+    ,
     // ========================================================================
     // 4. Script: Execute RK4 sequence
     // ========================================================================
     script: function* (runner) {
+        const rng = new Uint32Array(GW * GW).map(() => Math.random() * 0xFFFFFFFF);
+        runner.writeStorage('RngState', rng);
+
         const dispatchXY = GW / 8;
         let time = 0.0;
 

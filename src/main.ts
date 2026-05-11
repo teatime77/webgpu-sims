@@ -5,6 +5,7 @@ import { CaptureTool } from './core/utils/CaptureTool';
 import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
 import { SimulationRunner, type SimulationSchema, type ResourceBinding, type PassCommand } from './core/engine/SimulationRunner';
+import { makeUIs } from './core/ui/SimUI';
 
 async function bootstrap() {
     const engine = new WebGPUEngine();
@@ -61,6 +62,10 @@ async function bootstrap() {
     const runner = new SimulationRunner(engine);
     await runner.loadSchema(sim); 
 
+    if(sim.uis){
+        makeUIs(runner, sim);
+    }
+
     const format = runner.getFormat();
 
     // ========================================================
@@ -106,7 +111,7 @@ async function bootstrap() {
         }
     }
 
-    const it = sim.script(runner);
+    runner.generator = sim.script(runner);
 
     function frame() {
         const aspect = canvas.width / canvas.height;
@@ -116,7 +121,7 @@ async function bootstrap() {
         runner.currentCommandEncoder = device.createCommandEncoder();
 
         while (true) {
-            const result = it.next();
+            const result = runner.generator!.next();
             if (result.done) break;
             
             const val = result.value;

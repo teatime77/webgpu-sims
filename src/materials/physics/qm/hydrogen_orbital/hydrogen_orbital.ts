@@ -1,5 +1,4 @@
 // src/materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts
-import { SimUI } from '../../../../core/ui/SimUI';
 import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
 
 // Object to hold simulation state
@@ -58,11 +57,34 @@ const schema: SimulationSchema = {
             ]
         }
     ],
+    uis:[
+        { type: "select", obj:state, name:"orbitalMode", label: "Orbital", reset:true, options: [
+            { value: 0, text: "1s (spherical)" },
+            { value: 1, text: "2p_z (dumbbell)" },
+            { value: 2, text: "3d_z2 (donut+lobes)" }
+        ]}
+        ,
+        { type: "range", obj:state, name:"samplingStep", label: "Sampling Step", min:0.01, max:1.0, step:0.01 },
+        { type: "range", obj:state, name:"brightness"  , label: "Brightness"   , min: 0.001, max: 0.2, step: 0.001 },
+        { type: "range", obj:state, name:"colorMix"    , label: "Color Mix"    , min: 0.0, max: 1.0, step: 0.01 }
+    ]
+    ,
+    // ========================================================
+    // 4. Execution generator (MCMC burn-in orchestration)
+    // ========================================================
+    script: function* (runner) {
+        const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
-    // ========================================================
-    // 3. Initialization logic (UI and random seed)
-    // ========================================================
-    init: async (runner) => {
+        function writeParams(reset : number){
+            // Transfer the latest UI values to the GPU
+            const paramData = new Float32Array([
+                state.orbitalMode, state.samplingStep, state.brightness, state.colorMix,
+                reset, 0.0, 0.0, 0.0
+            ]);
+
+            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
+        }
+
         // Initialize random number state buffer
         const rngState = new Uint32Array(NUM_PARTICLES);
         for (let i = 0; i < NUM_PARTICLES; i++) {
@@ -70,58 +92,13 @@ const schema: SimulationSchema = {
         }
         runner.writeStorage('RngState', rngState);
 
-        // Construct UI panel
-        const ui = new SimUI();
-        ui.addSelect("Orbital", [
-            { value: 0, text: "1s (spherical)" },
-            { value: 1, text: "2p_z (dumbbell)" },
-            { value: 2, text: "3d_z2 (donut+lobes)" }
-        ], state.orbitalMode, v => {
-            state.orbitalMode = v;
-            state.needsReset = true; // Require burn-in upon switching
-        });
-        ui.addRange("Sampling Step", 0.01, 1.0, 0.01, state.samplingStep, v => state.samplingStep = v);
-        ui.addRange("Brightness", 0.001, 0.2, 0.001, state.brightness, v => state.brightness = v);
-        ui.addRange("Color Mix", 0.0, 1.0, 0.01, state.colorMix, v => state.colorMix = v);
-    },
-
-    // ========================================================
-    // 4. Execution generator (MCMC burn-in orchestration)
-    // ========================================================
-    script: function* (runner) {
-        const dispatchX = Math.ceil(NUM_PARTICLES / 64);
+        writeParams(1.0);
+        runner.compute('hydrogen_orbital_comp', dispatchX);
+        yield 'frame';
 
         while (true) {
-            let currentResetFlag = 0.0;
-            if (state.needsReset) currentResetFlag = 1.0;
-
-            // Transfer the latest UI values to the GPU
-            const paramData = new Float32Array([
-                state.orbitalMode, state.samplingStep, state.brightness, state.colorMix,
-                currentResetFlag, 0.0, 0.0, 0.0
-            ]);
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
-
-            if (state.needsReset) {
-                // 1. Randomly reposition all particles (resetFlag = 1.0)
-                runner.compute('hydrogen_orbital_comp', dispatchX);
-                
-                // 2. Reset the flag to 0
-                const resetParamData = new Float32Array([
-                    state.orbitalMode, state.samplingStep, state.brightness, state.colorMix,
-                    0.0, 0.0, 0.0, 0.0
-                ]);
-                runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, resetParamData);
-                
-                // 3. Fast burn-in (Run calculations 16 times within 1 frame for immediate convergence)
-                for (let i = 0; i < 16; i++) {
-                    runner.compute('hydrogen_orbital_comp', dispatchX);
-                }
-                state.needsReset = false;
-            } else {
-                // Normal sampling
-                runner.compute('hydrogen_orbital_comp', dispatchX);
-            }
+            writeParams(0.0);
+            runner.compute('hydrogen_orbital_comp', dispatchX);
 
             // Rendering (Vertex count is NUM_PARTICLES since it's point-list)
             runner.render('hydrogen_orbital_render', NUM_PARTICLES, 1, false);

@@ -51,12 +51,12 @@ const schema: SimulationSchema = {
                 { resource: 'Params', varName: 'params' }
             ]
         }
-    ],
-
+    ]
+    ,
     // ========================================================================
-    // 3. Initialization logic in TS (Absorbs the flexibility of V2)
+    // 4. Execution control via TS generator (Abolished V1's black-box DSL!)
     // ========================================================================
-    init: async (engine) => {
+    script: function* (engine) {
         const paramData = new Float32Array([1.0, 1.0, 0.7, 0.2]);
         engine.device.queue.writeBuffer(engine.getUniformBuffer('Params'), 0, paramData);
 
@@ -73,15 +73,10 @@ const schema: SimulationSchema = {
             initialData[i * 8 + 5] = (Math.random() - 0.5) * 0.02;
             initialData[i * 8 + 6] = (Math.random() - 0.5) * 0.02;
         }
+
         engine.writeStorage('ParticleData', initialData);
-
         engine.writeStorage('BaseMesh', makeGeodesicPolyhedron(0.02, 1));
-    },
 
-    // ========================================================================
-    // 4. Execution control via TS generator (Abolished V1's black-box DSL!)
-    // ========================================================================
-    script: function* (engine) {
         // Standard TypeScript loop, immediately understandable by both AI and humans
         while (true) {
             engine.compute('particle_compute', Math.ceil(20000 / 64));

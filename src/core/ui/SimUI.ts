@@ -1,3 +1,6 @@
+// import { run } from "node:test";
+import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "../engine/SimulationRunner";
+
 // src/core/ui/SimUI.ts
 
 export class SimUI {
@@ -89,7 +92,7 @@ export class SimUI {
     /**
      * ドロップダウンリスト（Select）を追加します
      */
-    addSelect(label: string, options: {value: number, text: string}[], initial: number, onChange: (val: number) => void) {
+    addSelect(label: string, options: {value: number, text: string}[], initial: number, onChange: (val: number) => Promise<void>) {
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.alignItems = 'center';
@@ -118,12 +121,55 @@ export class SimUI {
         
         select.value = initial.toString();
         
-        select.addEventListener('change', () => {
-            onChange(Number(select.value));
+        select.addEventListener('change', async () => {
+            await onChange(Number(select.value));
         });
 
         row.appendChild(lbl);
         row.appendChild(select);
         this.container.appendChild(row);
+    }
+
+    makeRange(data : RangeDef){
+        function onChange(val: number) :void {
+            data.obj[data.name] = val;
+        }
+
+        const initial = data.initial ?? data.obj[data.name];
+        this.addRange(data.label, data.min, data.max, data.step, initial, onChange);
+    }
+
+    makeSelect(runner:SimulationRunner, schema: SimulationSchema, data : SelectDef){
+        async function onChange(val: number) : Promise<void> {
+            data.obj[data.name] = val;
+
+            if(data.reset == true){
+                runner.generator = schema.script(runner);
+            }
+        }
+
+        const initial = data.initial ?? data.obj[data.name];
+        this.addSelect(data.label, data.options, initial, onChange);
+    }
+}
+
+export function makeUIs(runner:SimulationRunner, schema: SimulationSchema){
+    const simUI = new SimUI();
+
+    const uis:UIDef[] = schema.uis!;
+
+    for(const ui of uis){
+        switch(ui.type){
+        case "range":
+            simUI.makeRange(ui);
+            break;
+
+        case "select":
+            simUI.makeSelect(runner, schema, ui);
+            break;
+
+        default:
+            throw new Error();
+        }
     }
 }

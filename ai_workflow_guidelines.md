@@ -32,9 +32,14 @@ The `SimulationSchema` is the central blueprint for a simulation. It eliminates 
         *   Specify `access: 'read_write'` or `'read'`. 
         *   Use `historyLevel: 1` to read from the previous frame's buffer in ping-pong setups (historyLevel 0 is the current write-target).
 
-*   **`init(runner)`**: An async function to set up initial GPU buffer data and build the UI using `SimUI`. You can write to storage buffers using `runner.writeStorage('ResourceName', Float32ArrayData)`.
+*   **`uis`**: Defines the user interface controls that interact with the simulation's state.
+    *   It is an array of UI component definitions.
+    *   Example for a range slider: `{ type: "range", obj: state, name: "temperature", label: "Temperature", min: 0.0, max: 3.0, step: 0.01 }`
+    *   Example for a select dropdown: `{ type: "select", obj: state, name: "orbitalMode", label: "Orbital", reset: true, options: [{ value: 0, text: "1s" }] }`
 
-*   **`script(runner)`**: A generator function (`function*`) that acts as the simulation loop.
+*   **`script(runner)`**: A generator function (`function*`) that acts as both the initial setup and the execution loop.
+    *   **Initialization:** At the beginning of the function (before the loop), set up initial GPU buffer data. You can write to storage buffers using `runner.writeStorage('ResourceName', Float32ArrayData)`.
+    *   **Execution Loop:** Enter a `while (true)` loop to step through frames.
     *   Use `runner.compute('node_id', dispatchX, dispatchY, dispatchZ)` to dispatch compute shaders.
     *   Use `runner.render('node_id', vertexCount, instanceCount, hasDepth, canvasId)` to execute draw calls.
     *   Use `runner.swap('resource_name')` to flip ping-pong buffers at the end of a step.
