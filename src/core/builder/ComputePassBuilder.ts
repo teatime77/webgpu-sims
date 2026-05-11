@@ -4,8 +4,8 @@ export class ComputePassBuilder {
     private device: GPUDevice;
     private pipeline: GPUComputePipeline;
     
-    // グループごとのバインディングリソースを保持するMap
-    // 例: Map { 0 => [entry1, entry2], 1 => [entry3] }
+    // Map that holds binding resources for each group
+    // Example: Map { 0 => [entry1, entry2], 1 => [entry3] }
     private bindGroupEntries: Map<number, GPUBindGroupEntry[]> = new Map();
     
     private currentGroupIndex: number = 0;
@@ -14,13 +14,13 @@ export class ComputePassBuilder {
     constructor(device: GPUDevice, shaderCode: string, entryPoint: string = 'main') {
         this.device = device;
         
-        // 1. シェーダモジュールの作成
+        // 1. Create shader module
         const module = device.createShaderModule({ 
             label: `Compute Module (${entryPoint})`,
             code: shaderCode 
         });
 
-        // 2. パイプラインの作成 (layout: 'auto' によりWGSLから自動推論)
+        // 2. Create pipeline (auto-inferred from WGSL by layout: 'auto')
         this.pipeline = device.createComputePipeline({
             label: `Compute Pipeline (${entryPoint})`,
             layout: 'auto',
@@ -29,52 +29,52 @@ export class ComputePassBuilder {
     }
 
     /**
-     * バインドグループのインデックス（@group(X)）を切り替えます。
-     * このメソッドを呼ぶと、binding番号は0にリセットされます。
+     * Switches the bind group index (@group(X)).
+     * Calling this method resets the binding number to 0.
      */
     setGroup(groupIndex: number): this {
         this.currentGroupIndex = groupIndex;
-        this.currentBindingIndex = 0; // グループが変わったらバインディング番号をリセット
+        this.currentBindingIndex = 0; // Reset binding number when group changes
         
         if (!this.bindGroupEntries.has(groupIndex)) {
             this.bindGroupEntries.set(groupIndex, []);
         }
-        return this; // メソッドチェーン用
+        return this; // For method chaining
     }
 
     /**
-     * Uniformバッファを追加します。(@binding の番号は自動でインクリメントされます)
+     * Adds a Uniform buffer. (@binding number is automatically incremented)
      */
-    // 第2引数 explicitBinding を追加
+    // Added second argument explicitBinding
     addUniform(buffer: GPUBuffer, explicitBinding?: number): this {
         const binding = explicitBinding ?? this.currentBindingIndex;
         this.bindGroupEntries.get(this.currentGroupIndex)!.push({
             binding: binding,
             resource: { buffer }
         });
-        this.currentBindingIndex = binding + 1; // 次の自動採番に備える
+        this.currentBindingIndex = binding + 1; // Prepare for the next automatic numbering
         return this;
     }
 
-    // 第2引数 explicitBinding を追加
+    // Added second argument explicitBinding
     addStorage(buffer: GPUBuffer, explicitBinding?: number): this {
         const binding = explicitBinding ?? this.currentBindingIndex;
         this.bindGroupEntries.get(this.currentGroupIndex)!.push({
             binding: binding,
             resource: { buffer }
         });
-        this.currentBindingIndex = binding + 1; // 次の自動採番に備える
+        this.currentBindingIndex = binding + 1; // Prepare for the next automatic numbering
         return this;
     }
 
     /**
-     * コンピュートパスをディスパッチ（実行）します。
-     * 実行時に動的にBindGroupを生成してセットします。
+     * Dispatches (executes) the compute pass.
+     * Dynamically generates and sets BindGroups at runtime.
      */
     dispatch(passEncoder: GPUComputePassEncoder, workgroupCountX: number, workgroupCountY: number = 1, workgroupCountZ: number = 1) {
         passEncoder.setPipeline(this.pipeline);
 
-        // 登録されたすべてのグループに対してBindGroupを作成してセット
+        // Create and set BindGroups for all registered groups
         for (const [groupIndex, entries] of this.bindGroupEntries.entries()) {
             const bindGroup = this.device.createBindGroup({
                 layout: this.pipeline.getBindGroupLayout(groupIndex),
@@ -83,13 +83,13 @@ export class ComputePassBuilder {
             passEncoder.setBindGroup(groupIndex, bindGroup);
         }
 
-        // ワークグループのディスパッチ
+        // Dispatch workgroups
         passEncoder.dispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ);
     }
     
     /**
-     * 毎フレームバッファが切り替わる（ダブルバッファリング等の）場合、
-     * エントリをクリアして再登録するためのメソッドです。
+     * A method to clear and re-register entries
+     * for cases where buffers switch every frame (like double buffering).
      */
     clearBindings() {
         this.bindGroupEntries.clear();

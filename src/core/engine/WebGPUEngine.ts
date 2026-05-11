@@ -4,18 +4,18 @@ export class WebGPUEngine {
     public device!: GPUDevice;
     public format!: GPUTextureFormat;
     
-    // 複数のキャンバスコンテキストを管理するMap
+    // Map to manage multiple canvas contexts
     private contexts: Map<string, GPUCanvasContext> = new Map();
 
     private depthViews: Map<string, GPUTextureView> = new Map();
 
     /**
-     * WebGPUの初期化。アプリケーション起動時に1度だけ呼び出します。
+     * Initialize WebGPU. Call once when the application starts.
      */
     async init(): Promise<boolean> {
         if (!navigator.gpu) {
             console.error("WebGPU is not supported on this browser.");
-            alert("このブラウザはWebGPUをサポートしていません。Chromeなどの対応ブラウザを使用してください。");
+            alert("This browser does not support WebGPU. Please use a supported browser like Chrome.");
             return false;
         }
 
@@ -25,9 +25,9 @@ export class WebGPUEngine {
             return false;
         }
 
-        // GPUDeviceを取得（これがすべてのリソースの親になります）
+        // Request GPUDevice (this will be the parent of all resources)
         this.device = await adapter.requestDevice();
-        // 画面出力に最適なフォーマット（通常は 'bgra8unorm' など）を取得
+        // Get the optimal format for screen output (usually 'bgra8unorm' etc.)
         this.format = navigator.gpu.getPreferredCanvasFormat();
 
         console.log("WebGPU Engine Initialized Successfully.");
@@ -35,19 +35,19 @@ export class WebGPUEngine {
     }
 
     /**
-     * キャンバスをエンジンに登録し、WebGPUで描画できるように設定します。
-     * @param canvasId HTML上のcanvas要素のID
+     * Register the canvas with the engine and set it up for drawing with WebGPU.
+     * @param canvasId The ID of the canvas element in HTML
      */
     addCanvas(canvasId: string): GPUCanvasContext | null {
         const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         if (!canvas) {
-            console.error(`Canvas ID '${canvasId}' が見つかりません。`);
+            console.error(`Canvas ID '${canvasId}' not found.`);
             return null;
         }
 
         const context = canvas.getContext('webgpu') as unknown as GPUCanvasContext;
         if (!context) {
-            console.error("WebGPU context の取得に失敗しました。");
+            console.error("Failed to get WebGPU context.");
             return null;
         }
 
@@ -59,7 +59,7 @@ export class WebGPUEngine {
 
         this.contexts.set(canvasId, context);
 
-        // キャンバスと同じサイズのデプステクスチャを作成して保存する
+        // Create and save a depth texture of the same size as the canvas
         const depthTexture = this.device.createTexture({
             size: [canvas.width, canvas.height],
             format: 'depth24plus',
@@ -71,27 +71,27 @@ export class WebGPUEngine {
     }
 
     /**
-     * 登録済みのコンテキストを取得します。描画パスを実行する際に使用します。
+     * Get a registered context. Used when executing a render pass.
      */
     getContext(canvasId: string): GPUCanvasContext {
         const context = this.contexts.get(canvasId);
         if (!context) {
-            throw new Error(`Canvas '${canvasId}' は登録されていません。`);
+            throw new Error(`Canvas '${canvasId}' is not registered.`);
         }
         return context;
     }
 
-    // デプスビューを取得するためのメソッド
+    // Method to get the depth view
     getDepthView(canvasId: string): GPUTextureView {
         const view = this.depthViews.get(canvasId);
         if (!view) {
-            throw new Error(`Canvas '${canvasId}' のデプスビューは登録されていません。`);
+            throw new Error(`The depth view for canvas '${canvasId}' is not registered.`);
         }
         return view;
     }
 
     /**
-     * 登録されているすべてのキャンバス要素とそのIDを取得します（キャプチャ用）
+     * Get all registered canvas elements and their IDs (for capture)
      */
     getCanvases(): { id: string, canvas: HTMLCanvasElement }[] {
         const result: { id: string, canvas: HTMLCanvasElement }[] = [];

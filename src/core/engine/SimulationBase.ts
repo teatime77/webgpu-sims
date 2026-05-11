@@ -5,11 +5,11 @@ import { ResourceWrapper } from './ResourceWrapper';
 
 export interface ResourceDef {
     type: 'uniform' | 'storage';
-    fields?: Record<string, WgslFormat>; // uniform用
-    format?: WgslFormat;                 // storage用 (vec4<f32> など)
-    elementByteSize?: number;            // storage用 (カスタム構造体: 今回の 32 bytes 等)
-    count?: number;                      // storage用
-    bufferCount?: number;                // Ping-Pong用
+    fields?: Record<string, WgslFormat>; // for uniform
+    format?: WgslFormat;                 // for storage (e.g. vec4<f32>)
+    elementByteSize?: number;            // for storage (custom structs: e.g. 32 bytes)
+    count?: number;                      // for storage
+    bufferCount?: number;                // for Ping-Pong
 }
 
 export abstract class SimulationBase {
@@ -17,10 +17,10 @@ export abstract class SimulationBase {
     protected uniforms!: UniformManager;
     protected storages = new Map<string, ResourceWrapper>();
 
-    // 子クラスで宣言するリソース設計図
+    // Resource blueprint declared in subclass
     abstract defineResources(): Record<string, ResourceDef>;
 
-    // エンジン初期化時に呼ばれる
+    // Called during engine initialization
     async initResources(engine: WebGPUEngine) {
         this.engine = engine;
         this.uniforms = new UniformManager(engine.device);
@@ -35,7 +35,7 @@ export abstract class SimulationBase {
                 const count = def.bufferCount || 1;
                 const buffers: GPUBuffer[] = [];
 
-                // フォーマットから1要素のバイトサイズを計算
+                // Calculate byte size of one element from format
                 let elementSize = def.elementByteSize || 4; 
                 if (!def.elementByteSize) {
                     if (def.format === 'vec2<f32>') elementSize = 8;
@@ -56,7 +56,7 @@ export abstract class SimulationBase {
         }
     }
 
-    /** 名前と履歴レベルから GPUBuffer を取得する (Builder用) */
+    /** Get GPUBuffer from name and history level (For Builder) */
     protected getBuffer(id: string, historyLevel: number = 0): GPUBuffer {
         try {
             return this.uniforms.getBuffer(id);
@@ -67,7 +67,7 @@ export abstract class SimulationBase {
         }
     }
 
-    /** リソースのスワップを実行 */
+    /** Execute resource swap */
     protected swap(...ids: string[]) {
         for (const id of ids) {
             this.storages.get(id)?.swap();

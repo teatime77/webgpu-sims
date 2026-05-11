@@ -76,7 +76,7 @@ export class CaptureTool {
             panel.style.opacity = busy ? "0.5" : "1.0";
         };
 
-        // 単発キャプチャ
+        // Single capture
         captureBtn.addEventListener("click", async () => {
             if (this.isCapturing) return;
             setBusy(true);
@@ -96,7 +96,7 @@ export class CaptureTool {
             }
         });
 
-        // バーストキャプチャ (連写)
+        // Burst capture (continuous shooting)
         burstBtn.addEventListener("click", async () => {
             if (this.isCapturing) return;
             const count = Math.max(1, Math.min(200, Number(countInput.value) || 1));

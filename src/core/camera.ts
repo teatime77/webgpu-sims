@@ -3,13 +3,13 @@ import { mat4, vec3 } from 'gl-matrix';
 export class OrbitCamera {
     private canvas: HTMLCanvasElement;
     
-    // --- カメラの極座標パラメータ ---
-    public target = [0.0, 0.0, 0.0]; // 注視点 (パンで移動)
-    public distance: number = 40.0;        // カメラとの距離 (ズームで変化)
-    public theta: number = 0.0;            // 水平角度 (回転で変化)
-    public phi: number = Math.PI / 3;      // 垂直角度 (回転で変化)
+    // --- Polar coordinate parameters of the camera ---
+    public target = [0.0, 0.0, 0.0]; // Target point (moved by panning)
+    public distance: number = 40.0;        // Distance to the camera (changed by zooming)
+    public theta: number = 0.0;            // Horizontal angle (changed by rotation)
+    public phi: number = Math.PI / 3;      // Vertical angle (changed by rotation)
 
-    // --- マウス操作の内部状態 ---
+    // --- Internal state of mouse operations ---
     private isDragging = false;
     private dragButton = -1;
     private lastMouseX = 0;
@@ -21,7 +21,7 @@ export class OrbitCamera {
     }
 
     private attachEvents() {
-        // マウスを押した時
+        // When the mouse is pressed
         this.canvas.addEventListener('mousedown', (e) => {
             this.isDragging = true;
             this.dragButton = e.button;
@@ -29,13 +29,13 @@ export class OrbitCamera {
             this.lastMouseY = e.clientY;
         });
 
-        // マウスを離した時 (画面外に出た時も考慮してwindowに付与)
+        // When the mouse is released (attached to window considering when it goes out of screen)
         window.addEventListener('mouseup', () => {
             this.isDragging = false;
             this.dragButton = -1;
         });
 
-        // マウスを動かした時
+        // When the mouse is moved
         window.addEventListener('mousemove', (e) => {
             if (!this.isDragging) return;
 
@@ -45,57 +45,57 @@ export class OrbitCamera {
             this.lastMouseY = e.clientY;
 
             if (this.dragButton === 0) { 
-                // 【左クリック：回転 (Orbit)】
+                // [Left click: Orbit]
                 this.theta -= dx * 0.01;
                 this.phi -= dy * 0.01;
-                // phiの制限 (真上・真下を越えて反転しないように)
+                // Limit phi (prevent flipping over straight up/down)
                 const epsilon = 0.001;
                 this.phi = Math.max(epsilon, Math.min(Math.PI - epsilon, this.phi));
             } 
             else if (this.dragButton === 2) { 
-                // 【右クリック：パン (Pan)】
-                // 🌟 修正: 現在の角度から「前」「右」「上」のベクトルを再計算する
+                // [Right click: Pan]
+                // 🌟 Fix: Recalculate 'forward', 'right', 'up' vectors from current angle
                 
-                // 1. カメラが向いている方向（前）のベクトル
+                // 1. Forward vector
                 const forward = vec3.fromValues(
                     -Math.sin(this.phi) * Math.sin(this.theta),
                     -Math.cos(this.phi),
                     -Math.sin(this.phi) * Math.cos(this.theta)
                 );
                 
-                // 2. 世界の上方向（Y軸）
+                // 2. World up direction (Y-axis)
                 const worldUp = vec3.fromValues(0, 1, 0);
                 
-                // 3. 右ベクトル (前 × 上 の外積)
+                // 3. Right vector (cross product of forward x up)
                 const right = vec3.create();
                 vec3.cross(right, forward, worldUp);
-                vec3.normalize(right, right); // 念のため正規化
+                vec3.normalize(right, right); // Normalize just in case
                 
-                // 4. カメラの本当の上ベクトル (右 × 前 の外積)
+                // 4. Camera's true up vector (cross product of right x forward)
                 const up = vec3.create();
                 vec3.cross(up, right, forward);
                 vec3.normalize(up, up);
 
-                // 5. ターゲットの座標を移動させる
+                // 5. Move the target coordinates
                 const panSpeed = this.distance * 0.002;
                 vec3.scaleAndAdd(this.target, this.target, right, -dx * panSpeed);
                 vec3.scaleAndAdd(this.target, this.target, up, dy * panSpeed);
             }
         });
 
-        // ホイールを回した時
+        // When the wheel is turned
         this.canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
-            // 【ホイール：ズーム (Zoom)】
+            // [Wheel: Zoom]
             this.distance += e.deltaY * this.distance * 0.001;
-            this.distance = Math.max(1.0, this.distance); // 近づきすぎ防止
+            this.distance = Math.max(1.0, this.distance); // Prevent getting too close
         }, { passive: false });
         
-        // 右クリック時のブラウザメニューを無効化
+        // Disable browser menu on right click
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
 
-    // 極座標から実際のカメラの[x, y, z]座標を計算する
+    // Calculate actual [x, y, z] camera coordinates from polar coordinates
     private getEyePosition(): [number,number,number] {
         const x = this.target[0] + this.distance * Math.sin(this.phi) * Math.sin(this.theta);
         const y = this.target[1] + this.distance * Math.cos(this.phi);
@@ -103,24 +103,24 @@ export class OrbitCamera {
         return [x, y, z];
     }
 
-    // カメラのビュー行列 (どこからどこを見ているか)
+    // Camera view matrix (from where to where it is looking)
     private getViewMatrix(): mat4 {
         const eye = this.getEyePosition();
         const view = mat4.create();
-        mat4.lookAt(view, eye, this.target, [0, 1, 0]); // 上方向は常にY軸
+        mat4.lookAt(view, eye, this.target, [0, 1, 0]); // Up direction is always Y-axis
         return view;
     }
 
-    // 毎フレーム呼ばれ、GPUに渡すための2つの行列を生成して返す
+    // Called every frame, generates and returns two matrices to pass to GPU
     public getMatrices(aspectRatio: number) {
         const view = this.getViewMatrix();
         
         const proj = mat4.create();
-        // 画角: 45度 (PI/4), Nearクリップ: 0.1, Farクリップ: 1000.0
+        // FOV: 45 degrees (PI/4), Near clip: 0.1, Far clip: 1000.0
         mat4.perspective(proj, Math.PI / 4, aspectRatio, 0.1, 1000.0);
 
         const viewProj = mat4.create();
-        mat4.multiply(viewProj, proj, view); // プロジェクション行列 × ビュー行列
+        mat4.multiply(viewProj, proj, view); // Projection matrix x View matrix
 
         return {
             view: Array.from(view),

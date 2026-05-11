@@ -16,7 +16,7 @@ export class UniformManager {
         this.device = device;
     }
 
-    /** V1の buildUniformLayouts と同等: 構造体フィールドからパディングを自動計算してバッファを作成 */
+    /** Equivalent to buildUniformLayouts in V1: automatically calculate padding from struct fields and create buffer */
     register(id: string, fields: Record<string, WgslFormat>): GPUBuffer {
         let currentOffset = 0;
         const offsets: Record<string, FieldInfo> = {};
@@ -28,13 +28,13 @@ export class UniformManager {
             else if (format === 'vec3<f32>' || format === 'vec4<f32>') { alignment = 16; size = 16; }
             else if (format === 'mat4x4<f32>') { alignment = 16; size = 64; }
 
-            // アライメント境界に合わせてオフセットを切り上げ（パディング挿入）
+            // Round up offset to alignment boundary (insert padding)
             currentOffset = Math.ceil(currentOffset / alignment) * alignment;
             offsets[fieldName] = { byteOffset: currentOffset, format };
             currentOffset += size;
         }
 
-        // 全体サイズも16バイト境界に切り上げ
+        // Round up total size to 16 byte boundary as well
         const totalSize = Math.ceil(currentOffset / 16) * 16;
         const buffer = this.device.createBuffer({
             label: `Uniform_${id}`,
@@ -53,7 +53,7 @@ export class UniformManager {
         return buf;
     }
 
-    /** V1の updateVariables と同等: JSオブジェクトからバイナリを構築して一括転送 */
+    /** Equivalent to updateVariables in V1: construct binary from JS object and transfer at once */
     update(id: string, values: Record<string, any>) {
         const layout = this.layouts.get(id);
         const buffer = this.buffers.get(id);
@@ -67,13 +67,13 @@ export class UniformManager {
             if (!info || val === undefined) continue;
 
             if (info.format === 'f32') {
-                view.setFloat32(info.byteOffset, val, true); // true = リトルエンディアン
+                view.setFloat32(info.byteOffset, val, true); // true = little endian
             } else if (info.format === 'u32') {
                 view.setUint32(info.byteOffset, val, true);
             } else if (info.format === 'i32') {
                 view.setInt32(info.byteOffset, val, true);
             } else if (Array.isArray(val) || val instanceof Float32Array) {
-                // vec2, vec3, vec4, mat4x4 等の配列書き込み
+                // Array writing for vec2, vec3, vec4, mat4x4 etc.
                 for (let i = 0; i < val.length; i++) {
                     view.setFloat32(info.byteOffset + i * 4, val[i], true);
                 }

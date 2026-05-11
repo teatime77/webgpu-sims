@@ -8,14 +8,14 @@ export class SimUI {
     private hud: HTMLElement;
 
     constructor() {
-        // HMR(ホットリロード)時にUIが重複して増えないように古いものを削除
+        // Remove old UI to prevent duplicates during HMR (Hot Module Replacement)
         const existing = document.getElementById('sim-ui-container');
         if (existing) existing.remove();
 
-        // V1のデザインを踏襲したフローティングコンテナ
+        // Floating container following V1 design
         this.container = document.createElement('div');
         this.container.id = 'sim-ui-container';
-        this.container.style.position = 'absolute'; // fixedからabsoluteに変更(キャンバス基準)
+        this.container.style.position = 'absolute'; // Changed from fixed to absolute (relative to canvas)
         this.container.style.top = '10px';
         this.container.style.right = '10px';
         this.container.style.background = 'rgba(20, 20, 25, 0.85)';
@@ -27,25 +27,25 @@ export class SimUI {
         this.container.style.zIndex = '1000';
         document.body.appendChild(this.container);
 
-        // ★HUD用の要素を作成
+        // ★ Create elements for HUD
         this.hud = document.createElement('div');
         this.hud.style.padding = '8px';
         this.hud.style.marginBottom = '8px';
         this.hud.style.borderBottom = '1px solid #444';
-        this.hud.style.color = '#0af'; // 少し目立つ色
+        this.hud.style.color = '#0af'; // Slightly standout color
         this.hud.style.fontSize = '14px';
         this.hud.style.fontWeight = 'bold';
         this.hud.style.fontFamily = 'monospace';
         this.container.prepend(this.hud);
     }
 
-    // ★HUDのテキストを更新するメソッド
+    // ★ Method to update HUD text
     updateHUD(text: string) {
         this.hud.textContent = text;
     }
 
     /**
-     * V1の ui.range に相当するメソッド
+     * Method equivalent to ui.range in V1
      */
     addRange(label: string, min: number, max: number, step: number, initial: number, onChange: (val: number) => void) {
         const row = document.createElement('div');
@@ -68,7 +68,7 @@ export class SimUI {
         slider.style.flex = '1';
 
         const valDisp = document.createElement('span');
-        // ステップ数から小数点以下の表示桁数を計算 (V1の decimalsFromStep 相当)
+        // Calculate the number of decimal places to display from the step size (equivalent to decimalsFromStep in V1)
         const dec = Math.max(0, -Math.floor(Math.log10(step)));
         valDisp.textContent = initial.toFixed(dec);
         valDisp.style.minWidth = '40px';
@@ -76,11 +76,11 @@ export class SimUI {
         valDisp.style.fontFamily = 'monospace';
         valDisp.style.fontSize = '12px';
 
-        // スライダーを動かした瞬間にコールバックを発火 (live: true に相当)
+        // Trigger callback the moment the slider is moved (equivalent to live: true)
         slider.addEventListener('input', () => {
             const val = parseFloat(slider.value);
             valDisp.textContent = val.toFixed(dec);
-            onChange(val); // 外部に値を渡す
+            onChange(val); // Pass the value outside
         });
 
         row.appendChild(lbl);
@@ -90,7 +90,7 @@ export class SimUI {
     }
 
     /**
-     * ドロップダウンリスト（Select）を追加します
+     * Adds a dropdown list (Select)
      */
     addSelect(label: string, options: {value: number, text: string}[], initial: number, onChange: (val: number) => Promise<void>) {
         const row = document.createElement('div');
