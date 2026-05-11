@@ -34,13 +34,13 @@ fn vs_main(@builtin(vertex_index) v_idx: u32) -> VertexOutput {
     let pos = particles[v_idx].xyz;
     out.position = camera.viewProjection * vec4<f32>(pos, 1.0);
 
-    // 位置に応じた色付け（中心からの距離）
+    // Color based on position (distance from center)
     let r = length(pos);
     let hue = (r * 0.1) % 1.0;
     
-    // パラメータに基づいた色のブレンド
-    let c1 = vec3<f32>(0.2, 0.6, 1.0); // 青
-    let c2 = vec3<f32>(1.0, 0.3, 0.1); // 赤
+    // Blend colors based on parameters
+    let c1 = vec3<f32>(0.2, 0.6, 1.0); // Blue
+    let c2 = vec3<f32>(1.0, 0.3, 0.1); // Red
     let color = mix(c1, c2, clamp(r * 0.05, 0.0, 1.0) * params.colorMix);
 
     out.color = vec4<f32>(color * params.brightness, 1.0);

@@ -21,7 +21,7 @@ struct ParamsStruct {
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx = id.x;
     
-    // パーティクルの総数 (1パーティクルにつき pos と vel の2つの vec4 を使用)
+    // Total number of particles (each particle uses two vec4s: pos and vel)
     let num_particles = arrayLength(&particles) / 2u;
     if (idx >= num_particles) { return; }
 
@@ -29,15 +29,15 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     var pos = particles[p_idx];
     var vel = particles[p_idx + 1u];
 
-    // 位置の更新 (速度 × UIのスライダー値)
+    // Update position (velocity * UI slider value)
     pos += vel * params.speedScale;
 
-    // 壁でのバウンド判定 (-1.0 ~ 1.0 の空間)
+    // Bounce check at boundaries (space from -1.0 to 1.0)
     if (abs(pos.x) > 1.0) { vel.x *= -1.0; pos.x = sign(pos.x); }
     if (abs(pos.y) > 1.0) { vel.y *= -1.0; pos.y = sign(pos.y); }
     if (abs(pos.z) > 1.0) { vel.z *= -1.0; pos.z = sign(pos.z); }
 
-    // バッファに書き戻す
+    // Write back to buffer
     particles[p_idx] = pos;
     particles[p_idx + 1u] = vel;
 }
