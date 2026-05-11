@@ -35,8 +35,8 @@ const schema: SimulationSchema = {
             type: 'compute',
             workgroupSize: 64,
             bindings: [
-                { group: 0, binding: 0, resource: 'Params', varName: 'params' },
-                { group: 0, binding: 1, resource: 'ParticleData', varName: 'particles', access: 'read_write' }
+                { resource: 'Params', varName: 'params' },
+                { resource: 'ParticleData', varName: 'particles', access: 'read_write' }
             ]
         },
         {
@@ -45,10 +45,10 @@ const schema: SimulationSchema = {
             topology: 'triangle-list',
             depthTest: true,
             bindings: [
-                { group: 0, binding: 0, resource: 'Camera', varName: 'camera' },
-                { group: 0, binding: 1, resource: 'ParticleData', varName: 'particles', access: 'read' },
-                { group: 0, binding: 2, resource: 'BaseMesh', varName: 'baseMesh', access: 'read' },
-                { group: 0, binding: 3, resource: 'Params', varName: 'params' }
+                { resource: 'Camera', varName: 'camera' },
+                { resource: 'ParticleData', varName: 'particles', access: 'read' },
+                { resource: 'BaseMesh', varName: 'baseMesh', access: 'read' },
+                { resource: 'Params', varName: 'params' }
             ]
         }
     ],
