@@ -1,6 +1,52 @@
 // src/core/primitive.ts
 import { Vec3, vecSub, vecCross, vecNormalize } from './math/vec3';
 
+
+export function msg(txt : string){
+    console.log(txt);
+}
+
+export function range(n: number) : number[]{
+    return [...Array(n).keys()];
+}
+
+function setPosNorm(v : Float32Array, base : number, x : number, y : number, z : number, nx : number, ny : number, nz : number){
+    v[base    ] = x;
+    v[base + 1] = y;
+    v[base + 2] = z;
+
+    v[base + 3] = nx;
+    v[base + 4] = ny;
+    v[base + 5] = nz;
+}
+
+/*
+    makeTube creates a list of vertices for the 'triangle-strip' of the tube.
+*/
+export function makeTube(num_division : number = 16) : Float32Array {        
+    const vertexCount = (num_division + 1) * 2;
+
+    // 位置の配列
+    const vertexArray = new Float32Array(vertexCount * (3 + 3));
+
+    let base = 0;
+    for(let idx of range(num_division + 1)){
+        let theta = 2 * Math.PI * idx / num_division;
+        let x = Math.cos(theta);
+        let y = Math.sin(theta);
+
+        for(const z of [0, 1]){
+
+            setPosNorm(vertexArray, base, x, y, z, x, y, 0);
+            base += 3 + 3;
+        }
+    }
+
+    return vertexArray;
+}
+
+
+
 /**
  * Generates a vertex array (Pos3, Normal3) for a geodesic polyhedron (sphere).
  */
