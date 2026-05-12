@@ -4,7 +4,7 @@ import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/utils/CaptureTool';
 import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
-import { SimulationRunner, type SimulationSchema, type ResourceBinding, type PassCommand } from './core/engine/SimulationRunner';
+import { SimulationRunner, type SimulationSchema, type ResourceBinding } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
 
 async function bootstrap() {
