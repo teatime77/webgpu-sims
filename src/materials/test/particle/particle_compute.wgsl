@@ -8,6 +8,7 @@ struct ParamsStruct {
     colorR: f32,
     colorG: f32,
     colorB: f32,
+    init  : f32,
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
@@ -16,6 +17,41 @@ struct ParamsStruct {
 // ==========================================
 // IMPLEMENT YOUR LOGIC BELOW
 // ==========================================
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm or PCG
+fn pcg_hash(seed: u32) -> u32 {
+    var state = seed * 747796405u + 2891336453u;
+    var word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+// Generates a float between 0 and 1
+fn random(seed: u32) -> f32 {
+    return f32(seed) / 4294967295.0; 
+}
+
+fn init(idx : u32, p_idx : u32){
+    var seeds: array<u32, 6>;
+    var pos  : vec4<f32>;
+    var vel  : vec4<f32>;
+
+    seeds[0] = pcg_hash(idx * 1000u);
+    for (var i = 1u; i < 6u; i++) {
+        seeds[i] = pcg_hash(seeds[i - 1]);
+    }
+
+    pos.x = (random(seeds[0]) - 0.5) * 2.0;
+    pos.y = (random(seeds[1]) - 0.5) * 2.0;
+    pos.z = (random(seeds[2]) - 0.5) * 2.0;
+    pos.w = 0.0;
+
+    vel.x = (random(seeds[3]) - 0.5) * 0.02;
+    vel.y = (random(seeds[4]) - 0.5) * 0.02;
+    vel.z = (random(seeds[5]) - 0.5) * 0.02;
+    vel.w = 0.0;
+
+    particles[p_idx]      = pos;
+    particles[p_idx + 1u] = vel;
+}
 
 @compute @workgroup_size(64, 1, 1)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -26,6 +62,12 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     if (idx >= num_particles) { return; }
 
     let p_idx = idx * 2u;
+
+    if(params.init == 1.0){
+        init(idx, p_idx);
+        return;
+    }
+
     var pos = particles[p_idx];
     var vel = particles[p_idx + 1u];
 

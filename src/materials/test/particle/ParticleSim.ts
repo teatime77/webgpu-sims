@@ -15,7 +15,7 @@ const schema: SimulationSchema = {
         },
         Params: { 
             type: 'uniform', 
-            fields: { speedScale: 'f32', colorR: 'f32', colorG: 'f32', colorB: 'f32' } 
+            fields: { speedScale: 'f32', colorR: 'f32', colorG: 'f32', colorB: 'f32', init: 'f32' } 
         },
         ParticleData: { 
             type: 'storage', format: 'vec4<f32>', count: 20000
@@ -57,32 +57,20 @@ const schema: SimulationSchema = {
     // 4. Execution control via TS generator (Abolished V1's black-box DSL!)
     // ========================================================================
     script: function* (engine) {
-        const paramData = new Float32Array([1.0, 1.0, 0.7, 0.2]);
-        engine.device.queue.writeBuffer(engine.getUniformBuffer('Params'), 0, paramData);
+        engine.writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 1.0]);
+        engine.compute('particle_compute', Math.ceil(20000 / 64));
 
-        const numParticles = 20000 / 2;
-        const initialData = new Float32Array(20000 * 4);
-        for (let i = 0; i < numParticles; i++) {
-            // Position (pos)
-            initialData[i * 8 + 0] = (Math.random() - 0.5) * 2;
-            initialData[i * 8 + 1] = (Math.random() - 0.5) * 2;
-            initialData[i * 8 + 2] = (Math.random() - 0.5) * 2;
+        yield 'frame';
 
-            // ★ Added: Provide initial values for velocity (vel)
-            initialData[i * 8 + 4] = (Math.random() - 0.5) * 0.02;
-            initialData[i * 8 + 5] = (Math.random() - 0.5) * 0.02;
-            initialData[i * 8 + 6] = (Math.random() - 0.5) * 0.02;
-        }
-
-        engine.writeStorage('ParticleData', initialData);
         engine.writeStorage('BaseMesh', makeGeodesicPolyhedron(0.02, 1));
+        engine.writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 0.0]);
 
         // Standard TypeScript loop, immediately understandable by both AI and humans
         while (true) {
             engine.compute('particle_compute', Math.ceil(20000 / 64));
             engine.render('particle_render', 3840, 10000, true);
             
-            yield 'frame'; // Signal the end of 1 frame
+            yield 'frame';
         }
     }
 };

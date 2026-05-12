@@ -8,10 +8,11 @@ struct ParamsStruct {
     speed: f32,
     amplitude: f32,
     frequency: f32,
+    initialize: f32
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
-@group(0) @binding(1) var<storage, read> baseGrid: array<vec4<f32>>;
+@group(0) @binding(1) var<storage, read_write> baseGrid: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read_write> positions: array<vec4<f32>>;
 @group(0) @binding(3) var<storage, read_write> normals: array<vec4<f32>>;
 
@@ -19,11 +20,50 @@ struct ParamsStruct {
 // IMPLEMENT YOUR LOGIC BELOW
 // AI: Focus only on implementing the core logic for vs_main, fs_main, or compute main.
 // ==========================================
+fn init(idx: u32) {
+    let GRID_SIZE = 200u;
+    
+    // 6 vertices per grid cell (2 triangles)
+    let cell_idx = idx / 6u; 
+    let vertex_in_cell = idx % 6u;
+
+    // Map 1D cell index to 2D grid coordinates
+    let grid_x = f32(cell_idx % GRID_SIZE);
+    let grid_z = f32(cell_idx / GRID_SIZE);
+
+    let size = 20.0;
+    let halfSize = size / 2.0;
+    let step_size = size / f32(GRID_SIZE);
+
+    // Calculate the 4 corners of the current grid cell
+    let x0 = grid_x * step_size - halfSize;
+    let z0 = grid_z * step_size - halfSize;
+    let x1 = (grid_x + 1.0) * step_size - halfSize;
+    let z1 = (grid_z + 1.0) * step_size - halfSize;
+
+    var pos: vec4<f32>;
+
+    // Assign the correct vertex coordinate based on the position in the 6-vertex sequence
+    if (vertex_in_cell == 0u) { pos = vec4<f32>(x0, 0.0, z0, 1.0); }      // Triangle 1: Bottom-Left
+    else if (vertex_in_cell == 1u) { pos = vec4<f32>(x1, 0.0, z0, 1.0); } // Triangle 1: Bottom-Right
+    else if (vertex_in_cell == 2u) { pos = vec4<f32>(x0, 0.0, z1, 1.0); } // Triangle 1: Top-Left
+    else if (vertex_in_cell == 3u) { pos = vec4<f32>(x1, 0.0, z0, 1.0); } // Triangle 2: Bottom-Right
+    else if (vertex_in_cell == 4u) { pos = vec4<f32>(x1, 0.0, z1, 1.0); } // Triangle 2: Top-Right
+    else { pos = vec4<f32>(x0, 0.0, z1, 1.0); }                           // Triangle 2: Top-Left (vertex_in_cell == 5u)
+
+    baseGrid[idx] = pos;
+}
 
 @compute @workgroup_size(64, 1, 1)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx = id.x;
     if (idx >= arrayLength(&baseGrid)) { return; }
+
+    // Intercept for initialization pass
+    if (params.initialize == 1.0) {
+        init(idx);
+        return;
+    }
 
     // Read the static flat plane coordinate
     let base_pos = baseGrid[idx].xyz;

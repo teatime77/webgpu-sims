@@ -6,23 +6,47 @@
 struct ParamsStruct {
     time: f32,
     fieldScale: f32,
-    pad1: f32,
-    pad2: f32,
+    speed: f32,
+    gridSpacing: f32,
+    initialize: f32,  // Updated
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
-@group(0) @binding(1) var<storage, read> positions: array<vec4<f32>>;
+@group(0) @binding(1) var<storage, read_write> positions: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read_write> vectors: array<vec4<f32>>;
 
 // ==========================================
 // IMPLEMENT YOUR LOGIC BELOW
 // AI: Focus only on implementing the core logic for vs_main, fs_main, or compute main.
 // ==========================================
+fn init(idx: u32) {
+    let GRID_SIZE = 10u;
+    
+    // Reverse-map the 1D thread index to 3D grid coordinates 
+    // This matches the specific layout of your original TS loop
+    let z = f32(idx % GRID_SIZE);
+    let y = f32((idx / GRID_SIZE) % GRID_SIZE);
+    let x = f32(idx / (GRID_SIZE * GRID_SIZE));
+
+    let offset = (f32(GRID_SIZE) - 1.0) * params.gridSpacing / 2.0;
+
+    let pos_x = (x * params.gridSpacing) - offset;
+    let pos_y = (y * params.gridSpacing) - offset;
+    let pos_z = (z * params.gridSpacing) - offset;
+
+    positions[idx] = vec4<f32>(pos_x, pos_y, pos_z, 1.0);
+}
 
 @compute @workgroup_size(64, 1, 1)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx = id.x;
     if (idx >= arrayLength(&positions)) { return; }
+
+    // Intercept for initialization pass
+    if (params.initialize == 1.0) {
+        init(idx);
+        return;
+    }
 
     // Fetch the grid point position
     let pos = positions[idx].xyz;

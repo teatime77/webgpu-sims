@@ -134,6 +134,17 @@ export class SimulationRunner {
         this.uniforms.update(id, values);
     }
 
+    writeUniformArray(name:string, data: number[]){
+        let arrayData = new Float32Array(data);
+        this.device.queue.writeBuffer(this.getUniformBuffer(name), 0, arrayData);
+    }
+
+    writeUniformObject(name:string, data: any){
+        const values = Object.values(data);
+        values.every(x => typeof x == "number");
+        this.writeUniformArray(name, values as number[]);
+    }
+
     writeStorage(id: string, data: Float32Array | Uint32Array) {
         const buf = this.getStorageBuffer(id, 0);
         this.device.queue.writeBuffer(buf, 0, data);

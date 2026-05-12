@@ -5,9 +5,10 @@ import { makeArrowMesh } from '../../../core/primitive';
 // UI State
 const state = {
     time: 0.0,
+    fieldScale: 1.0,
     speed: 1.0,
-    fieldScale: 1.0,      // Increased default visual scale
-    gridSpacing: 1.0      // Increased distance between grid points
+    gridSpacing: 1.0,
+    initialize: 1.0,
 };
 
 // 10x10x10 grid = 1,000 arrows (Much cleaner than 4096)
@@ -31,8 +32,9 @@ const schema: SimulationSchema = {
             fields: { 
                 time: 'f32', 
                 fieldScale: 'f32', 
-                pad1: 'f32', 
-                pad2: 'f32' 
+                speed: 'f32', 
+                gridSpacing: 'f32',
+                initialize: 'f32',
             } 
         },
         GridPositions: { type: 'storage', format: 'vec4<f32>', count: NUM_ARROWS },
@@ -50,7 +52,7 @@ const schema: SimulationSchema = {
             workgroupSize: 64,
             bindings: [
                 { resource: 'Params', varName: 'params' },
-                { resource: 'GridPositions', varName: 'positions', access: 'read' },
+                { resource: 'GridPositions', varName: 'positions', access: 'read_write' },
                 { resource: 'GridVectors', varName: 'vectors', access: 'read_write' }
             ]
         },
@@ -84,43 +86,28 @@ const schema: SimulationSchema = {
     script: function* (runner) {
         const dispatchX = Math.ceil(NUM_ARROWS / 64);
 
-        // 1. Initialize the 3D Grid Positions
-        const posData = new Float32Array(NUM_ARROWS * 4);
-        let idx = 0;
-        
-        const offset = (GRID_SIZE - 1) * state.gridSpacing / 2;
-
-        for (let x = 0; x < GRID_SIZE; x++) {
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let z = 0; z < GRID_SIZE; z++) {
-                    posData[idx++] = (x * state.gridSpacing) - offset;
-                    posData[idx++] = (y * state.gridSpacing) - offset;
-                    posData[idx++] = (z * state.gridSpacing) - offset;
-                    posData[idx++] = 1.0; 
-                }
-            }
-        }
-        
-        runner.writeStorage('GridPositions', posData);
-
-        // 2. Load the Arrow Mesh with Custom Scaling
-        // By scaling X and Z by 4.0, we make the arrow shaft and head much thicker
-        // while leaving the length (Y) at 1.0 to be scaled dynamically by the shader.
+        // Load the Arrow Mesh
         const arrowGeom = makeArrowMesh({ 
             numDivision: RADIAL_SEGMENTS,
             scale: [4.0, 1.0, 4.0] 
         });
         runner.writeStorage('ArrowMesh', arrowGeom);
 
+        // 1. Initialization Compute Pass
+        state.initialize = 1.0;
+        runner.writeUniformObject('Params', state);            
+        runner.compute('field_compute', dispatchX);
+
+        yield 'frame';
+
+        // 2. Main execution loop
+        state.initialize = 0.0;
+
         // 3. Main execution loop
         while (true) {
             state.time += 0.016 * state.speed; 
 
-            const paramData = new Float32Array([
-                state.time, state.fieldScale, 0.0, 0.0
-            ]);
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
-            
+            runner.writeUniformObject('Params', state);            
             runner.compute('field_compute', dispatchX);
             runner.render('field_render', ARROW_VERTICES, NUM_ARROWS, true);
             

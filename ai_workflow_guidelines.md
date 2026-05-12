@@ -39,6 +39,9 @@ The `SimulationSchema` is the central blueprint for a simulation. It eliminates 
 
 *   **`script(runner)`**: A generator function (`function*`) that acts as both the initial setup and the execution loop.
     *   **Initialization:** At the beginning of the function (before the loop), set up initial GPU buffer data. You can write to storage buffers using `runner.writeStorage('ResourceName', Float32ArrayData)`.
+    *   **Updating Uniforms:** To easily update uniform buffers without manually calculating padding or constructing `Float32Array`s, use the `SimulationRunner` helpers:
+        *   `runner.writeUniformObject('ResourceName', dataObject)`: Automatically maps a JavaScript object to the schema's `fields`, handling WebGPU's strict 16-byte memory alignment and padding.
+        *   `runner.writeUniformArray('ResourceName', dataArray)`: Maps a flat array of numbers to the uniform buffer while enforcing the schema's alignment rules.
     *   **Execution Loop:** Enter a `while (true)` loop to step through frames.
     *   Use `runner.compute('node_id', dispatchX, dispatchY, dispatchZ)` to dispatch compute shaders.
     *   Use `runner.render('node_id', vertexCount, instanceCount, hasDepth, canvasId)` to execute draw calls.

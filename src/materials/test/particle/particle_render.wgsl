@@ -13,6 +13,7 @@ struct ParamsStruct {
     colorR: f32,
     colorG: f32,
     colorB: f32,
+    init  : f32,
 };
 
 @group(0) @binding(0) var<uniform> camera: CameraStruct;

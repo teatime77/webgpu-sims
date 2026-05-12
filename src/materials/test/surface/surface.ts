@@ -6,7 +6,8 @@ const state = {
     time: 0.0,
     speed: 1.0,
     amplitude: 1.0,
-    frequency: 1.0
+    frequency: 1.0,
+    initialize: 1.0,
 };
 
 // A high-density grid for a perfectly smooth, silky surface
@@ -25,7 +26,7 @@ const schema: SimulationSchema = {
         Params: { 
             type: 'uniform', 
             fields: { 
-                time: 'f32', speed: 'f32', amplitude: 'f32', frequency: 'f32' 
+                time: 'f32', speed: 'f32', amplitude: 'f32', frequency: 'f32', initialize: 'f32'
             } 
         },
         // BaseGrid holds the static (X, 0, Z) flat plane coordinates
@@ -45,7 +46,7 @@ const schema: SimulationSchema = {
             workgroupSize: 64,
             bindings: [
                 { resource: 'Params', varName: 'params' },
-                { resource: 'BaseGrid', varName: 'baseGrid', access: 'read' },
+                { resource: 'BaseGrid', varName: 'baseGrid', access: 'read_write' },
                 { resource: 'Positions', varName: 'positions', access: 'read_write' },
                 { resource: 'Normals', varName: 'normals', access: 'read_write' }
             ]
@@ -80,44 +81,22 @@ const schema: SimulationSchema = {
     script: function* (runner) {
         const dispatchX = Math.ceil(NUM_VERTICES / 64);
 
-        // 1. Generate the static base grid on the XZ plane
-        const baseGridData = new Float32Array(NUM_VERTICES * 4);
-        let idx = 0;
-        
-        const size = 20.0;
-        const halfSize = size / 2.0;
-        const step = size / GRID_SIZE;
+        // 1. Initialization Compute Pass
+        state.initialize = 1.0;
+        runner.writeUniformObject('Params', state);
+        runner.compute('wave_compute', dispatchX);
 
-        for (let z = 0; z < GRID_SIZE; z++) {
-            for (let x = 0; x < GRID_SIZE; x++) {
-                const x0 = x * step - halfSize;
-                const z0 = z * step - halfSize;
-                const x1 = (x + 1) * step - halfSize;
-                const z1 = (z + 1) * step - halfSize;
+        yield 'frame';
 
-                // Triangle 1: Bottom-Left, Bottom-Right, Top-Left
-                baseGridData[idx++] = x0; baseGridData[idx++] = 0.0; baseGridData[idx++] = z0; baseGridData[idx++] = 1.0;
-                baseGridData[idx++] = x1; baseGridData[idx++] = 0.0; baseGridData[idx++] = z0; baseGridData[idx++] = 1.0;
-                baseGridData[idx++] = x0; baseGridData[idx++] = 0.0; baseGridData[idx++] = z1; baseGridData[idx++] = 1.0;
-
-                // Triangle 2: Bottom-Right, Top-Right, Top-Left
-                baseGridData[idx++] = x1; baseGridData[idx++] = 0.0; baseGridData[idx++] = z0; baseGridData[idx++] = 1.0;
-                baseGridData[idx++] = x1; baseGridData[idx++] = 0.0; baseGridData[idx++] = z1; baseGridData[idx++] = 1.0;
-                baseGridData[idx++] = x0; baseGridData[idx++] = 0.0; baseGridData[idx++] = z1; baseGridData[idx++] = 1.0;
-            }
-        }
-        
-        runner.writeStorage('BaseGrid', baseGridData);
+        // 2. Main execution loop
+        state.initialize = 0.0;
 
         // 2. Main execution loop
         while (true) {
             state.time += 0.016 * state.speed; 
 
             // Write uniform parameters
-            const paramData = new Float32Array([
-                state.time, state.speed, state.amplitude, state.frequency
-            ]);
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
+            runner.writeUniformObject('Params', state);
             
             // Calculate wave heights and analytical normals
             runner.compute('wave_compute', dispatchX);
