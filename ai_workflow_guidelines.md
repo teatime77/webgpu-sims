@@ -96,3 +96,20 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     particles[idx].y -= 9.8 * params.dt; // Apply gravity
 }
 ```
+
+## 4. Common WebGPU Gotchas & Best Practices
+
+When implementing the TypeScript schema or WGSL logic, you MUST adhere to the following rules to prevent pipeline validation crashes and silent GPU failures:
+
+### A. Dead-Code Elimination (The Binding Mismatch Trap)
+**The Problem:** The WGSL compiler aggressively optimizes code. If you declare a binding in the TypeScript schema (e.g., passing a `Params` uniform to a render pass) but **never read from it** inside `vs_main` or `fs_main`, the compiler strips the binding entirely. WebGPU will then throw a `BindGroupLayout` validation error because the TS engine expects the binding to exist, but the compiled shader lacks it.
+**The Rule:** Only bind resources in the `SimulationSchema` that are explicitly necessary for the shader's logic. If you change a shader's logic and stop using a buffer, you MUST remove that binding from the TypeScript schema and regenerate the skeleton.
+
+### B. Safe Vertex Culling in Render Passes
+**The Problem:** When you want to dynamically hide/cull a vertex (e.g., conditionally hiding particles), setting `out.position = vec4<f32>(0.0, 0.0, 0.0, 0.0);` causes a divide-by-zero error during the perspective divide. Some GPU drivers handle this silently, but others (like WebKit or certain Windows drivers) will panic and render a completely black screen.
+**The Rule:** To cull a vertex safely, move it outside the visible clip space box using `W = 1.0`. 
+* **Correct:** `out.position = vec4<f32>(2.0, 2.0, 2.0, 1.0);`
+
+### C. Floating Point Underflow & Division by Zero
+**The Problem:** In Monte Carlo simulations or physics equations, probabilities and distances can get extremely small, underflowing to exactly `0.0`. If this value is used in a division (e.g., `p_proposal / p_current`), it results in `NaN`, freezing the particle in place or blacking out the screen.
+**The Rule:** Always guard divisions involving calculated densities or distances. Use `max(value, 1e-30)` to ensure denominators never hit absolute zero.
