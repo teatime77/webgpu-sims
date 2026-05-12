@@ -7,7 +7,8 @@ const state = {
     gravity: 9.8,
     interactionRadius: 0.2,
     stiffness: 500.0,
-    boxSize: 10.0
+    boxSize: 10.0,
+    initialize:1.0,
 };
 
 const NUM_PARTICLES = 4096;
@@ -71,37 +72,19 @@ const schema: SimulationSchema = {
     script: function* (runner) {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
-        function writeParams() {
-            const paramData = new Float32Array([
-                state.dt, state.gravity, state.interactionRadius, state.stiffness,
-                state.boxSize, 0.0, 0.0, 0.0
-            ]);
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
-        }
-
-        const posData = new Float32Array(NUM_PARTICLES * 4);
-        const velData = new Float32Array(NUM_PARTICLES * 4);
-
-        for (let i = 0; i < NUM_PARTICLES; i++) {
-            posData[i * 4 + 0] = (Math.random() - 0.5) * state.boxSize;
-            posData[i * 4 + 1] = (Math.random() - 0.5) * state.boxSize;
-            posData[i * 4 + 2] = (Math.random() - 0.5) * state.boxSize;
-            posData[i * 4 + 3] = 1.0; 
-
-            velData[i * 4 + 0] = (Math.random() - 0.5) * 4.0;
-            velData[i * 4 + 1] = (Math.random() - 0.5) * 4.0;
-            velData[i * 4 + 2] = (Math.random() - 0.5) * 4.0;
-            velData[i * 4 + 3] = 0.0;
-        }
-
-        runner.writeStorage('ParticlePos', posData);
-        runner.writeStorage('ParticleVel', velData);
-        
         // ★ Added: Generate a unit sphere (radius 1.0) to be scaled in the shader
         runner.writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1));
 
+        state.initialize = 1.0;
+        runner.writeUniformObject('Params', state);
+        runner.compute('md_compute', dispatchX);
+
+        yield 'frame';
+
+        state.initialize = 0.0;
+
         while (true) {
-            writeParams();
+            runner.writeUniformObject('Params', state);
             
             runner.compute('md_compute', dispatchX);
             

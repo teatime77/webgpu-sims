@@ -92,15 +92,6 @@ const schema: SimulationSchema = {
     script: function* (runner) {
         const dispatchX = Math.ceil(NUM_WALKERS / 64);
 
-        function writeParams(resetVal: number) {
-            const paramData = new Float32Array([
-                state.spinState, state.bondLength, state.jastrow, state.pinX,
-                state.pinY, state.pinZ, state.samplingStep, state.brightness,
-                resetVal, 0.0, 0.0, 0.0
-            ]);
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
-        }
-
         // Initialize random states
         const rngState = new Uint32Array(NUM_WALKERS);
         for (let i = 0; i < NUM_WALKERS; i++) {
@@ -109,12 +100,15 @@ const schema: SimulationSchema = {
         runner.writeStorage('RngState', rngState);
 
         // Burn-in pass (Scatter walkers randomly in 6D space)
-        writeParams(1.0);
+        state.needsReset = 1.0;
+        runner.writeUniformObject('Params', state);
+
         runner.compute('vqmc_compute', dispatchX);
         yield 'frame';
 
+        state.needsReset = 0.0;
         while (true) {
-            writeParams(0.0);
+            runner.writeUniformObject('Params', state);
             
             // 1. Move both electrons in 6D space according to the Slater Det * Jastrow
             runner.compute('vqmc_compute', dispatchX);

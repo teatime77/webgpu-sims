@@ -7,7 +7,8 @@ const state = {
     epsilon: 1.5,       // Depth of the potential well (attraction strength)
     sigma: 0.4,         // Distance where inter-particle potential is zero
     boxSize: 15.0,      // Bounding box size
-    damping: 0.999      // Simple thermostat to drain excess kinetic energy
+    damping: 0.999,     // Simple thermostat to drain excess kinetic energy
+    initialize: 1.0
 };
 
 const NUM_PARTICLES = 8192; // Doubled the particle count for better fluid dynamics
@@ -25,7 +26,7 @@ const schema: SimulationSchema = {
             type: 'uniform', 
             fields: { 
                 dt: 'f32', epsilon: 'f32', sigma: 'f32', boxSize: 'f32', 
-                damping: 'f32', pad1: 'f32', pad2: 'f32', pad3: 'f32' 
+                damping: 'f32', initialize: 'f32', pad2: 'f32', pad3: 'f32' 
             } 
         },
         // Positions w-component will store the particle "type" (0.0 or 1.0)
@@ -80,39 +81,18 @@ const schema: SimulationSchema = {
     script: function* (runner) {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
-        function writeParams() {
-            const paramData = new Float32Array([
-                state.dt, state.epsilon, state.sigma, state.boxSize,
-                state.damping, 0.0, 0.0, 0.0
-            ]);
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
-        }
-
-        const posData = new Float32Array(NUM_PARTICLES * 4);
-        const velData = new Float32Array(NUM_PARTICLES * 4);
-
-        for (let i = 0; i < NUM_PARTICLES; i++) {
-            // Distribute particles in a grid-like fashion initially to prevent atomic overlap explosions
-            posData[i * 4 + 0] = (Math.random() - 0.5) * (state.boxSize * 0.8);
-            posData[i * 4 + 1] = (Math.random() - 0.5) * (state.boxSize * 0.8);
-            posData[i * 4 + 2] = (Math.random() - 0.5) * (state.boxSize * 0.8);
-            
-            // Assign type: half are Type 0.0 (e.g., lighter), half are Type 1.0 (e.g., heavier)
-            posData[i * 4 + 3] = i % 2 === 0 ? 0.0 : 1.0; 
-
-            // Add some thermal noise to initial velocities
-            velData[i * 4 + 0] = (Math.random() - 0.5) * 2.0;
-            velData[i * 4 + 1] = (Math.random() - 0.5) * 2.0;
-            velData[i * 4 + 2] = (Math.random() - 0.5) * 2.0;
-            velData[i * 4 + 3] = 0.0;
-        }
-
-        runner.writeStorage('ParticlePos', posData);
-        runner.writeStorage('ParticleVel', velData);
         runner.writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1)); // Unit sphere
 
+        state.initialize = 1.0;
+        runner.writeUniformObject('Params', state);
+        runner.compute('lj_compute', dispatchX);
+
+        yield 'frame';
+
+        state.initialize = 0.0;
+
         while (true) {
-            writeParams();
+            runner.writeUniformObject('Params', state);
             
             runner.compute('lj_compute', dispatchX);
             runner.render('lj_render', VERTEX_COUNT, NUM_PARTICLES, true);

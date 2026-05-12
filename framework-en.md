@@ -38,7 +38,12 @@ An array defining the user interface controls (e.g., sliders, dropdowns). By lin
 
 The "soul" of the simulation. This is written as a **TypeScript generator function (`function*`)** that dictates both the initialization and the exact order of GPU operations.
 
-* **Initialization**: The first part of the script handles CPU-side setup, such as generating initial random seeds and writing initial distributions to GPU buffers (e.g., `runner.writeStorage(...)`).
+* **Initialization**: The first part of the script handles setup before the main loop begins. There are two primary ways to initialize simulation state:
+  * **CPU-Side Initialization**: Generating initial random seeds or geometry on the CPU and writing to GPU buffers using `runner.writeStorage('ResourceName', Float32ArrayData)`.
+  * **GPU-Side Initialization (Recommended)**: For large datasets like grids or particle systems, it is much more efficient to initialize data directly on the GPU using a compute shader. This is accomplished using an initialization flag pattern:
+    1. Add an `initialize` field (e.g., `f32`) to your `uniform` parameters schema.
+    2. In the TypeScript generator script, set `state.initialize = 1.0`, write the uniforms to the GPU, and dispatch the compute shader once. Yield a frame, then reset `state.initialize = 0.0` before entering the main `while(true)` loop.
+    3. In the WGSL compute shader, check the flag at the top of the `main` function (e.g., `if (params.initialize == 1.0) { init(idx); return; }`) to execute the initial setup logic instead of the normal physics step.
 
 * **Transparent Control Flow**: Standard TypeScript constructs like `while(true)` loops are used. Inside the loop, the script yields commands (e.g., `yield call('node_id')`, `yield swap('resource')`).
 * **Transparent Control Flow**: Standard TypeScript constructs like `while(true)` loops are used. Inside the loop, the script calls execution methods on the runner (e.g., `runner.compute('node_id')`, `runner.render('node_id')`, `runner.swap('resource')`).

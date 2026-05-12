@@ -80,14 +80,6 @@ const schema: SimulationSchema = {
     script: function* (runner) {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
-        function writeParams(resetVal: number) {
-            const paramData = new Float32Array([
-                state.orbitalType, state.bondLength, state.samplingStep, state.brightness,
-                state.colorMix, resetVal, 0.0, 0.0
-            ]);
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
-        }
-
         // Initialize random number state buffer for the MCMC algorithm
         const rngState = new Uint32Array(NUM_PARTICLES);
         for (let i = 0; i < NUM_PARTICLES; i++) {
@@ -96,14 +88,18 @@ const schema: SimulationSchema = {
         runner.writeStorage('RngState', rngState);
 
         // Burn-in pass: scatter particles instantly to match the distribution
-        writeParams(1.0);
+        state.needsReset = 1.0;
+        runner.writeUniformObject('Params', state);
+
         runner.compute('h2_hf_comp', dispatchX);
         yield 'frame';
+
+        state.needsReset = 0.0;
 
         // Main execution loop
         while (true) {
             // Write 0.0 to resetFlag during normal execution to perform standard MCMC steps
-            writeParams(0.0);
+            runner.writeUniformObject('Params', state);
             
             runner.compute('h2_hf_comp', dispatchX);
             runner.render('h2_hf_render', NUM_PARTICLES, 1, false);

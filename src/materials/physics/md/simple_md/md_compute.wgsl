@@ -9,7 +9,7 @@ struct ParamsStruct {
     interactionRadius: f32,
     stiffness: f32,
     boxSize: f32,
-    pad1: f32,
+    initialize: f32,
     pad2: f32,
     pad3: f32,
 };
@@ -22,12 +22,55 @@ struct ParamsStruct {
 // IMPLEMENT YOUR LOGIC BELOW
 // AI: Focus only on implementing the core logic for vs_main, fs_main, or compute main.
 // ==========================================
+// PCG Hash for generating random seeds
+fn pcg_hash(seed: u32) -> u32 {
+    var state = seed * 747796405u + 2891336453u;
+    var word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+// Converts a u32 hash to a float between 0.0 and 1.0
+fn random(seed: u32) -> f32 {
+    return f32(seed) / 4294967295.0; 
+}
+
+fn init(idx: u32) {
+    var seeds: array<u32, 6>;
+    
+    // Seed the chain using the particle index to ensure unique values
+    seeds[0] = pcg_hash(idx * 1000u + 1u);
+    for (var i = 1u; i < 6u; i++) {
+        seeds[i] = pcg_hash(seeds[i - 1]);
+    }
+
+    let box = params.boxSize;
+    
+    // Position: Random between -boxSize/2 and boxSize/2
+    let pos_x = (random(seeds[0]) - 0.5) * box;
+    let pos_y = (random(seeds[1]) - 0.5) * box;
+    let pos_z = (random(seeds[2]) - 0.5) * box;
+    
+    // Velocity: Random between -2.0 and 2.0
+    let vel_x = (random(seeds[3]) - 0.5) * 4.0;
+    let vel_y = (random(seeds[4]) - 0.5) * 4.0;
+    let vel_z = (random(seeds[5]) - 0.5) * 4.0;
+
+    // Write to buffers (W component of position holds mass = 1.0)
+    positions[idx] = vec4<f32>(pos_x, pos_y, pos_z, 1.0);
+    velocities[idx] = vec4<f32>(vel_x, vel_y, vel_z, 0.0);
+}
 
 @compute @workgroup_size(64, 1, 1)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx = id.x;
     let numParticles = arrayLength(&positions);
     if (idx >= numParticles) { return; }
+
+    // Intercept for initialization pass
+    if (params.initialize == 1.0) {
+        init(idx);
+        return;
+    }
 
     // Fetch particle state
     var pos = positions[idx].xyz;
