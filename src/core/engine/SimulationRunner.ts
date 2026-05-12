@@ -162,7 +162,8 @@ export class SimulationRunner {
         cPass.end();
     }
 
-    render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, canvasId = 'main-canvas') {
+    // Added clearScreen parameter with a default of true
+    render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas') {
         if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
 
         if (!this.initializedCanvases.has(canvasId)) {
@@ -196,18 +197,24 @@ export class SimulationRunner {
 
         const builder = this.passes.get(id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
-        
+
+        // Determine the load operation based on the flag
+        const loadOperation = clearScreen ? 'clear' : 'load';
+
         const passDesc: GPURenderPassDescriptor = {
             colorAttachments: [{
                 view: this.engine.getContext(canvasId).getCurrentTexture().createView(),
                 clearValue: { r: 0.0, g: 0.0, b: 0.01, a: 1.0 },
-                loadOp: 'clear', storeOp: 'store'
+                loadOp: loadOperation, // Dynamically set
+                storeOp: 'store'
             }]
         };
         if (useDepth) {
             passDesc.depthStencilAttachment = {
                 view: this.engine.getDepthView(canvasId),
-                depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store'
+                depthClearValue: 1.0,
+                depthLoadOp: loadOperation, // Dynamically set
+                depthStoreOp: 'store'
             };
         }
         const rPass = this.currentCommandEncoder.beginRenderPass(passDesc);
@@ -226,8 +233,8 @@ export function compute(id: string, x: number, y = 1, z = 1){
     simRunner.compute(id, x, y, z);
 }
 
-export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, canvasId = 'main-canvas'){
-    simRunner.render(id, vertexCount, instanceCount, hasDepth, canvasId)
+export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas'){
+    simRunner.render(id, vertexCount, instanceCount, hasDepth, clearScreen, canvasId)
 }
 
 export function writeUniformObject(name:string, data: any){
