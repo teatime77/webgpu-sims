@@ -1,5 +1,5 @@
 // src/materials/physics/qm/h2_molecule/h2_molecule.ts
-import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
 
 const state = {
     orbitalType: 0.0,    // 0 = Bonding (σg), 1 = Antibonding (σu*)
@@ -77,7 +77,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 4. Execution Loop
     // ========================================================
-    script: function* (runner) {
+    script: function* () {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         // Initialize random number state buffer for the MCMC algorithm
@@ -85,13 +85,13 @@ const schema: SimulationSchema = {
         for (let i = 0; i < NUM_PARTICLES; i++) {
             rngState[i] = Math.random() * 0xFFFFFFFF;
         }
-        runner.writeStorage('RngState', rngState);
+        writeStorage('RngState', rngState);
 
         // Burn-in pass: scatter particles instantly to match the distribution
         state.needsReset = 1.0;
-        runner.writeUniformObject('Params', state);
+        writeUniformObject('Params', state);
 
-        runner.compute('h2_hf_comp', dispatchX);
+        compute('h2_hf_comp', dispatchX);
         yield 'frame';
 
         state.needsReset = 0.0;
@@ -99,10 +99,10 @@ const schema: SimulationSchema = {
         // Main execution loop
         while (true) {
             // Write 0.0 to resetFlag during normal execution to perform standard MCMC steps
-            runner.writeUniformObject('Params', state);
+            writeUniformObject('Params', state);
             
-            runner.compute('h2_hf_comp', dispatchX);
-            runner.render('h2_hf_render', NUM_PARTICLES, 1, false);
+            compute('h2_hf_comp', dispatchX);
+            render('h2_hf_render', NUM_PARTICLES, 1, false);
             
             yield 'frame';
         }

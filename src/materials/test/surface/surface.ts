@@ -1,5 +1,5 @@
 // src/materials/test/surface/surface.ts
-import type { SimulationSchema } from '../../../core/engine/SimulationRunner';
+import { compute, render, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
 
 // UI State
 const state = {
@@ -78,13 +78,13 @@ const schema: SimulationSchema = {
     // ========================================================
     // 4. Execution Loop
     // ========================================================
-    script: function* (runner) {
+    script: function* () {
         const dispatchX = Math.ceil(NUM_VERTICES / 64);
 
         // 1. Initialization Compute Pass
         state.initialize = 1.0;
-        runner.writeUniformObject('Params', state);
-        runner.compute('wave_compute', dispatchX);
+        writeUniformObject('Params', state);
+        compute('wave_compute', dispatchX);
 
         yield 'frame';
 
@@ -96,13 +96,13 @@ const schema: SimulationSchema = {
             state.time += 0.016 * state.speed; 
 
             // Write uniform parameters
-            runner.writeUniformObject('Params', state);
+            writeUniformObject('Params', state);
             
             // Calculate wave heights and analytical normals
-            runner.compute('wave_compute', dispatchX);
+            compute('wave_compute', dispatchX);
             
             // Render the 240,000 vertices as 1 contiguous mesh instance
-            runner.render('wave_render', NUM_VERTICES, 1, true);
+            render('wave_render', NUM_VERTICES, 1, true);
             
             yield 'frame';
         }

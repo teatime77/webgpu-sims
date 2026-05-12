@@ -1,6 +1,6 @@
 // src/materials/test/ParticleSim.ts
 import { makeGeodesicPolyhedron } from '../../../core/primitive';
-import type { SimulationSchema } from '../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformArray, type SimulationSchema } from '../../../core/engine/SimulationRunner';
 
 const schema: SimulationSchema = {
     name: "Particle Physics V1.5",
@@ -56,19 +56,19 @@ const schema: SimulationSchema = {
     // ========================================================================
     // 4. Execution control via TS generator (Abolished V1's black-box DSL!)
     // ========================================================================
-    script: function* (engine) {
-        engine.writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 1.0]);
-        engine.compute('particle_compute', Math.ceil(20000 / 64));
+    script: function* () {
+        writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 1.0]);
+        compute('particle_compute', Math.ceil(20000 / 64));
 
         yield 'frame';
 
-        engine.writeStorage('BaseMesh', makeGeodesicPolyhedron(0.02, 1));
-        engine.writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 0.0]);
+        writeStorage('BaseMesh', makeGeodesicPolyhedron(0.02, 1));
+        writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 0.0]);
 
         // Standard TypeScript loop, immediately understandable by both AI and humans
         while (true) {
-            engine.compute('particle_compute', Math.ceil(20000 / 64));
-            engine.render('particle_render', 3840, 10000, true);
+            compute('particle_compute', Math.ceil(20000 / 64));
+            render('particle_render', 3840, 10000, true);
             
             yield 'frame';
         }

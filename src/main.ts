@@ -4,7 +4,7 @@ import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/utils/CaptureTool';
 import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
-import { SimulationRunner, type SimulationSchema, type ResourceBinding } from './core/engine/SimulationRunner';
+import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
 
 async function bootstrap() {
@@ -61,6 +61,7 @@ async function bootstrap() {
 
     const runner = new SimulationRunner(engine);
     await runner.loadSchema(sim); 
+    setRunner(runner);
 
     if(sim.uis){
         makeUIs(runner, sim);
@@ -111,7 +112,7 @@ async function bootstrap() {
         }
     }
 
-    runner.generator = sim.script(runner);
+    runner.generator = sim.script();
 
     function frame() {
         const aspect = canvas.width / canvas.height;

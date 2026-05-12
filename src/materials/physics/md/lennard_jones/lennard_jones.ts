@@ -1,5 +1,5 @@
 // src/materials/physics/md/lennard_jones/lennard_jones.ts
-import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
 import { makeGeodesicPolyhedron } from '../../../../core/primitive';
 
 const state = {
@@ -78,24 +78,24 @@ const schema: SimulationSchema = {
     // ========================================================
     // 4. Execution Loop
     // ========================================================
-    script: function* (runner) {
+    script: function* () {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
-        runner.writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1)); // Unit sphere
+        writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1)); // Unit sphere
 
         state.initialize = 1.0;
-        runner.writeUniformObject('Params', state);
-        runner.compute('lj_compute', dispatchX);
+        writeUniformObject('Params', state);
+        compute('lj_compute', dispatchX);
 
         yield 'frame';
 
         state.initialize = 0.0;
 
         while (true) {
-            runner.writeUniformObject('Params', state);
+            writeUniformObject('Params', state);
             
-            runner.compute('lj_compute', dispatchX);
-            runner.render('lj_render', VERTEX_COUNT, NUM_PARTICLES, true);
+            compute('lj_compute', dispatchX);
+            render('lj_render', VERTEX_COUNT, NUM_PARTICLES, true);
             
             yield 'frame';
         }

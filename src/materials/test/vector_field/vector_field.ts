@@ -1,5 +1,5 @@
 // src/materials/test/vector_field/vector_field.ts
-import type { SimulationSchema } from '../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
 import { makeArrowMesh } from '../../../core/primitive';
 
 // UI State
@@ -83,7 +83,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 4. Execution Loop
     // ========================================================
-    script: function* (runner) {
+    script: function* () {
         const dispatchX = Math.ceil(NUM_ARROWS / 64);
 
         // Load the Arrow Mesh
@@ -91,12 +91,12 @@ const schema: SimulationSchema = {
             numDivision: RADIAL_SEGMENTS,
             scale: [4.0, 1.0, 4.0] 
         });
-        runner.writeStorage('ArrowMesh', arrowGeom);
+        writeStorage('ArrowMesh', arrowGeom);
 
         // 1. Initialization Compute Pass
         state.initialize = 1.0;
-        runner.writeUniformObject('Params', state);            
-        runner.compute('field_compute', dispatchX);
+        writeUniformObject('Params', state);            
+        compute('field_compute', dispatchX);
 
         yield 'frame';
 
@@ -107,9 +107,9 @@ const schema: SimulationSchema = {
         while (true) {
             state.time += 0.016 * state.speed; 
 
-            runner.writeUniformObject('Params', state);            
-            runner.compute('field_compute', dispatchX);
-            runner.render('field_render', ARROW_VERTICES, NUM_ARROWS, true);
+            writeUniformObject('Params', state);            
+            compute('field_compute', dispatchX);
+            render('field_render', ARROW_VERTICES, NUM_ARROWS, true);
             
             yield 'frame';
         }

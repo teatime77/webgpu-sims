@@ -37,20 +37,20 @@ The `SimulationSchema` is the central blueprint for a simulation. It eliminates 
     *   Example for a range slider: `{ type: "range", obj: state, name: "temperature", label: "Temperature", min: 0.0, max: 3.0, step: 0.01 }`
     *   Example for a select dropdown: `{ type: "select", obj: state, name: "orbitalMode", label: "Orbital", reset: true, options: [{ value: 0, text: "1s" }] }`
 
-*   **`script(runner)`**: A generator function (`function*`) that acts as both the initial setup and the execution loop.
+*   **`script()`**: A generator function (`function*`) that acts as both the initial setup and the execution loop. It no longer takes a `runner` argument; instead, use the globally imported helper functions (e.g., `compute`, `render`).
     *   **Initialization:** At the beginning of the function (before the loop), set up initial GPU buffer data. There are two primary ways:
-        *   **CPU-Side Initialization:** Write to storage buffers using `runner.writeStorage('ResourceName', Float32ArrayData)`.
+        *   **CPU-Side Initialization:** Write to storage buffers using `writeStorage('ResourceName', Float32ArrayData)`.
         *   **GPU-Side Initialization (Recommended):** Initialize data directly on the GPU using a compute shader and an initialization flag pattern:
             1. Add an `initialize` field (e.g., `'f32'`) to the `uniform` parameters schema.
-            2. Set `state.initialize = 1.0`, write the uniforms via `runner.writeUniformObject`, and dispatch the compute shader once. Yield a frame, then reset `state.initialize = 0.0` before entering the main `while (true)` loop.
+            2. Set `state.initialize = 1.0`, write the uniforms via `writeUniformObject`, and dispatch the compute shader once. Yield a frame, then reset `state.initialize = 0.0` before entering the main `while (true)` loop.
             3. In the WGSL compute shader, check the flag at the top of the `main` function (e.g., `if (params.initialize == 1.0) { init(idx); return; }`) to execute the setup logic instead of the normal physics step.
-    *   **Updating Uniforms:** To easily update uniform buffers without manually calculating padding or constructing `Float32Array`s, use the `SimulationRunner` helpers:
-        *   `runner.writeUniformObject('ResourceName', dataObject)`: Automatically maps a JavaScript object to the schema's `fields`, handling WebGPU's strict 16-byte memory alignment and padding.
-        *   `runner.writeUniformArray('ResourceName', dataArray)`: Maps a flat array of numbers to the uniform buffer while enforcing the schema's alignment rules.
+    *   **Updating Uniforms:** To easily update uniform buffers without manually calculating padding or constructing `Float32Array`s, use the imported helpers:
+        *   `writeUniformObject('ResourceName', dataObject)`: Automatically maps a JavaScript object to the schema's `fields`, handling WebGPU's strict 16-byte memory alignment and padding.
+        *   `writeUniformArray('ResourceName', dataArray)`: Maps a flat array of numbers to the uniform buffer while enforcing the schema's alignment rules.
     *   **Execution Loop:** Enter a `while (true)` loop to step through frames.
-    *   Use `runner.compute('node_id', dispatchX, dispatchY, dispatchZ)` to dispatch compute shaders.
-    *   Use `runner.render('node_id', vertexCount, instanceCount, hasDepth, canvasId)` to execute draw calls.
-    *   Use `runner.swap('resource_name')` to flip ping-pong buffers at the end of a step.
+    *   Use `compute('node_id', dispatchX, dispatchY, dispatchZ)` to dispatch compute shaders.
+    *   Use `render('node_id', vertexCount, instanceCount, hasDepth, canvasId)` to execute draw calls.
+    *   Use `swap('resource_name')` to flip ping-pong buffers at the end of a step.
     *   Use `yield 'frame';` to yield control back to the browser's `requestAnimationFrame`.
 
 ---

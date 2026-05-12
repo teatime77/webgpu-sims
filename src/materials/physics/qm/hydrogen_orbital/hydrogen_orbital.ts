@@ -1,5 +1,5 @@
 // src/materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts
-import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
 
 // Object to hold simulation state
 const state = {
@@ -7,7 +7,7 @@ const state = {
     samplingStep: 0.15,
     brightness: 0.05,
     colorMix: 0.5,
-    needsReset: true     // ★ Changed from false to true (trigger burn-in right after loading)
+    needsReset: 1.0     // ★ Changed from false to true (trigger burn-in right after loading)
 };
 
 const NUM_PARTICLES = 1000000;
@@ -72,36 +72,29 @@ const schema: SimulationSchema = {
     // ========================================================
     // 4. Execution generator (MCMC burn-in orchestration)
     // ========================================================
-    script: function* (runner) {
+    script: function* () {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
-
-        function writeParams(reset : number){
-            // Transfer the latest UI values to the GPU
-            const paramData = new Float32Array([
-                state.orbitalMode, state.samplingStep, state.brightness, state.colorMix,
-                reset, 0.0, 0.0, 0.0
-            ]);
-
-            runner.device.queue.writeBuffer(runner.getUniformBuffer('Params'), 0, paramData);
-        }
 
         // Initialize random number state buffer
         const rngState = new Uint32Array(NUM_PARTICLES);
         for (let i = 0; i < NUM_PARTICLES; i++) {
             rngState[i] = Math.random() * 0xFFFFFFFF;
         }
-        runner.writeStorage('RngState', rngState);
+        writeStorage('RngState', rngState);
 
-        writeParams(1.0);
-        runner.compute('hydrogen_orbital_comp', dispatchX);
+        state.needsReset = 1.0;
+        writeUniformObject('Params', state);
+        compute('hydrogen_orbital_comp', dispatchX);
         yield 'frame';
 
+        state.needsReset = 0.0;
+
         while (true) {
-            writeParams(0.0);
-            runner.compute('hydrogen_orbital_comp', dispatchX);
+            writeUniformObject('Params', state);
+            compute('hydrogen_orbital_comp', dispatchX);
 
             // Rendering (Vertex count is NUM_PARTICLES since it's point-list)
-            runner.render('hydrogen_orbital_render', NUM_PARTICLES, 1, false);
+            render('hydrogen_orbital_render', NUM_PARTICLES, 1, false);
             
             yield 'frame';
         }

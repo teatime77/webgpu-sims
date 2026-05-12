@@ -1,5 +1,5 @@
 // src/materials/physics/qm/h2_vqmc/h2_vqmc.ts
-import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
 
 const state = {
     spinState: 0.0,      // 0 = Singlet (Symmetric Space), 1 = Triplet (Antisymmetric Space via Slater Det)
@@ -89,7 +89,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 4. Execution Loop
     // ========================================================
-    script: function* (runner) {
+    script: function* () {
         const dispatchX = Math.ceil(NUM_WALKERS / 64);
 
         // Initialize random states
@@ -97,24 +97,24 @@ const schema: SimulationSchema = {
         for (let i = 0; i < NUM_WALKERS; i++) {
             rngState[i] = Math.random() * 0xFFFFFFFF;
         }
-        runner.writeStorage('RngState', rngState);
+        writeStorage('RngState', rngState);
 
         // Burn-in pass (Scatter walkers randomly in 6D space)
         state.needsReset = 1.0;
-        runner.writeUniformObject('Params', state);
+        writeUniformObject('Params', state);
 
-        runner.compute('vqmc_compute', dispatchX);
+        compute('vqmc_compute', dispatchX);
         yield 'frame';
 
         state.needsReset = 0.0;
         while (true) {
-            runner.writeUniformObject('Params', state);
+            writeUniformObject('Params', state);
             
             // 1. Move both electrons in 6D space according to the Slater Det * Jastrow
-            runner.compute('vqmc_compute', dispatchX);
+            compute('vqmc_compute', dispatchX);
             
             // 2. Render Electron 2, filtering based on where Electron 1 is
-            runner.render('vqmc_render', NUM_WALKERS, 1, false);
+            render('vqmc_render', NUM_WALKERS, 1, false);
             
             yield 'frame';
         }

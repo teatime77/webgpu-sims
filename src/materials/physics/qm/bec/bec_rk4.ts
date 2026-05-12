@@ -1,14 +1,22 @@
 // src/materials/physics/qm/bec/bec_rk4.ts
-import { SimUI } from '../../../../core/ui/SimUI';
-import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, swap, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
 
 const GW = 192;
+const dispatchXY = GW / 8;
+
 const state = {
+    gridWidth: GW,
+    gridHeight: GW,
     temperature: 2.3,
     dt: 0.001,
     g: 14.0,
     omega: 0.48,
-    particleNumber: 2.5
+    particleNumber: 2.5,
+    domainHalf: 7.0,
+    time: 0,
+    partialNormCount: dispatchXY * dispatchXY,
+    pad1: 0,
+    pad2: 0,
 };
 
 const schema: SimulationSchema = {
@@ -183,61 +191,51 @@ const schema: SimulationSchema = {
     // ========================================================================
     // 4. Script: Execute RK4 sequence
     // ========================================================================
-    script: function* (runner) {
+    script: function* () {
         const rng = new Uint32Array(GW * GW).map(() => Math.random() * 0xFFFFFFFF);
-        runner.writeStorage('RngState', rng);
+        writeStorage('RngState', rng);
 
-        const dispatchXY = GW / 8;
         let time = 0.0;
 
-        const updateParams = () => {
-            const buf = runner.getUniformBuffer('BecParams');
-            const paramData = new Float32Array([
-                GW, GW, state.temperature, state.dt,
-                state.g, state.omega, state.particleNumber, 7.0, // domainHalf remains 7.0 as original
-                time, dispatchXY * dispatchXY,
-                0.0, 0.0
-            ]);
-            runner.device.queue.writeBuffer(buf, 0, paramData);
-        };
-
-        updateParams();
+        state.time = time;
+        writeUniformObject('BecParams', state);
         
-        runner.compute('bec_init', dispatchXY, dispatchXY);
-        runner.compute('bec_norm_partial', dispatchXY, dispatchXY);
-        runner.compute('bec_norm_total', 1);
-        runner.compute('bec_norm_apply', dispatchXY, dispatchXY);
+        compute('bec_init', dispatchXY, dispatchXY);
+        compute('bec_norm_partial', dispatchXY, dispatchXY);
+        compute('bec_norm_total', 1);
+        compute('bec_norm_apply', dispatchXY, dispatchXY);
         
-        runner.swap('Psi');
+        swap('Psi');
         yield 'frame';
 
         while (true) {
             time += state.dt;
-            updateParams();            
+            state.time = time;
+            writeUniformObject('BecParams', state);
 
             // Execute the 4 steps of RK4 in sequence
-            runner.compute('bec_rk4_k1', dispatchXY, dispatchXY);
-            runner.render('bec_debug_k1', 6, 1, false, 'canvas-k1');
+            compute('bec_rk4_k1', dispatchXY, dispatchXY);
+            render('bec_debug_k1', 6, 1, false, 'canvas-k1');
 
-            runner.compute('bec_rk4_k2', dispatchXY, dispatchXY);
-            runner.render('bec_debug_k2', 6, 1, false, 'canvas-k2');
+            compute('bec_rk4_k2', dispatchXY, dispatchXY);
+            render('bec_debug_k2', 6, 1, false, 'canvas-k2');
 
-            runner.compute('bec_rk4_k3', dispatchXY, dispatchXY);
-            runner.render('bec_debug_k3', 6, 1, false, 'canvas-k3');
+            compute('bec_rk4_k3', dispatchXY, dispatchXY);
+            render('bec_debug_k3', 6, 1, false, 'canvas-k3');
 
-            runner.compute('bec_rk4_finish', dispatchXY, dispatchXY);
-            runner.render('bec_debug_prenorm', 6, 1, false, 'canvas-prenorm');
+            compute('bec_rk4_finish', dispatchXY, dispatchXY);
+            render('bec_debug_prenorm', 6, 1, false, 'canvas-prenorm');
 
             // Normalization
-            runner.compute('bec_norm_partial', dispatchXY, dispatchXY);
-            runner.compute('bec_norm_total', 1);
-            runner.compute('bec_norm_apply', dispatchXY, dispatchXY);
+            compute('bec_norm_partial', dispatchXY, dispatchXY);
+            compute('bec_norm_total', 1);
+            compute('bec_norm_apply', dispatchXY, dispatchXY);
             
             // Rendering
-            runner.render('bec_render', 6, 1, false);
-            runner.render('bec_debug_render', 6, 1, false, 'debug-canvas');
+            render('bec_render', 6, 1, false);
+            render('bec_debug_render', 6, 1, false, 'debug-canvas');
 
-            runner.swap('Psi');
+            swap('Psi');
             yield 'frame';
         }
     }

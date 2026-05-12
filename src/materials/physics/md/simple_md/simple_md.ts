@@ -1,5 +1,5 @@
 // src/materials/physics/md/simple_md/simple_md.ts
-import type { SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
 import { makeGeodesicPolyhedron } from '../../../../core/primitive'; // Assuming this path based on your example
 
 const state = {
@@ -69,27 +69,27 @@ const schema: SimulationSchema = {
         { type: "range", obj: state, name: "stiffness", label: "Repulsion Stiffness", min: 100.0, max: 1000.0, step: 10.0 }
     ],
 
-    script: function* (runner) {
+    script: function* () {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         // ★ Added: Generate a unit sphere (radius 1.0) to be scaled in the shader
-        runner.writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1));
+        writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1));
 
         state.initialize = 1.0;
-        runner.writeUniformObject('Params', state);
-        runner.compute('md_compute', dispatchX);
+        writeUniformObject('Params', state);
+        compute('md_compute', dispatchX);
 
         yield 'frame';
 
         state.initialize = 0.0;
 
         while (true) {
-            runner.writeUniformObject('Params', state);
+            writeUniformObject('Params', state);
             
-            runner.compute('md_compute', dispatchX);
+            compute('md_compute', dispatchX);
             
             // ★ Changed: vertexCount = VERTEX_COUNT, instanceCount = NUM_PARTICLES
-            runner.render('md_render', VERTEX_COUNT, NUM_PARTICLES, true);
+            render('md_render', VERTEX_COUNT, NUM_PARTICLES, true);
             
             yield 'frame';
         }

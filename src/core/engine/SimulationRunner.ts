@@ -63,7 +63,7 @@ export interface SimulationSchema {
     resources: Record<string, ResourceDef>;
     nodes: NodeDef[];
     uis? : UIDef[];
-    script: (runner: SimulationRunner) => Generator<PassCommand, void, unknown>;
+    script: () => Generator<PassCommand, void, unknown>;
 }
 
 export class SimulationRunner {
@@ -214,4 +214,34 @@ export class SimulationRunner {
         builder.draw(rPass, vertexCount, instanceCount);
         rPass.end();
     }
+}
+
+let simRunner : SimulationRunner;
+
+export function setRunner(runner : SimulationRunner){
+    simRunner = runner;
+}
+
+export function compute(id: string, x: number, y = 1, z = 1){
+    simRunner.compute(id, x, y, z);
+}
+
+export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, canvasId = 'main-canvas'){
+    simRunner.render(id, vertexCount, instanceCount, hasDepth, canvasId)
+}
+
+export function writeUniformObject(name:string, data: any){
+    simRunner.writeUniformObject(name, data);
+}
+
+export function writeUniformArray(name:string, data: number[]){
+    simRunner.writeUniformArray(name, data);
+}
+
+export function swap(id: string){
+    simRunner.swap(id);
+}
+
+export function writeStorage(id: string, data: Float32Array | Uint32Array){
+    simRunner.writeStorage(id, data);
 }
