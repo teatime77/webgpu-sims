@@ -44,7 +44,7 @@ const schema: SimulationSchema = {
     // ========================================================
     nodes: [
         {
-            id: 'physics_and_transform_compute',
+            id: 'pendulum_comp',
             type: 'compute',
             workgroupSize: 64,
             bindings: [
@@ -90,7 +90,7 @@ const schema: SimulationSchema = {
 
         state.initialize = 1.0;
         writeUniformObject('Params', state);            
-        compute('physics_and_transform_compute', dispatchX);
+        compute('pendulum_comp', dispatchX);
         yield 'frame';
 
         state.initialize = 0.0;
@@ -99,7 +99,7 @@ const schema: SimulationSchema = {
         while (true) {
             writeUniformObject('Params', state);            
             
-            compute('physics_and_transform_compute', dispatchX);
+            compute('pendulum_comp', dispatchX);
             
             yield 'frame';
         }
