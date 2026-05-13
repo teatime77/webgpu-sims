@@ -18,6 +18,14 @@
     <!-- Container for dynamically added canvases -->
     <div id="sub-canvases" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;"></div>
   
+    <!-- Schema selector (Hidden by default) -->
+    <div id="schema-selector-container" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(30, 30, 30, 0.9); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); color: white; text-align: center; z-index: 1000; min-width: 300px;">
+      <h3 style="margin-top: 0; margin-bottom: 20px;">Select Simulation Schema</h3>
+      <select id="schema-select" style="padding: 10px; font-size: 16px; width: 100%; border-radius: 6px; background-color: #333; color: white; border: 1px solid #555;">
+        <option value="">-- Choose a schema --</option>
+      </select>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

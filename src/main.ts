@@ -21,10 +21,44 @@ async function bootstrap() {
     camera.distance = 5.0;
 
     // ========================================================
+    // ★ Dynamic loading of simulation schema (Vite compliant)
+    // ========================================================
+    const modules = import.meta.glob('./materials/**/*.ts');
+
+    // ========================================================
     // ★ Parse URL parameters (supporting deep directory hierarchies)
     // ========================================================
     const urlParams = new URLSearchParams(window.location.search);
-    const schemaPath = urlParams.get('schema') || 'test/ParticleSim';
+    const schemaParam = urlParams.get('schema');
+
+    if (!schemaParam) {
+        const container = document.getElementById('schema-selector-container');
+        const select = document.getElementById('schema-select') as HTMLSelectElement;
+        
+        if (container && select) {
+            const schemaPaths = Object.keys(modules).map(key => {
+                return key.replace(/^\.\/materials\//, '').replace(/\.ts$/, '');
+            }).sort();
+
+            for (const path of schemaPaths) {
+                const option = document.createElement('option');
+                option.value = path;
+                option.innerText = path;
+                select.appendChild(option);
+            }
+
+            select.onchange = () => {
+                if (select.value) {
+                    window.location.href = `?schema=${select.value}`;
+                }
+            };
+
+            container.style.display = 'block';
+        }
+        return;
+    }
+
+    const schemaPath = schemaParam;
 
     // Accurately separate directory and filename based on the last '/' in the path
     const lastSlashIdx = schemaPath.lastIndexOf('/');
@@ -32,11 +66,6 @@ async function bootstrap() {
     const schemaName = lastSlashIdx !== -1 ? schemaPath.substring(lastSlashIdx + 1) : schemaPath;
 
     new CaptureTool(engine, schemaName.toLowerCase());
-
-    // ========================================================
-    // ★ Dynamic loading of simulation schema (Vite compliant)
-    // ========================================================
-    const modules = import.meta.glob('./materials/**/*.ts');
 
     let sim: SimulationSchema;
     try {
