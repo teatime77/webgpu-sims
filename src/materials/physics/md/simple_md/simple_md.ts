@@ -73,7 +73,7 @@ const schema: SimulationSchema = {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         // ★ Added: Generate a unit sphere (radius 1.0) to be scaled in the shader
-        writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1));
+        writeStorage('BaseMesh', makeGeodesicPolyhedron(1));
 
         state.initialize = 1.0;
         writeUniformObject('Params', state);

@@ -62,7 +62,7 @@ const schema: SimulationSchema = {
 
         yield 'frame';
 
-        writeStorage('BaseMesh', makeGeodesicPolyhedron(0.02, 1));
+        writeStorage('BaseMesh', makeGeodesicPolyhedron(1));
         writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 0.0]);
 
         // Standard TypeScript loop, immediately understandable by both AI and humans

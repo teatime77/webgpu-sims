@@ -2,10 +2,10 @@
 import { WebGPUEngine } from './WebGPUEngine';
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
-import type { ResourceDef } from './SimulationBase';
+import { isMesh, type MeshDef, type ResourceDef, type SphereDef } from './SimulationBase';
 import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
 import type { RenderPassBuilder } from '../builder/RenderPassBuilder';
-import { makeUIs } from '../ui/SimUI';
+import { makeGeodesicPolyhedron, makeTube } from '../primitive';
 
 export interface ResourceBinding {
     group?: number;
@@ -60,7 +60,7 @@ export type PassCommand = 'frame' | undefined;
 
 export interface SimulationSchema {
     name?: string;
-    resources: Record<string, ResourceDef>;
+    resources: Record<string, ResourceDef | MeshDef>;
     nodes: NodeDef[];
     uis? : UIDef[];
     script: () => Generator<PassCommand, void, unknown>;
@@ -85,31 +85,47 @@ export class SimulationRunner {
     /** Load the V1.5 schema (blueprint) and automatically generate GPU resources */
     async loadSchema(schema: SimulationSchema) {
         // 1. Build resources
-        for (const [id, def] of Object.entries<ResourceDef>(schema.resources)) {
-            if (def.type === 'uniform') {
-                // Delegate padding calculation to UniformManager
-                if (def.fields) this.uniforms.register(id, def.fields);
-            } 
-            else if (def.type === 'storage') {
-                const count = def.bufferCount || 1;
-                const buffers: GPUBuffer[] = [];
-                
-                // Calculate byte size of a single element from WGSL format
-                let elementSize = 4; // f32, u32, i32
-                if (def.format === 'vec2<f32>') elementSize = 8;
-                else if (def.format === 'vec3<f32>' || def.format === 'vec4<f32>') elementSize = 16;
-                else if (def.format === 'mat4x4<f32>') elementSize = 64;
-                
-                const byteSize = elementSize * (def.count || 1);
+        for (const [id, def] of Object.entries<ResourceDef | MeshDef>(schema.resources)) {
+            if(isMesh(def)){
 
-                for (let i = 0; i < count; i++) {
-                    buffers.push(this.device.createBuffer({
-                        label: `Storage_${id}_${i}`,
-                        size: byteSize,
-                        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
-                    }));
+                const elementSize = 4; // f32
+                const byteSize = elementSize * def.count;
+
+                const buffer = this.device.createBuffer({
+                    label: `Storage_${id}`,
+                    size: byteSize,
+                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
+                });
+
+                this.storages.set(id, new ResourceWrapper(id, [buffer], 1, def));
+            }
+            else{
+
+                if (def.type === 'uniform') {
+                    // Delegate padding calculation to UniformManager
+                    if (def.fields) this.uniforms.register(id, def.fields);
+                } 
+                else if (def.type === 'storage') {
+                    const count = def.bufferCount || 1;
+                    const buffers: GPUBuffer[] = [];
+                    
+                    // Calculate byte size of a single element from WGSL format
+                    let elementSize = 4; // f32, u32, i32
+                    if (def.format === 'vec2<f32>') elementSize = 8;
+                    else if (def.format === 'vec3<f32>' || def.format === 'vec4<f32>') elementSize = 16;
+                    else if (def.format === 'mat4x4<f32>') elementSize = 64;
+                    
+                    const byteSize = elementSize * (def.count || 1);
+
+                    for (let i = 0; i < count; i++) {
+                        buffers.push(this.device.createBuffer({
+                            label: `Storage_${id}_${i}`,
+                            size: byteSize,
+                            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
+                        }));
+                    }
+                    this.storages.set(id, new ResourceWrapper(id, buffers, count));
                 }
-                this.storages.set(id, new ResourceWrapper(id, buffers, count));
             }
         }
     }
@@ -146,6 +162,28 @@ export class SimulationRunner {
     }
 
     writeStorage(id: string, data: Float32Array | Uint32Array) {
+        const buf = this.getStorageBuffer(id, 0);
+        this.device.queue.writeBuffer(buf, 0, data);
+    }
+
+    writeMesh(id: string) {
+        const res = this.storages.get(id);
+        if(res == undefined || res.mesh == undefined){
+            throw new Error();
+        }
+
+        let data: Float32Array;
+        switch(res.mesh.shape){
+        case "sphere":
+            data = makeGeodesicPolyhedron(res.mesh.division);
+            break;
+        case "tube":
+            data = makeTube(res.mesh.division);
+            break;
+        default:
+            throw new Error();
+        }
+
         const buf = this.getStorageBuffer(id, 0);
         this.device.queue.writeBuffer(buf, 0, data);
     }
@@ -257,4 +295,8 @@ export function swap(id: string){
 
 export function writeStorage(id: string, data: Float32Array | Uint32Array){
     simRunner.writeStorage(id, data);
+}
+
+export function writeMesh(id: string){
+    simRunner.writeMesh(id);
 }

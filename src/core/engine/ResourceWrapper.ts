@@ -1,16 +1,20 @@
 // src/core/engine/ResourceWrapper.ts
 
+import type { MeshDef } from "./SimulationBase";
+
 export class ResourceWrapper {
     public id: string;
     public buffers: GPUBuffer[];
     public bufferCount: number;
     public currentIndex: number = 0;
+    mesh?: MeshDef;
 
-    constructor(id: string, buffers: GPUBuffer[], bufferCount: number) {
+    constructor(id: string, buffers: GPUBuffer[], bufferCount: number, mesh?: MeshDef) {
         // Assign inside constructor
         this.id = id;
         this.buffers = buffers;
         this.bufferCount = bufferCount;
+        this.mesh = mesh;
     }
 
     /** historyLevel: 0 is the current write surface, 1 is the data from 1 step ago */

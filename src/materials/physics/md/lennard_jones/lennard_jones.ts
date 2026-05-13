@@ -81,7 +81,7 @@ const schema: SimulationSchema = {
     script: function* () {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
-        writeStorage('BaseMesh', makeGeodesicPolyhedron(1.0, 1)); // Unit sphere
+        writeStorage('BaseMesh', makeGeodesicPolyhedron(1)); // Unit sphere
 
         state.initialize = 1.0;
         writeUniformObject('Params', state);

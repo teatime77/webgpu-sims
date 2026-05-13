@@ -6,6 +6,7 @@ import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
 import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
+import { isMesh, isUniform } from './core/engine/SimulationBase';
 
 async function bootstrap() {
     const engine = new WebGPUEngine();
@@ -84,8 +85,12 @@ async function bootstrap() {
                 builder.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
                     const res = sim.resources[b.resource];
-                    if (res.type === 'uniform') builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
-                    else builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
+                    if(! isMesh(res) && res.type === 'uniform'){
+                        builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
+                    }
+                    else{
+                        builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
+                    }
                 });
             });
             runner.passes.set(node.id, builder);
@@ -104,8 +109,12 @@ async function bootstrap() {
                 builder.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
                     const res = sim.resources[b.resource];
-                    if (res.type === 'uniform') builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
-                    else builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
+                    if (isUniform(res)){
+                        builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
+                    } 
+                    else{
+                        builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
+                    } 
                 });
             });
             runner.passes.set(node.id, builder);

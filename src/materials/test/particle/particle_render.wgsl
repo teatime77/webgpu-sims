@@ -36,7 +36,7 @@ fn vs_main(@builtin(vertex_index) v_idx: u32, @builtin(instance_index) i_idx: u3
 
     // 1. Get vertex data of the base mesh (6 elements: x, y, z, nx, ny, nz)
     let v_offset = v_idx * 6u;
-    let v_pos = vec3<f32>(baseMesh[v_offset], baseMesh[v_offset + 1u], baseMesh[v_offset + 2u]);
+    let v_pos = 0.02 * vec3<f32>(baseMesh[v_offset], baseMesh[v_offset + 1u], baseMesh[v_offset + 2u]);
     let v_norm = vec3<f32>(baseMesh[v_offset + 3u], baseMesh[v_offset + 4u], baseMesh[v_offset + 5u]);
 
     // 2. Get instance (particle) position

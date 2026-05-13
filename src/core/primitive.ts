@@ -50,7 +50,7 @@ export function makeTube(num_division : number = 16) : Float32Array {
 /**
  * Generates a vertex array (Pos3, Normal3) for a geodesic polyhedron (sphere).
  */
-export function makeGeodesicPolyhedron(r: number, subdivisions: number): Float32Array {
+export function makeGeodesicPolyhedron(subdivisions: number = 2): Float32Array {
     const t = (1.0 + Math.sqrt(5.0)) / 2.0;
     let points = [
         new Vec3(-1, t, 0), new Vec3(1, t, 0), new Vec3(-1, -t, 0), new Vec3(1, -t, 0),
@@ -93,6 +93,7 @@ export function makeGeodesicPolyhedron(r: number, subdivisions: number): Float32
 
     const result = new Float32Array(faces.length * 3 * 6);
     let offset = 0;
+    const r = 1.0;
     for (const f of faces) {
         for (const i of f) {
             const p = points[i];

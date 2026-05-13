@@ -46,7 +46,7 @@ const schema: SimulationSchema = {
         
         // Base Geometries
         TubeMesh: { type: 'storage', format: 'f32', count: TUBE_VERTEX_COUNT * 6 }, // Pos3 + Norm3
-        BobMesh: { type: 'storage', format: 'f32', count: BOB_VERTEX_COUNT * 6 }    // Pos3 + Norm3
+        BobMesh: { shape: 'sphere', count: BOB_VERTEX_COUNT * 6 }    // Pos3 + Norm3
     },
 
     // ========================================================
@@ -111,7 +111,7 @@ const schema: SimulationSchema = {
         writeStorage('TubeMesh', tubeGeom);
 
         // Generate Bob with radius 1.0 (we will scale it dynamically in the shader)
-        const bobGeom = makeGeodesicPolyhedron(1.0, 2);
+        const bobGeom = makeGeodesicPolyhedron(2);
         writeStorage('BobMesh', bobGeom);
 
         // 1. Initialization Compute Pass

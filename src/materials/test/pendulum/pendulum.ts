@@ -1,5 +1,5 @@
 // src/materials/test/pendulum/pendulum.ts
-import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
+import { compute, render, writeMesh, writeStorage, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
 import { makeTube, makeGeodesicPolyhedron } from '../../../core/primitive';
 
 // UI State
@@ -35,8 +35,8 @@ const schema: SimulationSchema = {
         PendulumState: { type: 'storage', format: 'vec4<f32>', count: NUM_PENDULUMS },
         TubeTransforms: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TRANSFORM_STRIDE },
         BobTransforms: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TRANSFORM_STRIDE },
-        TubeMesh: { type: 'storage', format: 'f32', count: TUBE_VERTEX_COUNT * 6 },
-        BobMesh: { type: 'storage', format: 'f32', count: BOB_VERTEX_COUNT * 6 }
+        TubeMesh: { shape:"tube", division:TUBE_DIVISIONS, count: TUBE_VERTEX_COUNT * 6 },
+        BobMesh: { shape: 'sphere', count: BOB_VERTEX_COUNT * 6 }
     },
 
     // ========================================================
@@ -90,8 +90,8 @@ const schema: SimulationSchema = {
     script: function* () {
         const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
 
-        writeStorage('TubeMesh', makeTube(TUBE_DIVISIONS));
-        writeStorage('BobMesh', makeGeodesicPolyhedron(1.0, 2));
+        writeMesh('TubeMesh');
+        writeMesh('BobMesh');
 
         state.initialize = 1.0;
         writeUniformObject('Params', state);            

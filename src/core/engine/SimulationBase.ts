@@ -12,6 +12,26 @@ export interface ResourceDef {
     bufferCount?: number;                // for Ping-Pong
 }
 
+export type MeshShape = 'sphere' | 'tube';
+
+export interface MeshDef {
+    shape: MeshShape;
+    division?: number;
+    count: number;
+}
+
+export interface SphereDef extends MeshDef {
+    count: number;
+}
+
+export function isMesh(obj: ResourceDef | MeshDef): obj is MeshDef {
+    return (obj as MeshDef).shape !== undefined;
+}
+
+export function isUniform(obj: ResourceDef | MeshDef) : obj is ResourceDef {
+    return ! isMesh(obj) && obj.type === 'uniform';
+}
+
 export abstract class SimulationBase {
     protected engine!: WebGPUEngine;
     protected uniforms!: UniformManager;
