@@ -1,5 +1,8 @@
 // src/core/builder/RenderPassBuilder.ts
 
+import { isMesh } from "../engine/SimulationBase";
+import type { NodeDef } from "../engine/SimulationRunner";
+
 export interface RenderPassOptions {
     topology?: GPUPrimitiveTopology; // e.g., 'triangle-list', 'line-list', 'point-list'
     depthFormat?: GPUTextureFormat;  // Specify 'depth24plus' etc. if using depth testing
@@ -14,14 +17,17 @@ export class RenderPassBuilder {
     private currentGroupIndex: number = 0;
     private currentBindingIndex: number = 0;
     hasDepth : boolean = true;
+    node : NodeDef;
 
     constructor(
         device: GPUDevice, 
+        node : NodeDef,
         shaderCode: string, 
         presentationFormat: GPUTextureFormat,
         options: RenderPassOptions = {}
     ) {
         this.device = device;
+        this.node   = node;
         const topology = options.topology || 'triangle-list';
 
         // 1. Create shader module (assuming VS and FS are written in a single file)
@@ -77,6 +83,10 @@ export class RenderPassBuilder {
             },
             depthStencil: depthStencil
         });
+    }
+
+    isMeshRender() : boolean {
+        return this.node.bindings.some(x => isMesh(x)) ;
     }
 
     // --- Exact same interface as ComputePassBuilder ---

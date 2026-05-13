@@ -2,10 +2,11 @@
 import { WebGPUEngine } from './WebGPUEngine';
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
-import { isMesh, type MeshDef, type ResourceDef, type SphereDef } from './SimulationBase';
+import { isMesh, isRenderMesh, type MeshDef, type ResourceDef, type SphereDef } from './SimulationBase';
 import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
-import type { RenderPassBuilder } from '../builder/RenderPassBuilder';
-import { makeGeodesicPolyhedron, makeTube } from '../primitive';
+import { RenderPassBuilder } from '../builder/RenderPassBuilder';
+import { makeGeodesicPolyhedron, makeTube, msg } from '../primitive';
+import { theSchema } from '../../main';
 
 export interface ResourceBinding {
     group?: number;
@@ -24,6 +25,9 @@ export interface NodeDef {
     blendMode?: 'opaque' | 'alpha' | 'add' | 'normal';
     depthTest?: boolean;
     bindings: ResourceBinding[];
+    vertexCount?: number;
+    instanceCount?: number;
+    canvasId?: string;
 }
 
 export interface RangeDef {
@@ -75,6 +79,7 @@ export class SimulationRunner {
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
     public generator? : Generator<PassCommand, void, unknown>;
+    schema!: SimulationSchema;
 
     constructor(engine: WebGPUEngine) {
         this.engine = engine;
@@ -84,6 +89,8 @@ export class SimulationRunner {
 
     /** Load the V1.5 schema (blueprint) and automatically generate GPU resources */
     async loadSchema(schema: SimulationSchema) {
+        this.schema = schema;
+
         // 1. Build resources
         for (const [id, def] of Object.entries<ResourceDef | MeshDef>(schema.resources)) {
             if(isMesh(def)){
@@ -265,6 +272,32 @@ export class SimulationRunner {
         builder.draw(rPass, vertexCount, instanceCount);
         rPass.end();
     }
+
+    renderMesh(id: string, clearScreen: boolean){
+        const builder = this.passes.get(id) as RenderPassBuilder;
+        const node = builder.node;
+        if(builder == undefined || node.vertexCount == undefined || node.instanceCount == undefined || node.depthTest == undefined){
+            throw new Error();
+        }
+
+        this.render(id, node.vertexCount, node.instanceCount, node.depthTest, clearScreen, node.canvasId);
+    }
+
+    getMeshRenders() : RenderPassBuilder[] {
+        return Array.from(this.passes.values()).filter(x => x instanceof RenderPassBuilder && isRenderMesh(theSchema, x.node) ) as RenderPassBuilder[];
+    }
+
+    initScript(){
+        this.generator = this.schema.script();
+
+        Object.entries(theSchema.resources).forEach(([key, value]) => {
+            if(isMesh(value)){
+                msg(`mesh:${key}`);
+                writeMesh(key);
+            }
+        });
+        
+    }
 }
 
 let simRunner : SimulationRunner;
@@ -279,6 +312,10 @@ export function compute(id: string, x: number, y = 1, z = 1){
 
 export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas'){
     simRunner.render(id, vertexCount, instanceCount, hasDepth, clearScreen, canvasId)
+}
+
+export function renderMesh(id: string, clearScreen: boolean = true){
+    simRunner.renderMesh(id, clearScreen);
 }
 
 export function writeUniformObject(name:string, data: any){

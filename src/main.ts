@@ -4,9 +4,11 @@ import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/utils/CaptureTool';
 import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
-import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner } from './core/engine/SimulationRunner';
+import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner, renderMesh } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
-import { isMesh, isUniform } from './core/engine/SimulationBase';
+import { isMesh, isRenderMesh, isUniform } from './core/engine/SimulationBase';
+
+export let theSchema : SimulationSchema;
 
 async function bootstrap() {
     const engine = new WebGPUEngine();
@@ -89,6 +91,8 @@ async function bootstrap() {
         return;
     }
 
+    theSchema = sim;
+
     const runner = new SimulationRunner(engine);
     await runner.loadSchema(sim); 
     setRunner(runner);
@@ -103,8 +107,17 @@ async function bootstrap() {
     // ★ Build passes (Builder)
     // ========================================================
     for (const node of sim.nodes) {
-        // ★ Fix: Use the extracted directory instead of category
-        const shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+
+        let shaderUrl : string;
+        if(isRenderMesh(sim, node)){
+
+            shaderUrl = `./src/core/builder/render.wgsl`;
+        }
+        else{
+
+            // ★ Fix: Use the extracted directory instead of category
+            shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+        }
         const shader = await (await fetch(shaderUrl)).text();
         
         if (node.type === 'compute') {
@@ -126,7 +139,7 @@ async function bootstrap() {
         } else {
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
-            const builder = new RenderPassBuilder(device, shader, format, { 
+            const builder = new RenderPassBuilder(device, node, shader, format, { 
                 topology: node.topology || 'triangle-list',
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
@@ -150,7 +163,7 @@ async function bootstrap() {
         }
     }
 
-    runner.generator = sim.script();
+    runner.initScript();
 
     function frame() {
         const aspect = canvas.width / canvas.height;
@@ -165,6 +178,11 @@ async function bootstrap() {
             
             const val = result.value;
             if (val === 'frame') break;
+        }
+
+        const meshRenders = runner.getMeshRenders();
+        for(const [idx, render] of meshRenders.entries()){
+            renderMesh(render.node.id, idx == 0);
         }
 
         device.queue.submit([runner.currentCommandEncoder.finish()]);

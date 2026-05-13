@@ -2,6 +2,7 @@
 import { WebGPUEngine } from './WebGPUEngine';
 import { UniformManager, type WgslFormat } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
+import type { NodeDef, SimulationSchema } from './SimulationRunner';
 
 export interface ResourceDef {
     type: 'uniform' | 'storage';
@@ -30,6 +31,15 @@ export function isMesh(obj: ResourceDef | MeshDef): obj is MeshDef {
 
 export function isUniform(obj: ResourceDef | MeshDef) : obj is ResourceDef {
     return ! isMesh(obj) && obj.type === 'uniform';
+}
+
+export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
+    if(node.type == "render"){
+        const mesh = node.bindings.map(b => sim.resources[b.resource]).find(res => isMesh(res));
+        return mesh != undefined;
+    }
+
+    return false;
 }
 
 export abstract class SimulationBase {

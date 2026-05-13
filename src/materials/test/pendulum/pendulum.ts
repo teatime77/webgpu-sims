@@ -1,6 +1,5 @@
 // src/materials/test/pendulum/pendulum.ts
-import { compute, render, writeMesh, writeStorage, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
-import { makeTube, makeGeodesicPolyhedron } from '../../../core/primitive';
+import { compute, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
 
 // UI State
 const state = {
@@ -60,6 +59,8 @@ const schema: SimulationSchema = {
             topology: 'triangle-strip', // Explicitly defined here!
             blendMode: 'opaque',
             depthTest: true,
+            vertexCount: TUBE_VERTEX_COUNT,
+            instanceCount: NUM_PENDULUMS,
             bindings: [
                 { resource: 'Camera', varName: 'camera' },
                 { resource: 'TubeTransforms', varName: 'instances', access: 'read' },
@@ -72,6 +73,8 @@ const schema: SimulationSchema = {
             topology: 'triangle-list', // Explicitly defined here!
             blendMode: 'opaque',
             depthTest: true,
+            vertexCount: BOB_VERTEX_COUNT,
+            instanceCount: NUM_PENDULUMS,
             bindings: [
                 { resource: 'Camera', varName: 'camera' },
                 { resource: 'BobTransforms', varName: 'instances', access: 'read' },
@@ -90,9 +93,6 @@ const schema: SimulationSchema = {
     script: function* () {
         const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
 
-        writeMesh('TubeMesh');
-        writeMesh('BobMesh');
-
         state.initialize = 1.0;
         writeUniformObject('Params', state);            
         compute('physics_and_transform_compute', dispatchX);
@@ -105,10 +105,6 @@ const schema: SimulationSchema = {
             writeUniformObject('Params', state);            
             
             compute('physics_and_transform_compute', dispatchX);
-            
-            // Render passes are clean and explicit
-            render('tube_render', TUBE_VERTEX_COUNT, NUM_PENDULUMS, true, true);
-            render('bob_render', BOB_VERTEX_COUNT, NUM_PENDULUMS, true, false);
             
             yield 'frame';
         }

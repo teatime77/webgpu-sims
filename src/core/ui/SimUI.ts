@@ -1,4 +1,3 @@
-// import { run } from "node:test";
 import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "../engine/SimulationRunner";
 
 // src/core/ui/SimUI.ts
@@ -144,7 +143,7 @@ export class SimUI {
             data.obj[data.name] = val;
 
             if(data.reset == true){
-                runner.generator = schema.script(runner);
+                runner.initScript();
             }
         }
 

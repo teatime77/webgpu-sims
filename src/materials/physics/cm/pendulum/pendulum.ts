@@ -46,7 +46,7 @@ const schema: SimulationSchema = {
         
         // Base Geometries
         TubeMesh: { type: 'storage', format: 'f32', count: TUBE_VERTEX_COUNT * 6 }, // Pos3 + Norm3
-        BobMesh: { shape: 'sphere', count: BOB_VERTEX_COUNT * 6 }    // Pos3 + Norm3
+        BobMesh: { type: 'storage', format: 'f32', count: BOB_VERTEX_COUNT * 6 }    // Pos3 + Norm3
     },
 
     // ========================================================
