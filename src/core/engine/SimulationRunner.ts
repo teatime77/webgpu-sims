@@ -162,38 +162,44 @@ export class SimulationRunner {
         cPass.end();
     }
 
+    initCanvas(canvasId : string){
+        if (this.initializedCanvases.has(canvasId)) {
+            return;
+        }
+
+        // Automatically create a canvas if it does not exist in the DOM
+        if (!document.getElementById(canvasId)) {
+            const container = document.getElementById('sub-canvases') || document.body;
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'sub-canvas-wrapper';
+            
+            const label = document.createElement('div');
+            label.innerText = canvasId;
+            label.className = 'sub-canvas-label';
+            
+            const newCanvas = document.createElement('canvas');
+            newCanvas.id = canvasId;
+            newCanvas.width = 256;
+            newCanvas.height = 256;
+            if (canvasId != 'main-canvas') {
+                newCanvas.className = 'debug-canvas';
+            }
+            
+            wrapper.appendChild(label);
+            wrapper.appendChild(newCanvas);
+            container.appendChild(wrapper);
+        }
+
+        this.engine.addCanvas(canvasId);
+        this.initializedCanvases.add(canvasId);
+    }
+
     // Added clearScreen parameter with a default of true
     render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas') {
         if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
 
-        if (!this.initializedCanvases.has(canvasId)) {
-            // Automatically create a canvas if it does not exist in the DOM
-            if (!document.getElementById(canvasId)) {
-                const container = document.getElementById('sub-canvases') || document.body;
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = 'sub-canvas-wrapper';
-                
-                const label = document.createElement('div');
-                label.innerText = canvasId;
-                label.className = 'sub-canvas-label';
-                
-                const newCanvas = document.createElement('canvas');
-                newCanvas.id = canvasId;
-                newCanvas.width = 256;
-                newCanvas.height = 256;
-                if (canvasId != 'main-canvas') {
-                    newCanvas.className = 'debug-canvas';
-                }
-                
-                wrapper.appendChild(label);
-                wrapper.appendChild(newCanvas);
-                container.appendChild(wrapper);
-            }
-
-            this.engine.addCanvas(canvasId);
-            this.initializedCanvases.add(canvasId);
-        }
+        this.initCanvas(canvasId);
 
         const builder = this.passes.get(id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
