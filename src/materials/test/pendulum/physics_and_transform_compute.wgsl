@@ -13,51 +13,57 @@ struct ParamsStruct {
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
 @group(0) @binding(1) var<storage, read_write> stateBuffer: array<vec4<f32>>;
-@group(0) @binding(2) var<storage, read_write> tubeTransforms: array<f32>;
-@group(0) @binding(3) var<storage, read_write> bobTransforms: array<f32>;
+@group(0) @binding(2) var<storage, read_write> Tubes: array<f32>;
+@group(0) @binding(3) var<storage, read_write> Spheres: array<f32>;
 
 // ==========================================
 // IMPLEMENT YOUR LOGIC BELOW
 // ==========================================
 
-// Helper function to create a 4x4 Translation Matrix
-fn make_translation(p: vec3<f32>) -> mat4x4<f32> {
-    return mat4x4<f32>(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        p.x, p.y, p.z, 1.0
-    );
+// Writes 12 floats: Base Pos (3), Vector (3), Radius (1), Padding (1), Color (4)
+fn write_tube_params(idx: u32, base_pos: vec3<f32>, vec_to_top: vec3<f32>, radius: f32, color: vec4<f32>) {
+    let offset = idx * 12u;
+    
+    // 1. Position of the center of the base (3 floats)
+    Tubes[offset + 0u] = base_pos.x; 
+    Tubes[offset + 1u] = base_pos.y; 
+    Tubes[offset + 2u] = base_pos.z;
+    
+    // 2. Vector from base to top (3 floats)
+    Tubes[offset + 3u] = vec_to_top.x; 
+    Tubes[offset + 4u] = vec_to_top.y; 
+    Tubes[offset + 5u] = vec_to_top.z;
+    
+    // 3. Radius (1 float)
+    Tubes[offset + 6u] = radius;
+    
+    // 4. Padding (1 float - keeps memory aligned to 4-float/16-byte boundaries)
+    Tubes[offset + 7u] = 0.0;
+    
+    // 5. Color (4 floats)
+    Tubes[offset + 8u]  = color.r; 
+    Tubes[offset + 9u]  = color.g; 
+    Tubes[offset + 10u] = color.b; 
+    Tubes[offset + 11u] = color.a;
 }
 
-// Helper function to create a 4x4 Scale Matrix
-fn make_scale(s: vec3<f32>) -> mat4x4<f32> {
-    return mat4x4<f32>(
-        s.x, 0.0, 0.0, 0.0,
-        0.0, s.y, 0.0, 0.0,
-        0.0, 0.0, s.z, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
-}
-
-// Since the TS schema defined the buffer as a flat array of floats ('f32'),
-// we write the 16 matrix floats + 4 color floats = 20 floats sequentially.
-fn write_tube_instance(idx: u32, model: mat4x4<f32>, color: vec4<f32>) {
-    let offset = idx * 20u;
-    tubeTransforms[offset + 0u] = model[0][0]; tubeTransforms[offset + 1u] = model[0][1]; tubeTransforms[offset + 2u] = model[0][2]; tubeTransforms[offset + 3u] = model[0][3];
-    tubeTransforms[offset + 4u] = model[1][0]; tubeTransforms[offset + 5u] = model[1][1]; tubeTransforms[offset + 6u] = model[1][2]; tubeTransforms[offset + 7u] = model[1][3];
-    tubeTransforms[offset + 8u] = model[2][0]; tubeTransforms[offset + 9u] = model[2][1]; tubeTransforms[offset + 10u]= model[2][2]; tubeTransforms[offset + 11u]= model[2][3];
-    tubeTransforms[offset + 12u]= model[3][0]; tubeTransforms[offset + 13u]= model[3][1]; tubeTransforms[offset + 14u]= model[3][2]; tubeTransforms[offset + 15u]= model[3][3];
-    tubeTransforms[offset + 16u]= color.r;     tubeTransforms[offset + 17u]= color.g;     tubeTransforms[offset + 18u]= color.b;     tubeTransforms[offset + 19u]= color.a;
-}
-
-fn write_bob_instance(idx: u32, model: mat4x4<f32>, color: vec4<f32>) {
-    let offset = idx * 20u;
-    bobTransforms[offset + 0u] = model[0][0]; bobTransforms[offset + 1u] = model[0][1]; bobTransforms[offset + 2u] = model[0][2]; bobTransforms[offset + 3u] = model[0][3];
-    bobTransforms[offset + 4u] = model[1][0]; bobTransforms[offset + 5u] = model[1][1]; bobTransforms[offset + 6u] = model[1][2]; bobTransforms[offset + 7u] = model[1][3];
-    bobTransforms[offset + 8u] = model[2][0]; bobTransforms[offset + 9u] = model[2][1]; bobTransforms[offset + 10u]= model[2][2]; bobTransforms[offset + 11u]= model[2][3];
-    bobTransforms[offset + 12u]= model[3][0]; bobTransforms[offset + 13u]= model[3][1]; bobTransforms[offset + 14u]= model[3][2]; bobTransforms[offset + 15u]= model[3][3];
-    bobTransforms[offset + 16u]= color.r;     bobTransforms[offset + 17u]= color.g;     bobTransforms[offset + 18u]= color.b;     bobTransforms[offset + 19u]= color.a;
+// Writes 8 floats: Center Pos (3), Radius (1), Color (4)
+fn write_sphere_params(idx: u32, center: vec3<f32>, radius: f32, color: vec4<f32>) {
+    let offset = idx * 8u;
+    
+    // 1. Center Position (3 floats)
+    Spheres[offset + 0u] = center.x; 
+    Spheres[offset + 1u] = center.y; 
+    Spheres[offset + 2u] = center.z;
+    
+    // 2. Radius (1 float - acts as natural padding for the vec3!)
+    Spheres[offset + 3u] = radius;
+    
+    // 3. Color (4 floats)
+    Spheres[offset + 4u] = color.r; 
+    Spheres[offset + 5u] = color.g; 
+    Spheres[offset + 6u] = color.b; 
+    Spheres[offset + 7u] = color.a;
 }
 
 @compute @workgroup_size(64, 1, 1)
@@ -88,42 +94,33 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     stateBuffer[idx] = vec4<f32>(new_theta, omega, z_offset, L);
 
     // ==========================================
-    // 2. TRANSFORM MATRIX GENERATION
+    // 2. PARAMETER PACKING (No Matrices!)
     // ==========================================
+    
+    // Common variables
     let pivot = vec3<f32>(0.0, 0.0, z_offset);
+    // The vector pointing from the pivot to the bob
+    let string_vec = vec3<f32>(L * sin(new_theta), -L * cos(new_theta), 0.0);
     
-    // --- TUBE (STRING) INSTANCE ---
-    let string_dir = vec3<f32>(sin(new_theta), -cos(new_theta), 0.0);
-    let Z_prime = string_dir;
-    let helper_up = vec3<f32>(0.0, 0.0, 1.0); 
-    let X_prime = normalize(cross(helper_up, Z_prime));
-    let Y_prime = cross(Z_prime, X_prime);
-    
-    // Convert Orthogonal Basis vectors to a 4x4 Rotation Matrix
-    let tube_rot = mat4x4<f32>(
-        vec4<f32>(X_prime, 0.0),
-        vec4<f32>(Y_prime, 0.0),
-        vec4<f32>(Z_prime, 0.0),
-        vec4<f32>(0.0, 0.0, 0.0, 1.0)
-    );
-    let tube_scale = make_scale(vec3<f32>(params.stringThickness, params.stringThickness, L));
-    let tube_trans = make_translation(pivot);
-    
-    // Standard Transform Math: Model = Translation * Rotation * Scale
-    let tube_model = tube_trans * tube_rot * tube_scale;
+    // --- TUBE (STRING) DATA ---
     let tube_color = vec4<f32>(0.7, 0.7, 0.7, 1.0);
-    write_tube_instance(idx, tube_model, tube_color);
+    write_tube_params(
+        idx, 
+        pivot,                  // Base is at the pivot
+        string_vec,             // Vector reaching down to the bob
+        params.stringThickness, // Radius
+        tube_color
+    );
 
-    // --- BOB (SPHERE) INSTANCE ---
-    let bob_center = pivot + vec3<f32>(L * sin(new_theta), -L * cos(new_theta), 0.0);
-    
-    let bob_scale = make_scale(vec3<f32>(params.bobRadius, params.bobRadius, params.bobRadius));
-    let bob_trans = make_translation(bob_center);
-    
-    // Bobs are spheres, so we don't need a rotation matrix! Model = Translation * Scale
-    let bob_model = bob_trans * bob_scale;
-    
+    // --- BOB (SPHERE) DATA ---
+    let bob_center = pivot + string_vec; // Center is exactly at the end of the string
     let hue = f32(idx) / f32(num_pendulums);
     let bob_color = vec4<f32>(0.2 + hue * 0.8, 0.6, 1.0 - hue * 0.5, 1.0);
-    write_bob_instance(idx, bob_model, bob_color);
+    
+    write_sphere_params(
+        idx,
+        bob_center,
+        params.bobRadius,
+        bob_color
+    );
 }

@@ -6,7 +6,7 @@ import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
 import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner, renderMesh } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
-import { isMesh, isRenderMesh, isUniform } from './core/engine/SimulationBase';
+import { getMeshFromNode, isMesh, isRenderMesh, isUniform } from './core/engine/SimulationBase';
 
 export let theSchema : SimulationSchema;
 
@@ -111,7 +111,13 @@ async function bootstrap() {
         let shaderUrl : string;
         if(isRenderMesh(sim, node)){
 
-            shaderUrl = `./src/core/builder/render.wgsl`;
+            const mesh = getMeshFromNode(node);
+            let fileName : string;
+            switch(mesh.shape){
+            case "sphere": fileName = "sphere_render.wgsl"; break;
+            case "tube"  : fileName = "tube_render.wgsl"; break
+            }
+            shaderUrl = `./src/core/builder/${fileName}`;
         }
         else{
 

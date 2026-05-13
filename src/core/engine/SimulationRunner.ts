@@ -276,11 +276,11 @@ export class SimulationRunner {
     renderMesh(id: string, clearScreen: boolean){
         const builder = this.passes.get(id) as RenderPassBuilder;
         const node = builder.node;
-        if(builder == undefined || node.vertexCount == undefined || node.instanceCount == undefined || node.depthTest == undefined){
+        if(builder == undefined || node.vertexCount == undefined || node.instanceCount == undefined){
             throw new Error();
         }
 
-        this.render(id, node.vertexCount, node.instanceCount, node.depthTest, clearScreen, node.canvasId);
+        this.render(id, node.vertexCount, node.instanceCount, true, clearScreen, node.canvasId);
     }
 
     getMeshRenders() : RenderPassBuilder[] {

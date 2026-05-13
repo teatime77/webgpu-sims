@@ -1,6 +1,10 @@
 // src/core/utils/CaptureTool.ts
 import { WebGPUEngine } from '../engine/WebGPUEngine';
 
+export function assert(ok : boolean){
+    console.assert(ok);
+}
+
 export class CaptureTool {
     private isCapturing = false;
 

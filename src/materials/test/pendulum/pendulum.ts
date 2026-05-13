@@ -17,7 +17,8 @@ const TUBE_DIVISIONS = 16;
 const TUBE_VERTEX_COUNT = (TUBE_DIVISIONS + 1) * 2;
 const BOB_FACES = 320;
 const BOB_VERTEX_COUNT = BOB_FACES * 3;
-const TRANSFORM_STRIDE = 20; 
+const TUBE_STRIDE = 12;
+const SPHERE_STRIDE = 8;
 
 const schema: SimulationSchema = {
     name: "Pendulum Wave (Material Architecture)",
@@ -32,10 +33,10 @@ const schema: SimulationSchema = {
             } 
         },
         PendulumState: { type: 'storage', format: 'vec4<f32>', count: NUM_PENDULUMS },
-        TubeTransforms: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TRANSFORM_STRIDE },
-        BobTransforms: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TRANSFORM_STRIDE },
+        Tubes: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TUBE_STRIDE },
+        Spheres: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * SPHERE_STRIDE },
         TubeMesh: { shape:"tube", division:TUBE_DIVISIONS, count: TUBE_VERTEX_COUNT * 6 },
-        BobMesh: { shape: 'sphere', count: BOB_VERTEX_COUNT * 6 }
+        SphereMesh: { shape: 'sphere', count: BOB_VERTEX_COUNT * 6 }
     },
 
     // ========================================================
@@ -49,36 +50,30 @@ const schema: SimulationSchema = {
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'PendulumState', varName: 'stateBuffer', access: 'read_write' },
-                { resource: 'TubeTransforms', varName: 'tubeTransforms', access: 'read_write' },
-                { resource: 'BobTransforms', varName: 'bobTransforms', access: 'read_write' }
+                { resource: 'Tubes', access: 'read_write' },
+                { resource: 'Spheres', access: 'read_write' }
             ]
         },
         {
             id: 'tube_render',
             type: 'render',
-            topology: 'triangle-strip', // Explicitly defined here!
-            blendMode: 'opaque',
-            depthTest: true,
             vertexCount: TUBE_VERTEX_COUNT,
             instanceCount: NUM_PENDULUMS,
             bindings: [
-                { resource: 'Camera', varName: 'camera' },
-                { resource: 'TubeTransforms', varName: 'instances', access: 'read' },
-                { resource: 'TubeMesh', varName: 'vertexData', access: 'read' }
+                { resource: 'Camera' },
+                { resource: 'Tubes', varName: 'instances' },
+                { resource: 'TubeMesh', varName: 'vertexData' }
             ]
         },
         {
             id: 'bob_render',
             type: 'render',
-            topology: 'triangle-list', // Explicitly defined here!
-            blendMode: 'opaque',
-            depthTest: true,
             vertexCount: BOB_VERTEX_COUNT,
             instanceCount: NUM_PENDULUMS,
             bindings: [
-                { resource: 'Camera', varName: 'camera' },
-                { resource: 'BobTransforms', varName: 'instances', access: 'read' },
-                { resource: 'BobMesh', varName: 'vertexData', access: 'read' }
+                { resource: 'Camera' },
+                { resource: 'Spheres', varName: 'instances' },
+                { resource: 'SphereMesh', varName: 'vertexData' }
             ]
         }
     ],

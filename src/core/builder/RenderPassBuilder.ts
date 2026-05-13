@@ -1,5 +1,6 @@
 // src/core/builder/RenderPassBuilder.ts
 
+import { theSchema } from "../../main";
 import { isMesh } from "../engine/SimulationBase";
 import type { NodeDef } from "../engine/SimulationRunner";
 
@@ -28,7 +29,16 @@ export class RenderPassBuilder {
     ) {
         this.device = device;
         this.node   = node;
-        const topology = options.topology || 'triangle-list';
+
+        let topology: GPUPrimitiveTopology;
+        const mesh = node.bindings.map(b => theSchema.resources[b.resource]).find(res => isMesh(res));
+        if(mesh != undefined && mesh.shape == "tube"){
+            topology = 'triangle-strip';
+        }
+        else{
+
+            topology = options.topology || 'triangle-list';
+        }
 
         // 1. Create shader module (assuming VS and FS are written in a single file)
         const module = device.createShaderModule({
@@ -83,10 +93,6 @@ export class RenderPassBuilder {
             },
             depthStencil: depthStencil
         });
-    }
-
-    isMeshRender() : boolean {
-        return this.node.bindings.some(x => isMesh(x)) ;
     }
 
     // --- Exact same interface as ComputePassBuilder ---

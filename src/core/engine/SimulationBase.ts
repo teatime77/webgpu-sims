@@ -3,6 +3,8 @@ import { WebGPUEngine } from './WebGPUEngine';
 import { UniformManager, type WgslFormat } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
 import type { NodeDef, SimulationSchema } from './SimulationRunner';
+import { assert } from '../utils/CaptureTool';
+import { theSchema } from '../../main';
 
 export interface ResourceDef {
     type: 'uniform' | 'storage';
@@ -40,6 +42,14 @@ export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
     }
 
     return false;
+}
+
+export function getMeshFromNode(node: NodeDef) : MeshDef {
+    assert(node.type == "render");
+    const mesh = node.bindings.map(b => theSchema.resources[b.resource]).find(res => isMesh(res))!;
+    assert(mesh != undefined);
+
+    return mesh;
 }
 
 export abstract class SimulationBase {
