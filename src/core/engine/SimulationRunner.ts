@@ -2,7 +2,7 @@
 import { WebGPUEngine } from './WebGPUEngine';
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
-import { isMesh, isRenderMesh, type MeshDef, type ResourceDef, type SphereDef } from './SimulationBase';
+import { isMesh, isRenderMesh, type MeshDef, type ResourceDef, type SphereDef } from './utils';
 import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
 import { RenderPassBuilder } from '../builder/RenderPassBuilder';
 import { makeGeodesicPolyhedron, makeTube, msg } from '../primitive';

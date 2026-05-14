@@ -1,6 +1,6 @@
 // src/core/engine/ResourceWrapper.ts
 
-import type { MeshDef } from "./SimulationBase";
+import type { MeshDef } from "./utils";
 
 export class ResourceWrapper {
     public id: string;

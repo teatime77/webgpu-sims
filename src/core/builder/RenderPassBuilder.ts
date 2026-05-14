@@ -1,7 +1,7 @@
 // src/core/builder/RenderPassBuilder.ts
 
 import { theSchema } from "../../main";
-import { isMesh } from "../engine/SimulationBase";
+import { isMesh } from "../engine/utils";
 import type { NodeDef } from "../engine/SimulationRunner";
 
 export interface RenderPassOptions {

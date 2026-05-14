@@ -6,7 +6,7 @@ import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
 import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner, renderMesh } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
-import { getMeshFromNode, isMesh, isRenderMesh, isUniform } from './core/engine/SimulationBase';
+import { getMeshFromNode, isMesh, isRenderMesh, isUniform } from './core/engine/utils';
 import { testParser } from './core/engine/parser';
 
 export let theSchema : SimulationSchema;
