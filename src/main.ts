@@ -7,10 +7,13 @@ import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
 import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner, renderMesh } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
 import { getMeshFromNode, isMesh, isRenderMesh, isUniform } from './core/engine/SimulationBase';
+import { testParser } from './core/engine/parser';
 
 export let theSchema : SimulationSchema;
 
 async function bootstrap() {
+    await testParser();
+
     const engine = new WebGPUEngine();
     if (!await engine.init()) return;
 
@@ -32,32 +35,52 @@ async function bootstrap() {
     // ========================================================
     const urlParams = new URLSearchParams(window.location.search);
     const schemaParam = urlParams.get('schema');
+    const idxStr = urlParams.get("idx");
 
-    if (!schemaParam) {
-        const container = document.getElementById('schema-selector-container');
-        const select = document.getElementById('schema-select') as HTMLSelectElement;
-        
-        if (container && select) {
-            const schemaPaths = Object.keys(modules).map(key => {
-                return key.replace(/^\.\/materials\//, '').replace(/\.ts$/, '');
-            }).sort();
+    let schemaPaths : string[] = [];
 
-            for (const path of schemaPaths) {
-                const option = document.createElement('option');
-                option.value = path;
-                option.innerText = path;
-                select.appendChild(option);
-            }
+    if (!schemaParam || idxStr != undefined) {
+        schemaPaths = Object.keys(modules).map(key => {
+            return key.replace(/^\.\/materials\//, '').replace(/\.ts$/, '');
+        }).sort();
 
-            select.onchange = () => {
-                if (select.value) {
-                    window.location.href = `?schema=${select.value}`;
+        if(!schemaParam){
+            const container = document.getElementById('schema-selector-container');
+            const select = document.getElementById('schema-select') as HTMLSelectElement;
+            
+            if (container && select) {
+
+                if(urlParams.has("all")){
+                    window.location.href = `?schema=${schemaPaths[0]}&idx=0`;
+                    return;
                 }
-            };
 
-            container.style.display = 'block';
+                for (const path of schemaPaths) {
+                    const option = document.createElement('option');
+                    option.value = path;
+                    option.innerText = path;
+                    select.appendChild(option);
+                }
+
+                select.onchange = () => {
+                    if (select.value) {
+                        window.location.href = `?schema=${select.value}`;
+                    }
+                };
+
+                container.style.display = 'block';
+            }
+            return;
         }
-        return;
+    }
+
+    if(idxStr != undefined){
+        const idx = parseInt(idxStr) + 1;
+        if(idx < schemaPaths.length){
+            setTimeout(()=>{
+                window.location.href = `?schema=${schemaPaths[idx]}&idx=${idx}`;
+            }, 1000);
+        }
     }
 
     const schemaPath = schemaParam;

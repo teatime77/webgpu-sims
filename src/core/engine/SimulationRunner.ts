@@ -7,6 +7,7 @@ import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
 import { RenderPassBuilder } from '../builder/RenderPassBuilder';
 import { makeGeodesicPolyhedron, makeTube, msg } from '../primitive';
 import { theSchema } from '../../main';
+import { getElementSize, MyError } from './utils';
 
 export interface ResourceBinding {
     group?: number;
@@ -117,10 +118,10 @@ export class SimulationRunner {
                     const buffers: GPUBuffer[] = [];
                     
                     // Calculate byte size of a single element from WGSL format
-                    let elementSize = 4; // f32, u32, i32
-                    if (def.format === 'vec2<f32>') elementSize = 8;
-                    else if (def.format === 'vec3<f32>' || def.format === 'vec4<f32>') elementSize = 16;
-                    else if (def.format === 'mat4x4<f32>') elementSize = 64;
+                    if(def.format == undefined){
+                        throw new MyError();
+                    }
+                    const elementSize = getElementSize(def.format);
                     
                     const byteSize = elementSize * (def.count || 1);
 

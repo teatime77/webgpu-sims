@@ -1,5 +1,7 @@
 // src/core/engine/UniformManager.ts
 
+import { getElementSizeAlignment } from "./utils";
+
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
 
 interface FieldInfo {
@@ -22,11 +24,7 @@ export class UniformManager {
         const offsets: Record<string, FieldInfo> = {};
 
         for (const [fieldName, format] of Object.entries(fields)) {
-            let alignment = 4;
-            let size = 4;
-            if (format === 'vec2<f32>') { alignment = 8; size = 8; }
-            else if (format === 'vec3<f32>' || format === 'vec4<f32>') { alignment = 16; size = 16; }
-            else if (format === 'mat4x4<f32>') { alignment = 16; size = 64; }
+            const [size, alignment] = getElementSizeAlignment(format);
 
             // Round up offset to alignment boundary (insert padding)
             currentOffset = Math.ceil(currentOffset / alignment) * alignment;

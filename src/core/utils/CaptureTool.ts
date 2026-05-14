@@ -5,6 +5,13 @@ export function assert(ok : boolean){
     console.assert(ok);
 }
 
+export async function fetchText(fileURL: string) {
+    const response = await fetch(fileURL);
+    const text = await response!.text();
+
+    return text;
+}
+
 export class CaptureTool {
     private isCapturing = false;
 
