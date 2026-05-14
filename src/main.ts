@@ -3,7 +3,7 @@ import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/utils/CaptureTool';
 import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
-import { SimulationRunner, type SimulationSchema, type ResourceBinding, setRunner, renderMesh } from './core/engine/SimulationRunner';
+import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
 import { getMeshFromNode, isMesh, isRenderMesh, isUniform } from './core/engine/utils';
 import { testParser } from './core/engine/parser';
@@ -105,7 +105,7 @@ async function bootstrap() {
         }
 
         const simModule = await modules[targetPath]() as { default: SimulationSchema };
-        sim = simModule.default;
+        sim = new SimulationSchema(simModule.default as any);
     } catch (e) {
         console.error(`Failed to load schema: ${schemaPath}`, e);
         alert(`Schema "${schemaPath}" not found.`);
@@ -152,7 +152,7 @@ async function bootstrap() {
             groups.forEach(g => {
                 builder.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
-                    const res = sim.resources[b.resource];
+                    const res = sim.resources.get(b.resource)!;
                     if(! isMesh(res) && res.type === 'uniform'){
                         builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     }
@@ -176,7 +176,7 @@ async function bootstrap() {
             groups.forEach(g => {
                 builder.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
-                    const res = sim.resources[b.resource];
+                    const res = sim.resources.get(b.resource)!;
                     if (isUniform(res)){
                         builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     } 

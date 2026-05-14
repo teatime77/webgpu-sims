@@ -38,29 +38,53 @@ export function getElementSize(format : string) : number {
     return size;
 }
 
-export interface ResourceDef {
-    type: 'uniform' | 'storage';
-    fields?: Record<string, WgslFormat>; // for uniform
+export abstract class ResourceDef {
+    type!: 'uniform' | 'storage';
+
+    constructor(){
+    }
+}
+
+export class StorageDef extends ResourceDef {
     format?: WgslFormat;                 // for storage (e.g. vec4<f32>)
     elementByteSize?: number;            // for storage (custom structs: e.g. 32 bytes)
     count?: number;                      // for storage
     bufferCount?: number;                // for Ping-Pong
+
+    constructor(data : any){
+        super();
+        Object.assign(this, data)
+    }
+}
+
+export class UniformDef extends ResourceDef {
+    fields?: Record<string, WgslFormat>; // for uniform
+
+    constructor(data : any){
+        super();
+        Object.assign(this, data)
+    }
 }
 
 export type MeshShape = 'sphere' | 'tube';
 
-export interface MeshDef {
-    shape: MeshShape;
+export class MeshDef {
+    shape!: MeshShape;
     division?: number;
-    count: number;
-}
+    count!: number;
 
-export interface SphereDef extends MeshDef {
-    count: number;
+    constructor(data : any){
+        Object.assign(this, data)
+    }
 }
 
 export function isMesh(obj: ResourceDef | MeshDef): obj is MeshDef {
-    return (obj as MeshDef).shape !== undefined;
+    try{
+        return (obj as MeshDef).shape !== undefined;
+    }
+    catch(e){
+        throw new MyError();
+    }
 }
 
 export function isUniform(obj: ResourceDef | MeshDef) : obj is ResourceDef {
@@ -69,7 +93,7 @@ export function isUniform(obj: ResourceDef | MeshDef) : obj is ResourceDef {
 
 export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
     if(node.type == "render"){
-        const mesh = node.bindings.map(b => sim.resources[b.resource]).find(res => isMesh(res));
+        const mesh = node.bindings.map(b => sim.resources.get(b.resource)!).find(res => isMesh(res));
         return mesh != undefined;
     }
 
@@ -78,7 +102,7 @@ export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
 
 export function getMeshFromNode(node: NodeDef) : MeshDef {
     assert(node.type == "render");
-    const mesh = node.bindings.map(b => theSchema.resources[b.resource]).find(res => isMesh(res))!;
+    const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => isMesh(res))!;
     assert(mesh != undefined);
 
     return mesh;

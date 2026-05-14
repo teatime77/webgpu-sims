@@ -31,7 +31,7 @@ export class RenderPassBuilder {
         this.node   = node;
 
         let topology: GPUPrimitiveTopology;
-        const mesh = node.bindings.map(b => theSchema.resources[b.resource]).find(res => isMesh(res));
+        const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => isMesh(res));
         if(mesh != undefined && mesh.shape == "tube"){
             topology = 'triangle-strip';
         }

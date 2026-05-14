@@ -1,33 +1,42 @@
 // src/core/engine/SimulationRunner.ts
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
-import { isMesh, isRenderMesh, type MeshDef, type ResourceDef, type SphereDef } from './utils';
+import { isMesh, isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef } from './utils';
 import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
 import { RenderPassBuilder } from '../builder/RenderPassBuilder';
 import { makeGeodesicPolyhedron, makeTube, msg } from '../primitive';
 import { theSchema } from '../../main';
 import { getElementSize, MyError } from './utils';
 
-export interface ResourceBinding {
+export class ResourceBinding {
     group?: number;
     binding?: number;
-    resource: string;
+    resource!: string;
     historyLevel?: number;
     varName?: string;
     access?: string;
+
+    constructor(data : any){
+        Object.assign(this, data)
+    }
 }
 
-export interface NodeDef {
-    id: string;
-    type: 'compute' | 'render';
+export class NodeDef {
+    id!: string;
+    type!: 'compute' | 'render';
     workgroupSize?: number | string | (number | string)[];
     topology?: GPUPrimitiveTopology;
     blendMode?: 'opaque' | 'alpha' | 'add' | 'normal';
     depthTest?: boolean;
-    bindings: ResourceBinding[];
+    bindings!: ResourceBinding[];
     vertexCount?: number;
     instanceCount?: number;
     canvasId?: string;
+
+    constructor(data : any){
+        data.bindings = data.bindings.map((x: any) => new ResourceBinding(x));
+        Object.assign(this, data);
+    }
 }
 
 export interface RangeDef {
@@ -62,12 +71,44 @@ export type UIDef = RangeDef | SelectDef | ButtonDef;
 
 export type PassCommand = 'frame' | undefined;
 
-export interface SimulationSchema {
+
+export interface ISimulationSchema {
     name?: string;
     resources: Record<string, ResourceDef | MeshDef>;
     nodes: NodeDef[];
     uis? : UIDef[];
     script: () => Generator<PassCommand, void, unknown>;
+}
+
+export class SimulationSchema {
+    name?: string;
+    resources: Map<string, ResourceDef | MeshDef>;
+    nodes: NodeDef[];
+    uis? : UIDef[];
+    script: () => Generator<PassCommand, void, unknown>;
+
+    constructor(data: ISimulationSchema){
+        this.name = data.name;
+        this.resources = new Map();
+        for(const [key, val] of Object.entries(data.resources)){
+            if((val as any).shape != undefined){
+
+                this.resources.set(key, new MeshDef(val as any));
+            }
+            else{
+                if((val as any).type == 'uniform'){
+                    this.resources.set(key, new UniformDef(val as any));
+                }
+                else{
+                    this.resources.set(key, new StorageDef(val as any));
+                }
+            }
+        }
+        this.nodes = data.nodes.map(x => new NodeDef(x));
+        this.uis   = data.uis;
+        this.script = data.script;
+        
+    }
 }
 
 export class SimulationRunner {
@@ -193,7 +234,7 @@ export class SimulationRunner {
         this.schema = schema;
 
         // 1. Build resources
-        for (const [id, def] of Object.entries<ResourceDef | MeshDef>(schema.resources)) {
+        for (const [id, def] of schema.resources.entries()) {
             if(isMesh(def)){
 
                 const elementSize = 4; // f32
@@ -209,11 +250,11 @@ export class SimulationRunner {
             }
             else{
 
-                if (def.type === 'uniform') {
+                if (def instanceof UniformDef) {
                     // Delegate padding calculation to UniformManager
                     if (def.fields) this.uniforms.register(id, def.fields);
                 } 
-                else if (def.type === 'storage') {
+                else if (def instanceof StorageDef) {
                     const count = def.bufferCount || 1;
                     const buffers: GPUBuffer[] = [];
                     
