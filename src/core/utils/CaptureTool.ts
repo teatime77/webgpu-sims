@@ -1,5 +1,6 @@
 // src/core/utils/CaptureTool.ts
-import { WebGPUEngine } from '../engine/WebGPUEngine';
+
+import type { SimulationRunner } from "../engine/SimulationRunner";
 
 export function assert(ok : boolean){
     console.assert(ok);
@@ -15,7 +16,7 @@ export async function fetchText(fileURL: string) {
 export class CaptureTool {
     private isCapturing = false;
 
-    constructor(engine: WebGPUEngine, prefix: string = "sim") {
+    constructor(engine: SimulationRunner, prefix: string = "sim") {
         this.setupCapturePanel(engine, prefix);
     }
 
@@ -39,7 +40,7 @@ export class CaptureTool {
         });
     }
 
-    private setupCapturePanel(engine: WebGPUEngine, prefix: string): void {
+    private setupCapturePanel(engine: SimulationRunner, prefix: string): void {
         if (document.getElementById("capture-panel")) return;
 
         const panel = document.createElement("div");

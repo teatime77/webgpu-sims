@@ -1,5 +1,4 @@
 // src/core/engine/SimulationRunner.ts
-import { WebGPUEngine } from './WebGPUEngine';
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
 import { isMesh, isRenderMesh, type MeshDef, type ResourceDef, type SphereDef } from './utils';
@@ -72,20 +71,121 @@ export interface SimulationSchema {
 }
 
 export class SimulationRunner {
-    public device: GPUDevice;
-    public uniforms: UniformManager;
+    public device!: GPUDevice;
+    public uniforms!: UniformManager;
     public storages: Map<string, ResourceWrapper> = new Map();
-    private engine: WebGPUEngine;
     public passes: Map<string, ComputePassBuilder | RenderPassBuilder> = new Map();
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
     public generator? : Generator<PassCommand, void, unknown>;
     schema!: SimulationSchema;
 
-    constructor(engine: WebGPUEngine) {
-        this.engine = engine;
-        this.device = engine.device;
+    // public device!: GPUDevice;
+    public format!: GPUTextureFormat;
+    
+    // Map to manage multiple canvas contexts
+    private contexts: Map<string, GPUCanvasContext> = new Map();
+
+    private depthViews: Map<string, GPUTextureView> = new Map();
+
+
+    /**
+     * Initialize WebGPU. Call once when the application starts.
+     */
+    async init(): Promise<boolean> {
+        if (!navigator.gpu) {
+            console.error("WebGPU is not supported on this browser.");
+            alert("This browser does not support WebGPU. Please use a supported browser like Chrome.");
+            return false;
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) {
+            console.error("No appropriate GPUAdapter found.");
+            return false;
+        }
+
+        // Request GPUDevice (this will be the parent of all resources)
+        this.device = await adapter.requestDevice();
+        // Get the optimal format for screen output (usually 'bgra8unorm' etc.)
+        this.format = navigator.gpu.getPreferredCanvasFormat();
+
         this.uniforms = new UniformManager(this.device);
+
+        console.log("WebGPU Engine Initialized Successfully.");
+        return true;
+    }
+
+    /**
+     * Register the canvas with the engine and set it up for drawing with WebGPU.
+     * @param canvasId The ID of the canvas element in HTML
+     */
+    addCanvas(canvasId: string): GPUCanvasContext | null {
+        const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+        if (!canvas) {
+            console.error(`Canvas ID '${canvasId}' not found.`);
+            return null;
+        }
+
+        const context = canvas.getContext('webgpu') as unknown as GPUCanvasContext;
+        if (!context) {
+            console.error("Failed to get WebGPU context.");
+            return null;
+        }
+
+        context.configure({
+            device: this.device,
+            format: this.format,
+            alphaMode: 'premultiplied',
+        });
+
+        this.contexts.set(canvasId, context);
+
+        // Create and save a depth texture of the same size as the canvas
+        const depthTexture = this.device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: 'depth24plus',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+        this.depthViews.set(canvasId, depthTexture.createView());
+
+        return context;
+    }
+
+    /**
+     * Get a registered context. Used when executing a render pass.
+     */
+    getContext(canvasId: string): GPUCanvasContext {
+        const context = this.contexts.get(canvasId);
+        if (!context) {
+            throw new Error(`Canvas '${canvasId}' is not registered.`);
+        }
+        return context;
+    }
+
+    // Method to get the depth view
+    getDepthView(canvasId: string): GPUTextureView {
+        const view = this.depthViews.get(canvasId);
+        if (!view) {
+            throw new Error(`The depth view for canvas '${canvasId}' is not registered.`);
+        }
+        return view;
+    }
+
+    /**
+     * Get all registered canvas elements and their IDs (for capture)
+     */
+    getCanvases(): { id: string, canvas: HTMLCanvasElement }[] {
+        const result: { id: string, canvas: HTMLCanvasElement }[] = [];
+        for (const [id, context] of this.contexts.entries()) {
+            result.push({ id, canvas: context.canvas as HTMLCanvasElement });
+        }
+        return result;
+    }
+
+
+
+    constructor() {
     }
 
     /** Load the V1.5 schema (blueprint) and automatically generate GPU resources */
@@ -237,7 +337,7 @@ export class SimulationRunner {
             container.appendChild(wrapper);
         }
 
-        this.engine.addCanvas(canvasId);
+        this.addCanvas(canvasId);
         this.initializedCanvases.add(canvasId);
     }
 
@@ -255,7 +355,7 @@ export class SimulationRunner {
 
         const passDesc: GPURenderPassDescriptor = {
             colorAttachments: [{
-                view: this.engine.getContext(canvasId).getCurrentTexture().createView(),
+                view: this.getContext(canvasId).getCurrentTexture().createView(),
                 clearValue: { r: 0.0, g: 0.0, b: 0.01, a: 1.0 },
                 loadOp: loadOperation, // Dynamically set
                 storeOp: 'store'
@@ -263,7 +363,7 @@ export class SimulationRunner {
         };
         if (useDepth) {
             passDesc.depthStencilAttachment = {
-                view: this.engine.getDepthView(canvasId),
+                view: this.getDepthView(canvasId),
                 depthClearValue: 1.0,
                 depthLoadOp: loadOperation, // Dynamically set
                 depthStoreOp: 'store'

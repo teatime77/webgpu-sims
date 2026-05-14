@@ -1,5 +1,4 @@
 // src/main.ts
-import { WebGPUEngine } from './core/engine/WebGPUEngine';
 import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/utils/CaptureTool';
 import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
@@ -14,13 +13,12 @@ export let theSchema : SimulationSchema;
 async function bootstrap() {
     await testParser();
 
-    const engine = new WebGPUEngine();
-    if (!await engine.init()) return;
+    const runner = new SimulationRunner();
+    if (!await runner.init()) return;
 
-    engine.addCanvas('main-canvas');
+    runner.addCanvas('main-canvas');
 
     const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-    const device = engine.device;
 
     const camera = new OrbitCamera(canvas);
     camera.distance = 5.0;
@@ -90,7 +88,7 @@ async function bootstrap() {
     const directory = lastSlashIdx !== -1 ? schemaPath.substring(0, lastSlashIdx) : 'test';
     const schemaName = lastSlashIdx !== -1 ? schemaPath.substring(lastSlashIdx + 1) : schemaPath;
 
-    new CaptureTool(engine, schemaName.toLowerCase());
+    new CaptureTool(runner, schemaName.toLowerCase());
 
     let sim: SimulationSchema;
     try {
@@ -116,7 +114,6 @@ async function bootstrap() {
 
     theSchema = sim;
 
-    const runner = new SimulationRunner(engine);
     await runner.loadSchema(sim); 
     setRunner(runner);
 
@@ -150,7 +147,7 @@ async function bootstrap() {
         const shader = await (await fetch(shaderUrl)).text();
         
         if (node.type === 'compute') {
-            const builder = new ComputePassBuilder(device, shader, 'main');
+            const builder = new ComputePassBuilder(runner.device, shader, 'main');
             const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
             groups.forEach(g => {
                 builder.setGroup(g);
@@ -168,7 +165,7 @@ async function bootstrap() {
         } else {
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
-            const builder = new RenderPassBuilder(device, node, shader, format, { 
+            const builder = new RenderPassBuilder(runner.device, node, shader, format, { 
                 topology: node.topology || 'triangle-list',
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
@@ -199,7 +196,7 @@ async function bootstrap() {
         const matrices = camera.getMatrices(aspect);
         runner.updateVariables('Camera', matrices);
 
-        runner.currentCommandEncoder = device.createCommandEncoder();
+        runner.currentCommandEncoder = runner.device.createCommandEncoder();
 
         while (true) {
             const result = runner.generator!.next();
@@ -214,7 +211,7 @@ async function bootstrap() {
             renderMesh(render.node.id, idx == 0);
         }
 
-        device.queue.submit([runner.currentCommandEncoder.finish()]);
+        runner.device.queue.submit([runner.currentCommandEncoder.finish()]);
         runner.currentCommandEncoder = null;
         requestAnimationFrame(frame);
     }
