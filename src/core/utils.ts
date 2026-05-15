@@ -106,8 +106,21 @@ export class UniformDef extends ResourceDef {
         super();
         Object.assign(this, data);
 
+        if(this.fields == undefined){
+            if(this.obj == undefined){
+                throw new MyError();
+            }
+
+            this.fields = {};
+            for (const [name, val] of Object.entries(this.obj)){
+                assert(typeof val == "number");
+
+                this.fields[name] = 'f32';
+            }
+        }
+
         let offset = 0;
-        for (const [name, format] of Object.entries(this.fields!)) {
+        for (const [name, format] of Object.entries(this.fields)) {
             const [size, alignment] = getElementSizeAlignment(format);
 
             // Round up offset to alignment boundary (insert padding)

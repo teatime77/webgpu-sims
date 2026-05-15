@@ -10,8 +10,6 @@ struct ParamsStruct {
     brightness: f32,
     colorMix: f32,
     resetFlag: f32,
-    pad1: f32,
-    pad2: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;

@@ -27,11 +27,7 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            obj : state,
-            fields: { 
-                dt: 'f32', gravity: 'f32', baseLength: 'f32', 
-                bobRadius: 'f32', stringThickness: 'f32', time: 'f32'
-            } 
+            obj : state
         },
         PendulumState: { type: 'storage', format: 'vec4<f32>', count: NUM_PENDULUMS },
         Tubes: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TUBE_STRIDE },

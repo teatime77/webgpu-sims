@@ -24,11 +24,7 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            obj : state,
-            fields: { 
-                dt: 'f32', epsilon: 'f32', sigma: 'f32', boxSize: 'f32', 
-                damping: 'f32', time: 'f32', pad2: 'f32', pad3: 'f32' 
-            } 
+            obj : state
         },
         // Positions w-component will store the particle "type" (0.0 or 1.0)
         ParticlePos: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },

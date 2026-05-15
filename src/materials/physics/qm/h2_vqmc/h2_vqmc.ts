@@ -26,11 +26,7 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            fields: { 
-                spinState: 'f32', bondLength: 'f32', jastrow: 'f32', pinX: 'f32',
-                pinY: 'f32', pinZ: 'f32', samplingStep: 'f32', brightness: 'f32',
-                needsReset: 'f32', pad1: 'f32', pad2: 'f32', pad3: 'f32'
-            } 
+            obj : state
         },
         // We now store TWO buffers to represent a 6D walker configuration
         Electron1Pos: { type: 'storage', format: 'vec4<f32>', count: NUM_WALKERS },

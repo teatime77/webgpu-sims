@@ -10,8 +10,6 @@ struct ParamsStruct {
     boxSize: f32,
     damping: f32,
     time: f32,
-    pad2: f32,
-    pad3: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;

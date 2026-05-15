@@ -24,8 +24,7 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            obj : state,
-            fields: { dt: 'f32', gravity: 'f32', interactionRadius: 'f32', stiffness: 'f32', boxSize: 'f32', time: 'f32', pad2: 'f32', pad3: 'f32' } 
+            obj : state
         },
         ParticlePos: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },
         ParticleVel: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },

@@ -23,10 +23,7 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            fields: { 
-                orbitalType: 'f32', bondLength: 'f32', samplingStep: 'f32', brightness: 'f32', 
-                colorMix: 'f32', needsReset: 'f32', pad1: 'f32', pad2: 'f32' 
-            } 
+            obj : state
         },
         ParticleData: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },
         RngState: { type: 'storage', format: 'u32', count: NUM_PARTICLES }

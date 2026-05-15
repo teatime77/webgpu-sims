@@ -26,14 +26,7 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            obj : state,
-            fields: { 
-                time: 'f32', 
-                amplitude: 'f32', 
-                frequency: 'f32', 
-                speed: 'f32',
-                segmentLength: 'f32',
-            } 
+            obj : state
         },
         // We use vec4<f32> for positions and directions to ensure correct 16-byte memory alignment
         Positions: { type: 'storage', format: 'vec4<f32>', count: NUM_SEGMENTS },

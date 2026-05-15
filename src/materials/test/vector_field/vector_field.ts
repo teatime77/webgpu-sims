@@ -28,13 +28,7 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            obj : state,
-            fields: { 
-                time: 'f32', 
-                fieldScale: 'f32', 
-                speed: 'f32', 
-                gridSpacing: 'f32',
-            } 
+            obj : state
         },
         GridPositions: { type: 'storage', format: 'vec4<f32>', count: NUM_ARROWS },
         GridVectors: { type: 'storage', format: 'vec4<f32>', count: NUM_ARROWS },
