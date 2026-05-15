@@ -39,6 +39,13 @@ export class NodeDef {
         data.bindings = data.bindings.map((x: any) => new ResourceBinding(x));
         Object.assign(this, data);
     }
+
+    getMesh() : MeshDef | undefined {
+        assert(this.type == "render");
+        const mesh = this.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef)!;
+
+        return mesh;
+    }
 }
 
 export interface RangeDef {

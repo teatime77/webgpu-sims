@@ -92,11 +92,3 @@ export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
 
     return false;
 }
-
-export function getMeshFromNode(node: NodeDef) : MeshDef {
-    assert(node.type == "render");
-    const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => res instanceof MeshDef)!;
-    assert(mesh != undefined);
-
-    return mesh;
-}

@@ -5,7 +5,7 @@ import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
-import { getMeshFromNode, isRenderMesh, isUniform, MeshDef } from './core/engine/utils';
+import { isRenderMesh, isUniform, MeshDef, MyError } from './core/engine/utils';
 import { testParser } from './core/engine/parser';
 
 export let theSchema : SimulationSchema;
@@ -127,22 +127,31 @@ async function bootstrap() {
     // ★ Build passes (Builder)
     // ========================================================
     for (const node of sim.nodes) {
-
         let shaderUrl : string;
-        if(isRenderMesh(sim, node)){
+        if (node.type === 'compute'){
 
-            const mesh = getMeshFromNode(node);
-            let fileName : string;
-            switch(mesh.shape){
-            case "sphere": fileName = "sphere_render.wgsl"; break;
-            case "tube"  : fileName = "tube_render.wgsl"; break
+            shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+        }
+        else if(node.type == "render"){
+            const mesh = node.getMesh();
+            if(mesh != undefined){
+
+                let fileName : string;
+                switch(mesh.shape){
+                case "sphere": fileName = "sphere_render.wgsl"; break;
+                case "tube"  : fileName = "tube_render.wgsl"; break;
+                default: throw new MyError();
+                }
+                shaderUrl = `./src/core/builder/${fileName}`;
             }
-            shaderUrl = `./src/core/builder/${fileName}`;
+            else{
+
+                // ★ Fix: Use the extracted directory instead of category
+                shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+            }
         }
         else{
-
-            // ★ Fix: Use the extracted directory instead of category
-            shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+            throw new MyError();
         }
         const shader = await (await fetch(shaderUrl)).text();
         
@@ -162,7 +171,9 @@ async function bootstrap() {
                 });
             });
             runner.passes.set(node.id, builder);
-        } else {
+        } 
+        else if(node.type == "render"){
+
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
             const builder = new RenderPassBuilder(runner.device, node, shader, format, { 
