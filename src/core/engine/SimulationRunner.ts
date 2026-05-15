@@ -1,12 +1,13 @@
 // src/core/engine/SimulationRunner.ts
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
-import { isMesh, isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef } from './utils';
+import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef } from './utils';
 import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
 import { RenderPassBuilder } from '../builder/RenderPassBuilder';
 import { makeGeodesicPolyhedron, makeTube, msg } from '../primitive';
 import { theSchema } from '../../main';
 import { getElementSize, MyError } from './utils';
+import { assert } from '../utils/CaptureTool';
 
 export class ResourceBinding {
     group?: number;
@@ -15,6 +16,7 @@ export class ResourceBinding {
     historyLevel?: number;
     varName?: string;
     access?: string;
+    resourceDef? : ResourceDef;
 
     constructor(data : any){
         Object.assign(this, data)
@@ -74,7 +76,7 @@ export type PassCommand = 'frame' | undefined;
 
 export interface ISimulationSchema {
     name?: string;
-    resources: Record<string, ResourceDef | MeshDef>;
+    resources: Record<string, ResourceDef>;
     nodes: NodeDef[];
     uis? : UIDef[];
     script: () => Generator<PassCommand, void, unknown>;
@@ -82,14 +84,14 @@ export interface ISimulationSchema {
 
 export class SimulationSchema {
     name?: string;
-    resources: Map<string, ResourceDef | MeshDef>;
+    resources: Map<string, ResourceDef>;
     nodes: NodeDef[];
     uis? : UIDef[];
     script: () => Generator<PassCommand, void, unknown>;
 
     constructor(data: ISimulationSchema){
         this.name = data.name;
-        this.resources = new Map();
+        this.resources = new Map<string, ResourceDef>();
         for(const [key, val] of Object.entries(data.resources)){
             if((val as any).shape != undefined){
 
@@ -105,6 +107,13 @@ export class SimulationSchema {
             }
         }
         this.nodes = data.nodes.map(x => new NodeDef(x));
+
+        this.nodes.forEach(node => node.bindings.forEach(b => {
+            b.resourceDef = this.resources.get(b.resource);
+            assert(b.resourceDef != undefined);
+        }));
+
+
         this.uis   = data.uis;
         this.script = data.script;
         
@@ -235,7 +244,7 @@ export class SimulationRunner {
 
         // 1. Build resources
         for (const [id, def] of schema.resources.entries()) {
-            if(isMesh(def)){
+            if(def instanceof MeshDef){
 
                 const elementSize = 4; // f32
                 const byteSize = elementSize * def.count;
@@ -433,7 +442,7 @@ export class SimulationRunner {
         this.generator = this.schema.script();
 
         Object.entries(theSchema.resources).forEach(([key, value]) => {
-            if(isMesh(value)){
+            if(value instanceof MeshDef){
                 msg(`mesh:${key}`);
                 writeMesh(key);
             }

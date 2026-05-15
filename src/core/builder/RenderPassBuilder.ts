@@ -1,8 +1,8 @@
 // src/core/builder/RenderPassBuilder.ts
 
 import { theSchema } from "../../main";
-import { isMesh } from "../engine/utils";
 import type { NodeDef } from "../engine/SimulationRunner";
+import { MeshDef } from "../engine/utils";
 
 export interface RenderPassOptions {
     topology?: GPUPrimitiveTopology; // e.g., 'triangle-list', 'line-list', 'point-list'
@@ -31,7 +31,7 @@ export class RenderPassBuilder {
         this.node   = node;
 
         let topology: GPUPrimitiveTopology;
-        const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => isMesh(res));
+        const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => res instanceof MeshDef);
         if(mesh != undefined && mesh.shape == "tube"){
             topology = 'triangle-strip';
         }

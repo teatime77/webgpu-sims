@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
 import type { SimulationSchema } from '../src/core/engine/SimulationRunner';
+import { MeshDef } from '../src/core/engine/utils';
 
 async function main() {
     const targetFile = process.argv[2];
@@ -39,8 +40,8 @@ async function main() {
         // but defining them correctly aligns with WebGPU's strict alignment rules.
         const generatedStructs = new Set<string>();
         for (const bind of node.bindings) {
-            const res = schema.resources[bind.resource];
-            if (res && res.type === 'uniform' && res.fields) {
+            const res = bind.resourceDef!;
+            if (!(res instanceof MeshDef) && res.type === 'uniform' && res.fields) {
                 if (generatedStructs.has(bind.resource)) continue;
                 generatedStructs.add(bind.resource);
 
@@ -55,7 +56,7 @@ async function main() {
         // 2. Generate Bindings
         // AI instruction: These bindings exactly match the "bindings" array in the SimulationSchema.
         for (const [idx, bind] of node.bindings.entries()) {
-            const res = schema.resources[bind.resource];
+            const res = bind.resourceDef!;
             if (!res) continue;
 
             const group = bind.group || 0;

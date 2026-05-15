@@ -5,7 +5,7 @@ import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
 import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/engine/SimulationRunner';
 import { makeUIs } from './core/ui/SimUI';
-import { getMeshFromNode, isMesh, isRenderMesh, isUniform } from './core/engine/utils';
+import { getMeshFromNode, isRenderMesh, isUniform, MeshDef } from './core/engine/utils';
 import { testParser } from './core/engine/parser';
 
 export let theSchema : SimulationSchema;
@@ -152,8 +152,8 @@ async function bootstrap() {
             groups.forEach(g => {
                 builder.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
-                    const res = sim.resources.get(b.resource)!;
-                    if(! isMesh(res) && res.type === 'uniform'){
+                    const res = b.resourceDef!;
+                    if(! (res instanceof MeshDef) && res.type === 'uniform'){
                         builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     }
                     else{
@@ -176,7 +176,7 @@ async function bootstrap() {
             groups.forEach(g => {
                 builder.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
-                    const res = sim.resources.get(b.resource)!;
+                    const res = b.resourceDef!;
                     if (isUniform(res)){
                         builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     } 

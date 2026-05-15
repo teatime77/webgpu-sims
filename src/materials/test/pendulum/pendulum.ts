@@ -35,8 +35,8 @@ const schema: SimulationSchema = {
         PendulumState: { type: 'storage', format: 'vec4<f32>', count: NUM_PENDULUMS },
         Tubes: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TUBE_STRIDE },
         Spheres: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * SPHERE_STRIDE },
-        TubeMesh: { shape:"tube", division:TUBE_DIVISIONS, count: TUBE_VERTEX_COUNT * 6 },
-        SphereMesh: { shape: 'sphere', count: BOB_VERTEX_COUNT * 6 }
+        TubeMesh: { type: 'mesh', shape:"tube", division:TUBE_DIVISIONS, count: TUBE_VERTEX_COUNT * 6 },
+        SphereMesh: { type: 'mesh', shape: 'sphere', count: BOB_VERTEX_COUNT * 6 }
     },
 
     // ========================================================

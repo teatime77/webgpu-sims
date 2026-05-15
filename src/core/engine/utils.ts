@@ -39,7 +39,7 @@ export function getElementSize(format : string) : number {
 }
 
 export abstract class ResourceDef {
-    type!: 'uniform' | 'storage';
+    type!: 'uniform' | 'storage' | 'mesh';
 
     constructor(){
     }
@@ -68,32 +68,25 @@ export class UniformDef extends ResourceDef {
 
 export type MeshShape = 'sphere' | 'tube';
 
-export class MeshDef {
+export class MeshDef extends ResourceDef {
     shape!: MeshShape;
     division?: number;
     count!: number;
 
     constructor(data : any){
+        super();
         Object.assign(this, data)
+        assert(this.type == 'mesh');
     }
 }
 
-export function isMesh(obj: ResourceDef | MeshDef): obj is MeshDef {
-    try{
-        return (obj as MeshDef).shape !== undefined;
-    }
-    catch(e){
-        throw new MyError();
-    }
-}
-
-export function isUniform(obj: ResourceDef | MeshDef) : obj is ResourceDef {
-    return ! isMesh(obj) && obj.type === 'uniform';
+export function isUniform(obj: ResourceDef) : obj is ResourceDef {
+    return ! (obj instanceof MeshDef) && obj.type === 'uniform';
 }
 
 export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
     if(node.type == "render"){
-        const mesh = node.bindings.map(b => sim.resources.get(b.resource)!).find(res => isMesh(res));
+        const mesh = node.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef);
         return mesh != undefined;
     }
 
@@ -102,7 +95,7 @@ export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
 
 export function getMeshFromNode(node: NodeDef) : MeshDef {
     assert(node.type == "render");
-    const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => isMesh(res))!;
+    const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => res instanceof MeshDef)!;
     assert(mesh != undefined);
 
     return mesh;
