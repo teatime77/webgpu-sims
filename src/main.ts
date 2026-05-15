@@ -1,8 +1,7 @@
 // src/main.ts
 import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/CaptureTool';
-import { ComputePassBuilder } from './core/ComputePassBuilder';
-import { RenderPassBuilder } from './core/RenderPassBuilder';
+import { ComputePassBuilder, RenderPassBuilder } from './core/SimulationRunner';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
 import { makeUIs } from './core/SimUI';
 import { isUniform, MeshDef, MyError } from './core/utils';
@@ -155,48 +154,48 @@ async function bootstrap() {
         }
         const shader = await (await fetch(shaderUrl)).text();
         
-        if (node.type === 'compute') {
-            const builder = new ComputePassBuilder(runner.device, shader, 'main');
+        if (node instanceof ComputePassBuilder) {
+            node.initComputePass(runner.device, shader, 'main');
             const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
             groups.forEach(g => {
-                builder.setGroup(g);
+                node.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
                     const res = b.resourceDef!;
                     if(! (res instanceof MeshDef) && res.type === 'uniform'){
-                        builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
+                        node.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     }
                     else{
-                        builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
+                        node.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
                     }
                 });
             });
-            runner.passes.set(node.id, builder);
+            runner.passes.set(node.id, node);
         } 
-        else if(node.type == "render"){
+        else if(node instanceof RenderPassBuilder){
 
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
-            const builder = new RenderPassBuilder(runner.device, node, shader, format, { 
+            node.initRenderPass(runner.device, node, shader, format, { 
                 topology: node.topology || 'triangle-list',
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
             });
-            builder.hasDepth = hasDepth; // Flag for use inside the loop
+            node.hasDepth = hasDepth; // Flag for use inside the loop
 
             const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
             groups.forEach(g => {
-                builder.setGroup(g);
+                node.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
                     const res = b.resourceDef!;
                     if (isUniform(res)){
-                        builder.addUniform(runner.getUniformBuffer(b.resource), b.binding);
+                        node.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     } 
                     else{
-                        builder.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
+                        node.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
                     } 
                 });
             });
-            runner.passes.set(node.id, builder);
+            runner.passes.set(node.id, node);
         }
     }
 
