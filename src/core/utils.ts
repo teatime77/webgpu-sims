@@ -40,15 +40,47 @@ export function getElementSize(format : string) : number {
 export abstract class ResourceDef {
     type!: 'uniform' | 'storage' | 'mesh';
 
+    public id!: string;
+    public buffers!: GPUBuffer[];
+    public bufferCount!: number;
+    public currentIndex: number = 0;
+    mesh?: MeshDef;
+
     constructor(){
     }
+
+    initResource(id: string, buffers: GPUBuffer[], bufferCount: number, mesh?: MeshDef) {
+        // Assign inside constructor
+        this.id = id;
+        this.buffers = buffers;
+        if(this.bufferCount == undefined){
+            this.bufferCount = bufferCount;
+        }
+        else{
+            assert(this.bufferCount == bufferCount);
+        }
+        this.mesh = mesh;
+    }
+
+    /** historyLevel: 0 is the current write surface, 1 is the data from 1 step ago */
+    getBuffer(historyLevel: number = 0): GPUBuffer {
+        const n = this.bufferCount;
+        const idx = (this.currentIndex + n - historyLevel) % n;
+        return this.buffers[idx];
+    }
+
+    /** Rotate the ring at the end of the frame/step */
+    swap(): void {
+        this.currentIndex = (this.currentIndex + 1) % this.bufferCount;
+    }
+
+
 }
 
 export class StorageDef extends ResourceDef {
     format?: WgslFormat;                 // for storage (e.g. vec4<f32>)
     elementByteSize?: number;            // for storage (custom structs: e.g. 32 bytes)
     count?: number;                      // for storage
-    bufferCount?: number;                // for Ping-Pong
 
     constructor(data : any){
         super();

@@ -1,6 +1,5 @@
 // src/core/SimulationRunner.ts
 import { UniformManager } from './UniformManager';
-import { ResourceWrapper } from './ResourceWrapper';
 import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef } from './utils';
 import { makeGeodesicPolyhedron, makeTube, msg } from './primitive';
 import { theSchema } from '../main';
@@ -389,7 +388,6 @@ export class SimulationSchema {
 export class SimulationRunner {
     public device!: GPUDevice;
     public uniforms!: UniformManager;
-    public storages: Map<string, ResourceWrapper> = new Map();
     public passes: Map<string, ComputePassBuilder | RenderPassBuilder> = new Map();
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
@@ -521,7 +519,7 @@ export class SimulationRunner {
                     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
                 });
 
-                this.storages.set(id, new ResourceWrapper(id, [buffer], 1, def));
+                def.initResource(id, [buffer], 1, def);
             }
             else{
 
@@ -548,7 +546,7 @@ export class SimulationRunner {
                             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
                         }));
                     }
-                    this.storages.set(id, new ResourceWrapper(id, buffers, count));
+                    def.initResource(id, buffers, count);
                 }
             }
         }
@@ -565,7 +563,7 @@ export class SimulationRunner {
     }
 
     getStorageBuffer(id: string, historyLevel: number = 0): GPUBuffer {
-        const res = this.storages.get(id);
+        const res = theSchema.resources.get(id);
         if (!res) throw new Error(`Storage resource [${id}] not found`);
         return res.getBuffer(historyLevel);
     }
@@ -591,7 +589,7 @@ export class SimulationRunner {
     }
 
     writeMesh(id: string) {
-        const res = this.storages.get(id);
+        const res = theSchema.resources.get(id);
         if(res == undefined || res.mesh == undefined){
             throw new Error();
         }
@@ -613,7 +611,7 @@ export class SimulationRunner {
     }
 
     swap(id: string) {
-        this.storages.get(id)?.swap();
+        theSchema.resources.get(id)?.swap();
     }
 
     compute(id: string, x: number, y = 1, z = 1) {

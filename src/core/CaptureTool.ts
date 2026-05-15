@@ -1,9 +1,12 @@
 // src/core/CaptureTool.ts
 
 import type { SimulationRunner } from "./SimulationRunner";
+import { MyError } from "./utils";
 
 export function assert(ok : boolean){
-    console.assert(ok);
+    if(!ok){
+        throw new MyError();
+    }
 }
 
 export async function fetchText(fileURL: string) {
