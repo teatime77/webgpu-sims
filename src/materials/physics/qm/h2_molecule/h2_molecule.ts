@@ -25,7 +25,7 @@ const schema: SimulationSchema = {
             type: 'uniform', 
             fields: { 
                 orbitalType: 'f32', bondLength: 'f32', samplingStep: 'f32', brightness: 'f32', 
-                colorMix: 'f32', resetFlag: 'f32', pad1: 'f32', pad2: 'f32' 
+                colorMix: 'f32', needsReset: 'f32', pad1: 'f32', pad2: 'f32' 
             } 
         },
         ParticleData: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },
@@ -98,7 +98,7 @@ const schema: SimulationSchema = {
 
         // Main execution loop
         while (true) {
-            // Write 0.0 to resetFlag during normal execution to perform standard MCMC steps
+            // Write 0.0 to needsReset during normal execution to perform standard MCMC steps
             writeUniformObject('Params', state);
             
             compute('h2_hf_comp', dispatchX);

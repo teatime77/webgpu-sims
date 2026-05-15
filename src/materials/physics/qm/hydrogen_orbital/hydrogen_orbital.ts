@@ -24,7 +24,7 @@ const schema: SimulationSchema = {
             type: 'uniform', 
             fields: { 
                 orbitalMode: 'f32', samplingStep: 'f32', brightness: 'f32', colorMix: 'f32', 
-                resetFlag: 'f32', pad1: 'f32', pad2: 'f32', pad3: 'f32' 
+                needsReset: 'f32', pad1: 'f32', pad2: 'f32', pad3: 'f32' 
             } 
         },
         ParticleData: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },

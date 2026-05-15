@@ -1,10 +1,11 @@
 // src/core/SimulationRunner.ts
-import { UniformManager } from './UniformManager';
 import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef } from './utils';
 import { makeGeodesicPolyhedron, makeTube, msg } from './primitive';
 import { theSchema } from '../main';
 import { getElementSize, MyError } from './utils';
 import { assert } from './CaptureTool';
+
+export let theRunner : SimulationRunner;
 
 export class ResourceBinding {
     group?: number;
@@ -387,7 +388,6 @@ export class SimulationSchema {
 
 export class SimulationRunner {
     public device!: GPUDevice;
-    public uniforms!: UniformManager;
     public passes: Map<string, ComputePassBuilder | RenderPassBuilder> = new Map();
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
@@ -402,6 +402,9 @@ export class SimulationRunner {
 
     private depthViews: Map<string, GPUTextureView> = new Map();
 
+    constructor(){
+        theRunner = this;
+    }
 
     /**
      * Initialize WebGPU. Call once when the application starts.
@@ -423,8 +426,6 @@ export class SimulationRunner {
         this.device = await adapter.requestDevice();
         // Get the optimal format for screen output (usually 'bgra8unorm' etc.)
         this.format = navigator.gpu.getPreferredCanvasFormat();
-
-        this.uniforms = new UniformManager(this.device);
 
         console.log("WebGPU Engine Initialized Successfully.");
         return true;
@@ -497,11 +498,6 @@ export class SimulationRunner {
         return result;
     }
 
-
-
-    constructor() {
-    }
-
     /** Load the V1.5 schema (blueprint) and automatically generate GPU resources */
     async loadSchema(schema: SimulationSchema) {
         this.schema = schema;
@@ -525,9 +521,7 @@ export class SimulationRunner {
 
                 if (def instanceof UniformDef) {
                     // Delegate padding calculation to UniformManager
-                    if (def.fields){
-                        this.uniforms.register(id, def.fields);
-                    } 
+                    def.initUniform(this.device);
                 } 
                 else if (def instanceof StorageDef) {
                     const count = def.bufferCount || 1;
@@ -561,7 +555,10 @@ export class SimulationRunner {
     }
 
     getUniformBuffer(id: string): GPUBuffer {
-        return this.uniforms.getUniformManagerBuffer(id);
+        const res = theSchema.resources.get(id) as UniformDef;
+        assert(res instanceof UniformDef);
+
+        return res.buffer;
     }
 
     getStorageBuffer(id: string, historyLevel: number = 0): GPUBuffer {
@@ -576,9 +573,10 @@ export class SimulationRunner {
     }
 
     writeUniformObject(name:string, data: any){
-        const values = Object.values(data);
-        values.every(x => typeof x == "number");
-        this.writeUniformArray(name, values as number[]);
+        const res = theSchema.resources.get(name) as UniformDef;
+        assert(res instanceof UniformDef);
+
+        res.update(data);
     }
 
     writeStorage(id: string, data: Float32Array | Uint32Array) {

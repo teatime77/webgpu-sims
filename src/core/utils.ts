@@ -1,9 +1,9 @@
-import type { WgslFormat } from './UniformManager';
-import type { NodeDef, SimulationSchema } from './SimulationRunner';
+import { theRunner, type NodeDef, type SimulationSchema } from './SimulationRunner';
 import { assert } from './CaptureTool';
 
 export class MyError extends Error {
 }
+export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
 
 export function getElementSizeAlignment(format : string) : [number, number] {
     let alignment;
@@ -88,25 +88,75 @@ export class StorageDef extends ResourceDef {
     }
 }
 
+
+interface FieldDef {
+    name  : string;
+    offset: number;
+    format: WgslFormat;
+}
+
 export class UniformDef extends ResourceDef {
     fields?: Record<string, WgslFormat>; // for uniform
-    // totalSize: number;
+    fieldDefs: FieldDef[] = [];
+    totalSize: number;
+    buffer!: GPUBuffer;
 
     constructor(data : any){
         super();
         Object.assign(this, data);
 
-        // for (const [fieldName, format] of Object.entries(this.fields!)) {
-        //     const [size, alignment] = getElementSizeAlignment(format);
+        let offset = 0;
+        for (const [name, format] of Object.entries(this.fields!)) {
+            const [size, alignment] = getElementSizeAlignment(format);
 
-        //     // Round up offset to alignment boundary (insert padding)
-        //     currentOffset = Math.ceil(currentOffset / alignment) * alignment;
-        //     offsets[fieldName] = { byteOffset: currentOffset, format };
-        //     currentOffset += size;
-        // }
+            // Round up offset to alignment boundary (insert padding)
+            offset = Math.ceil(offset / alignment) * alignment;
+            this.fieldDefs.push({name, offset, format});
 
-        // // Round up total size to 16 byte boundary as well
-        // const totalSize = Math.ceil(currentOffset / 16) * 16;
+            offset += size;
+        }
+
+        // Round up total size to 16 byte boundary as well
+        this.totalSize = Math.ceil(offset / 16) * 16;
+    }
+
+    initUniform(device: GPUDevice){
+        this.buffer = device.createBuffer({
+            label: `Uniform_${this.id}`,
+            size: this.totalSize,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+    }
+
+    /** Equivalent to updateVariables in V1: construct binary from JS object and transfer at once */
+    update(obj : any) {
+        const arrayBuffer = new ArrayBuffer(this.totalSize);
+        const view = new DataView(arrayBuffer);
+
+        for(const [name, val] of Object.entries(obj)) {
+            const info = this.fieldDefs.find(x => x.name == name)!;
+            assert(info != undefined);
+
+            if(['f32', 'u32', 'i32'].includes(info.format)){
+                assert(typeof val == "number");
+            }
+            
+            if (info.format === 'f32') {
+                view.setFloat32(info.offset, val as number, true); // true = little endian
+            } else if (info.format === 'u32') {
+                view.setUint32(info.offset, val as number, true);
+            } else if (info.format === 'i32') {
+                view.setInt32(info.offset, val as number, true);
+            } else if (Array.isArray(val) || val instanceof Float32Array) {
+                assert(Array.isArray(val) && val.every(x => typeof x == "number"));
+                // Array writing for vec2, vec3, vec4, mat4x4 etc.
+                for (let i = 0; i < val.length; i++) {
+                    view.setFloat32(info.offset + i * 4, val[i], true);
+                }
+            }
+        }
+
+        theRunner.device.queue.writeBuffer(this.buffer, 0, arrayBuffer);
     }
 }
 

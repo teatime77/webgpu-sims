@@ -29,7 +29,7 @@ const schema: SimulationSchema = {
             fields: { 
                 spinState: 'f32', bondLength: 'f32', jastrow: 'f32', pinX: 'f32',
                 pinY: 'f32', pinZ: 'f32', samplingStep: 'f32', brightness: 'f32',
-                resetFlag: 'f32', pad1: 'f32', pad2: 'f32', pad3: 'f32'
+                needsReset: 'f32', pad1: 'f32', pad2: 'f32', pad3: 'f32'
             } 
         },
         // We now store TWO buffers to represent a 6D walker configuration
