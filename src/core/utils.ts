@@ -174,10 +174,6 @@ export class MeshDef extends ResourceDef {
     }
 }
 
-export function isUniform(obj: ResourceDef) : obj is ResourceDef {
-    return ! (obj instanceof MeshDef) && obj.type === 'uniform';
-}
-
 export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
     if(node.type == "render"){
         const mesh = node.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef);

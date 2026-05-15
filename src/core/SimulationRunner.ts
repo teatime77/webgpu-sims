@@ -384,11 +384,17 @@ export class SimulationSchema {
         this.script = data.script;
         
     }
+
+    getNode(id:string) : NodeDef {
+        const node = this.nodes.find(x => x.id == id)!;
+        assert(node != undefined);
+
+        return node;
+    }
 }
 
 export class SimulationRunner {
     public device!: GPUDevice;
-    public passes: Map<string, ComputePassBuilder | RenderPassBuilder> = new Map();
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
     public generator? : Generator<PassCommand, void, unknown>;
@@ -657,7 +663,7 @@ export class SimulationRunner {
 
         this.initCanvas(canvasId);
 
-        const builder = this.passes.get(id) as RenderPassBuilder;
+        const builder = this.schema.getNode(id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
 
         // Determine the load operation based on the flag
@@ -685,7 +691,7 @@ export class SimulationRunner {
     }
 
     renderMesh(id: string, clearScreen: boolean){
-        const builder = this.passes.get(id) as RenderPassBuilder;
+        const builder = this.schema.getNode(id) as RenderPassBuilder;
         const node = builder.node;
         if(builder == undefined || node.vertexCount == undefined || node.instanceCount == undefined){
             throw new Error();
@@ -695,7 +701,7 @@ export class SimulationRunner {
     }
 
     getMeshRenders() : RenderPassBuilder[] {
-        return Array.from(this.passes.values()).filter(x => x instanceof RenderPassBuilder && isRenderMesh(theSchema, x.node) ) as RenderPassBuilder[];
+        return Array.from(this.schema.nodes).filter(x => x instanceof RenderPassBuilder && isRenderMesh(theSchema, x.node) ) as RenderPassBuilder[];
     }
 
     initScript(){

@@ -4,7 +4,7 @@ import { CaptureTool } from './core/CaptureTool';
 import { ComputePassBuilder, RenderPassBuilder, writeUniformArray, writeUniformObject } from './core/SimulationRunner';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
 import { makeUIs } from './core/SimUI';
-import { isUniform, MeshDef, MyError } from './core/utils';
+import { MeshDef, MyError, UniformDef } from './core/utils';
 import { testParser } from './core/parser';
 
 export let theSchema : SimulationSchema;
@@ -169,7 +169,6 @@ async function bootstrap() {
                     }
                 });
             });
-            runner.passes.set(node.id, node);
         } 
         else if(node instanceof RenderPassBuilder){
 
@@ -187,7 +186,7 @@ async function bootstrap() {
                 node.setGroup(g);
                 node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
                     const res = b.resourceDef!;
-                    if (isUniform(res)){
+                    if (res instanceof UniformDef){
                         node.addUniform(runner.getUniformBuffer(b.resource), b.binding);
                     } 
                     else{
@@ -195,7 +194,6 @@ async function bootstrap() {
                     } 
                 });
             });
-            runner.passes.set(node.id, node);
         }
     }
 
