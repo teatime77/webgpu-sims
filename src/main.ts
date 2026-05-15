@@ -1,7 +1,7 @@
 // src/main.ts
 import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/CaptureTool';
-import { ComputePassBuilder, RenderPassBuilder } from './core/SimulationRunner';
+import { ComputePassBuilder, RenderPassBuilder, writeUniformArray, writeUniformObject } from './core/SimulationRunner';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
 import { makeUIs } from './core/SimUI';
 import { isUniform, MeshDef, MyError } from './core/utils';
@@ -204,7 +204,8 @@ async function bootstrap() {
     function frame() {
         const aspect = canvas.width / canvas.height;
         const matrices = camera.getMatrices(aspect);
-        runner.updateVariables('Camera', matrices);
+        const nums = matrices.viewProjection.concat(matrices.view);
+        writeUniformArray('Camera', nums)
 
         runner.currentCommandEncoder = runner.device.createCommandEncoder();
 

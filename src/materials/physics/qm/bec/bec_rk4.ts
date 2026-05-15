@@ -26,6 +26,7 @@ const schema: SimulationSchema = {
     // 1. Resources: Add intermediate buffers K1, K2, K3 for RK4
     // ========================================================================
     resources: {
+        Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         BecParams: { 
             type: 'uniform', 
             fields: { 

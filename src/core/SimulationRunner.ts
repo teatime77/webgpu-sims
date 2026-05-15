@@ -525,7 +525,9 @@ export class SimulationRunner {
 
                 if (def instanceof UniformDef) {
                     // Delegate padding calculation to UniformManager
-                    if (def.fields) this.uniforms.register(id, def.fields);
+                    if (def.fields){
+                        this.uniforms.register(id, def.fields);
+                    } 
                 } 
                 else if (def instanceof StorageDef) {
                     const count = def.bufferCount || 1;
@@ -559,17 +561,13 @@ export class SimulationRunner {
     }
 
     getUniformBuffer(id: string): GPUBuffer {
-        return this.uniforms.getBuffer(id);
+        return this.uniforms.getUniformManagerBuffer(id);
     }
 
     getStorageBuffer(id: string, historyLevel: number = 0): GPUBuffer {
         const res = theSchema.resources.get(id);
         if (!res) throw new Error(`Storage resource [${id}] not found`);
         return res.getBuffer(historyLevel);
-    }
-
-    updateVariables(id: string, values: Record<string, any>) {
-        this.uniforms.update(id, values);
     }
 
     writeUniformArray(name:string, data: number[]){

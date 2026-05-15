@@ -90,10 +90,23 @@ export class StorageDef extends ResourceDef {
 
 export class UniformDef extends ResourceDef {
     fields?: Record<string, WgslFormat>; // for uniform
+    // totalSize: number;
 
     constructor(data : any){
         super();
-        Object.assign(this, data)
+        Object.assign(this, data);
+
+        // for (const [fieldName, format] of Object.entries(this.fields!)) {
+        //     const [size, alignment] = getElementSizeAlignment(format);
+
+        //     // Round up offset to alignment boundary (insert padding)
+        //     currentOffset = Math.ceil(currentOffset / alignment) * alignment;
+        //     offsets[fieldName] = { byteOffset: currentOffset, format };
+        //     currentOffset += size;
+        // }
+
+        // // Round up total size to 16 byte boundary as well
+        // const totalSize = Math.ceil(currentOffset / 16) * 16;
     }
 }
 
