@@ -8,7 +8,6 @@ const state = {
     fieldScale: 1.0,
     speed: 1.0,
     gridSpacing: 1.0,
-    initialize: 1.0,
 };
 
 // 10x10x10 grid = 1,000 arrows (Much cleaner than 4096)
@@ -29,12 +28,12 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
+            obj : state,
             fields: { 
                 time: 'f32', 
                 fieldScale: 'f32', 
                 speed: 'f32', 
                 gridSpacing: 'f32',
-                initialize: 'f32',
             } 
         },
         GridPositions: { type: 'storage', format: 'vec4<f32>', count: NUM_ARROWS },
@@ -93,20 +92,8 @@ const schema: SimulationSchema = {
         });
         writeStorage('ArrowMesh', arrowGeom);
 
-        // 1. Initialization Compute Pass
-        state.initialize = 1.0;
-        writeUniformObject('Params', state);            
-        compute('field_compute', dispatchX);
-
-        yield 'frame';
-
-        // 2. Main execution loop
-        state.initialize = 0.0;
-
         // 3. Main execution loop
         while (true) {
-            state.time += 0.016 * state.speed; 
-
             writeUniformObject('Params', state);            
             compute('field_compute', dispatchX);
             render('field_render', ARROW_VERTICES, NUM_ARROWS, true);

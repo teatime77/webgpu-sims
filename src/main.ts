@@ -208,6 +208,9 @@ async function bootstrap() {
         runner.currentCommandEncoder = runner.device.createCommandEncoder();
 
         while (true) {
+
+            runner.setTime();
+
             const result = runner.generator!.next();
             if (result.done) break;
             

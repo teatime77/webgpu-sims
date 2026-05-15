@@ -8,7 +8,6 @@ struct ParamsStruct {
     fieldScale: f32,
     speed: f32,
     gridSpacing: f32,
-    initialize: f32,  // Updated
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
@@ -43,14 +42,14 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     if (idx >= arrayLength(&positions)) { return; }
 
     // Intercept for initialization pass
-    if (params.initialize == 1.0) {
+    if (params.time == 0.0) {
         init(idx);
         return;
     }
 
     // Fetch the grid point position
     let pos = positions[idx].xyz;
-    let t = params.time;
+    let t = params.time * params.speed;
 
     // A mathematical vector field (Arnold-Beltrami-Childress (ABC) inspired flow)
     // This creates beautiful twisting, non-intersecting vortices that evolve over time.

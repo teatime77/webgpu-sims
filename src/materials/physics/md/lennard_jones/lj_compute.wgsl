@@ -9,7 +9,7 @@ struct ParamsStruct {
     sigma: f32,
     boxSize: f32,
     damping: f32,
-    initialize: f32,
+    time: f32,
     pad2: f32,
     pad3: f32,
 };
@@ -70,7 +70,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let numParticles = arrayLength(&positions);
     if (idx >= numParticles) { return; }
 
-    if(params.initialize == 1.0){
+    if(params.time == 0.0){
         init(idx);
         return;
     }

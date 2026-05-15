@@ -9,7 +9,6 @@ const state = {
     frequency: 2.0,
     speed: 1.0,
     segmentLength: 0.02, // Length of each tube segment
-    initialize: 1.0,
 };
 
 // Simulation constants
@@ -27,13 +26,13 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
+            obj : state,
             fields: { 
                 time: 'f32', 
                 amplitude: 'f32', 
                 frequency: 'f32', 
                 speed: 'f32',
                 segmentLength: 'f32',
-                initialize: 'f32'
             } 
         },
         // We use vec4<f32> for positions and directions to ensure correct 16-byte memory alignment
@@ -91,20 +90,8 @@ nodes: [
         const tubeGeom = makeTube(TUBE_DIVISIONS);
         writeStorage('TubeMesh', tubeGeom);
 
-        // 1. Initialization Compute Pass
-        state.initialize = 1.0;
-        writeUniformObject('Params', state);            
-        compute('string_compute', dispatchX);
-
-        yield 'frame';
-
-        // 2. Setup for main execution loop
-        state.initialize = 0.0;
-
         // 3. Main execution loop
         while (true) {
-            state.time += 0.016 * state.speed; 
-
             writeUniformObject('Params', state);            
             
             // Calculate wave positions and tangents

@@ -7,7 +7,6 @@ const state = {
     speed: 1.0,
     amplitude: 1.0,
     frequency: 1.0,
-    initialize: 1.0,
 };
 
 // A high-density grid for a perfectly smooth, silky surface
@@ -25,8 +24,9 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
+            obj : state,
             fields: { 
-                time: 'f32', speed: 'f32', amplitude: 'f32', frequency: 'f32', initialize: 'f32'
+                time: 'f32', speed: 'f32', amplitude: 'f32', frequency: 'f32'
             } 
         },
         // BaseGrid holds the static (X, 0, Z) flat plane coordinates
@@ -81,20 +81,8 @@ const schema: SimulationSchema = {
     script: function* () {
         const dispatchX = Math.ceil(NUM_VERTICES / 64);
 
-        // 1. Initialization Compute Pass
-        state.initialize = 1.0;
-        writeUniformObject('Params', state);
-        compute('wave_compute', dispatchX);
-
-        yield 'frame';
-
-        // 2. Main execution loop
-        state.initialize = 0.0;
-
         // 2. Main execution loop
         while (true) {
-            state.time += 0.016 * state.speed; 
-
             // Write uniform parameters
             writeUniformObject('Params', state);
             

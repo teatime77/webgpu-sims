@@ -8,7 +8,7 @@ const state = {
     baseLength: 4.0,
     bobRadius: 0.4,
     stringThickness: 0.05,
-    initialize: 1.0,
+    time: 0.0,
 };
 
 const NUM_PENDULUMS = 10;
@@ -27,9 +27,10 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
+            obj : state,
             fields: { 
                 dt: 'f32', gravity: 'f32', baseLength: 'f32', 
-                bobRadius: 'f32', stringThickness: 'f32', initialize: 'f32'
+                bobRadius: 'f32', stringThickness: 'f32', time: 'f32'
             } 
         },
         PendulumState: { type: 'storage', format: 'vec4<f32>', count: NUM_PENDULUMS },
@@ -87,13 +88,6 @@ const schema: SimulationSchema = {
 
     script: function* () {
         const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
-
-        state.initialize = 1.0;
-        writeUniformObject('Params', state);            
-        compute('pendulum_comp', dispatchX);
-        yield 'frame';
-
-        state.initialize = 0.0;
 
         // Main Loop
         while (true) {

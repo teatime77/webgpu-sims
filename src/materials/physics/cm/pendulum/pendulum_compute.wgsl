@@ -9,7 +9,7 @@ struct ParamsStruct {
     baseLength: f32,
     bobRadius: f32,
     stringThickness: f32,
-    initialize: f32,
+    time: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
@@ -27,7 +27,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     if (idx >= num_pendulums) { return; }
 
     // --- GPU Initialization ---
-    if (params.initialize == 1.0) {
+    if (params.time == 0.0) {
         // Space them out along the Z-axis
         let z_spacing = 1.0;
         let z_offset = (f32(idx) - f32(num_pendulums) / 2.0) * z_spacing;

@@ -8,7 +8,7 @@ const state = {
     interactionRadius: 0.2,
     stiffness: 500.0,
     boxSize: 10.0,
-    initialize:1.0,
+    time:0.0,
 };
 
 const NUM_PARTICLES = 4096;
@@ -24,7 +24,8 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
-            fields: { dt: 'f32', gravity: 'f32', interactionRadius: 'f32', stiffness: 'f32', boxSize: 'f32', initialize: 'f32', pad2: 'f32', pad3: 'f32' } 
+            obj : state,
+            fields: { dt: 'f32', gravity: 'f32', interactionRadius: 'f32', stiffness: 'f32', boxSize: 'f32', time: 'f32', pad2: 'f32', pad3: 'f32' } 
         },
         ParticlePos: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },
         ParticleVel: { type: 'storage', format: 'vec4<f32>', count: NUM_PARTICLES },
@@ -74,14 +75,6 @@ const schema: SimulationSchema = {
 
         // ★ Added: Generate a unit sphere (radius 1.0) to be scaled in the shader
         writeStorage('BaseMesh', makeGeodesicPolyhedron(1));
-
-        state.initialize = 1.0;
-        writeUniformObject('Params', state);
-        compute('md_compute', dispatchX);
-
-        yield 'frame';
-
-        state.initialize = 0.0;
 
         while (true) {
             writeUniformObject('Params', state);

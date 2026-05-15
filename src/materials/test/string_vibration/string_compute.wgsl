@@ -9,7 +9,6 @@ struct ParamsStruct {
     frequency: f32,
     speed: f32,
     segmentLength: f32,
-    initialize: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
@@ -28,7 +27,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let x = (f32(idx) - f32(num_segments) / 2.0) * params.segmentLength;
 
-    if (params.initialize == 1.0) {
+    if (params.time == 0.0) {
         positions[idx] = vec4<f32>(x, 0.0, 0.0, 1.0);
         directions[idx] = vec4<f32>(1.0, 0.0, 0.0, params.segmentLength);
         return;

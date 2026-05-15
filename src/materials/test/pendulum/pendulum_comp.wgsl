@@ -8,7 +8,7 @@ struct ParamsStruct {
     baseLength: f32,
     bobRadius: f32,
     stringThickness: f32,
-    initialize: f32,
+    time: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
@@ -75,7 +75,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     // ==========================================
     // 1. PHYSICS INTEGRATION
     // ==========================================
-    if (params.initialize == 1.0) {
+    if (params.time == 0.0) {
         let z_offset = (f32(idx) - f32(num_pendulums) / 2.0) * 1.0;
         let frequency_factor = 1.0 + f32(idx) * 0.05;
         let L = params.baseLength / (frequency_factor * frequency_factor);

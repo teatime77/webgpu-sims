@@ -9,7 +9,7 @@ const state = {
     baseLength: 4.0,
     bobRadius: 0.4,
     stringThickness: 0.05,
-    initialize: 1.0,
+    time: 0.0,
 };
 
 const NUM_PENDULUMS = 10;
@@ -32,13 +32,14 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
+            obj : state,
             fields: { 
                 dt: 'f32', 
                 gravity: 'f32', 
                 baseLength: 'f32', 
                 bobRadius: 'f32',
                 stringThickness: 'f32',
-                initialize: 'f32'
+                time: 'f32'
             } 
         },
         // State holds: [angle (theta), angular_velocity (omega), z_offset, length]
@@ -113,15 +114,6 @@ const schema: SimulationSchema = {
         // Generate Bob with radius 1.0 (we will scale it dynamically in the shader)
         const bobGeom = makeGeodesicPolyhedron(2);
         writeStorage('BobMesh', bobGeom);
-
-        // 1. Initialization Compute Pass
-        state.initialize = 1.0;
-        writeUniformObject('Params', state);            
-        compute('pendulum_compute', dispatchX);
-        yield 'frame';
-
-        // 2. Setup for main execution loop
-        state.initialize = 0.0;
 
         // 3. Main execution loop
         while (true) {

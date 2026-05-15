@@ -9,7 +9,7 @@ struct ParamsStruct {
     interactionRadius: f32,
     stiffness: f32,
     boxSize: f32,
-    initialize: f32,
+    time: f32,
     pad2: f32,
     pad3: f32,
 };
@@ -67,7 +67,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     if (idx >= numParticles) { return; }
 
     // Intercept for initialization pass
-    if (params.initialize == 1.0) {
+    if (params.time == 0.0) {
         init(idx);
         return;
     }

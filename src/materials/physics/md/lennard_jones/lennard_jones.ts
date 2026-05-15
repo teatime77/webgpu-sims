@@ -8,7 +8,7 @@ const state = {
     sigma: 0.4,         // Distance where inter-particle potential is zero
     boxSize: 15.0,      // Bounding box size
     damping: 0.999,     // Simple thermostat to drain excess kinetic energy
-    initialize: 1.0
+    time: 1.0
 };
 
 const NUM_PARTICLES = 8192; // Doubled the particle count for better fluid dynamics
@@ -24,9 +24,10 @@ const schema: SimulationSchema = {
         Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
+            obj : state,
             fields: { 
                 dt: 'f32', epsilon: 'f32', sigma: 'f32', boxSize: 'f32', 
-                damping: 'f32', initialize: 'f32', pad2: 'f32', pad3: 'f32' 
+                damping: 'f32', time: 'f32', pad2: 'f32', pad3: 'f32' 
             } 
         },
         // Positions w-component will store the particle "type" (0.0 or 1.0)
@@ -82,14 +83,6 @@ const schema: SimulationSchema = {
         const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         writeStorage('BaseMesh', makeGeodesicPolyhedron(1)); // Unit sphere
-
-        state.initialize = 1.0;
-        writeUniformObject('Params', state);
-        compute('lj_compute', dispatchX);
-
-        yield 'frame';
-
-        state.initialize = 0.0;
 
         while (true) {
             writeUniformObject('Params', state);

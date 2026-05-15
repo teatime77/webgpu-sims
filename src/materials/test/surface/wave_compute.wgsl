@@ -8,7 +8,6 @@ struct ParamsStruct {
     speed: f32,
     amplitude: f32,
     frequency: f32,
-    initialize: f32
 };
 
 @group(0) @binding(0) var<uniform> params: ParamsStruct;
@@ -60,7 +59,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     if (idx >= arrayLength(&baseGrid)) { return; }
 
     // Intercept for initialization pass
-    if (params.initialize == 1.0) {
+    if (params.time == 0.0) {
         init(idx);
         return;
     }
@@ -72,7 +71,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let A = params.amplitude;
     let F = params.frequency;
-    let T = params.time;
+    let T = params.time * params.speed;
 
     // --- Wave 1: Traveling along the X axis ---
     let w1_phase = x * F + T;

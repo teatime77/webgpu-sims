@@ -100,6 +100,7 @@ export class UniformDef extends ResourceDef {
     fieldDefs: FieldDef[] = [];
     totalSize: number;
     buffer!: GPUBuffer;
+    obj? : any;
 
     constructor(data : any){
         super();
@@ -118,6 +119,10 @@ export class UniformDef extends ResourceDef {
 
         // Round up total size to 16 byte boundary as well
         this.totalSize = Math.ceil(offset / 16) * 16;
+    }
+
+    getField(name : string) : FieldDef | undefined {
+        return this.fieldDefs.find(x => x.name == name);
     }
 
     initUniform(device: GPUDevice){

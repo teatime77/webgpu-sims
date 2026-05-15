@@ -391,6 +391,16 @@ export class SimulationSchema {
 
         return node;
     }
+
+    getUniform(id:string) : UniformDef | undefined {
+        const res = this.resources.get(id);
+        if(res instanceof UniformDef){
+            return res;
+        }
+        else{
+            return undefined;
+        }
+    }
 }
 
 export class SimulationRunner {
@@ -399,6 +409,7 @@ export class SimulationRunner {
     private initializedCanvases = new Set<string>(['main-canvas']);
     public generator? : Generator<PassCommand, void, unknown>;
     schema!: SimulationSchema;
+    startTime : number = 0;
 
     // public device!: GPUDevice;
     public format!: GPUTextureFormat;
@@ -706,14 +717,27 @@ export class SimulationRunner {
 
     initScript(){
         this.generator = this.schema.script();
+        this.startTime = NaN;
 
-        Object.entries(theSchema.resources).forEach(([key, value]) => {
+        for(const [key, value] of theSchema.resources.entries()){
             if(value instanceof MeshDef){
                 msg(`mesh:${key}`);
                 writeMesh(key);
             }
-        });
-        
+        }        
+    }
+
+    setTime(){
+        const uni = this.schema.getUniform("Params");
+        if(uni != undefined && uni.obj != undefined && typeof uni.obj.time == "number" ){
+            if(isNaN(this.startTime)){
+                this.startTime = Date.now();
+                uni.obj.time = 0;
+            }
+            else{
+                uni.obj.time = (Date.now() - this.startTime) / 1000.0;
+            }
+        }
     }
 }
 
