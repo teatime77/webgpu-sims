@@ -2,8 +2,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import type { SimulationSchema } from '../src/core/engine/SimulationRunner';
-import { MeshDef } from '../src/core/engine/utils';
+import type { SimulationSchema } from '../src/core/SimulationRunner';
+import { MeshDef } from '../src/core/utils';
 
 async function main() {
     const targetFile = process.argv[2];

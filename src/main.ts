@@ -1,12 +1,12 @@
 // src/main.ts
 import { OrbitCamera } from './core/camera';
-import { CaptureTool } from './core/utils/CaptureTool';
-import { ComputePassBuilder } from './core/builder/ComputePassBuilder';
-import { RenderPassBuilder } from './core/builder/RenderPassBuilder';
-import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/engine/SimulationRunner';
-import { makeUIs } from './core/ui/SimUI';
-import { isRenderMesh, isUniform, MeshDef, MyError } from './core/engine/utils';
-import { testParser } from './core/engine/parser';
+import { CaptureTool } from './core/CaptureTool';
+import { ComputePassBuilder } from './core/ComputePassBuilder';
+import { RenderPassBuilder } from './core/RenderPassBuilder';
+import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
+import { makeUIs } from './core/SimUI';
+import { isUniform, MeshDef, MyError } from './core/utils';
+import { testParser } from './core/parser';
 
 export let theSchema : SimulationSchema;
 
@@ -142,7 +142,7 @@ async function bootstrap() {
                 case "tube"  : fileName = "tube_render.wgsl"; break;
                 default: throw new MyError();
                 }
-                shaderUrl = `./src/core/builder/${fileName}`;
+                shaderUrl = `./src/core/wgsl/${fileName}`;
             }
             else{
 

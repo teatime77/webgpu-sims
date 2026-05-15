@@ -1,5 +1,5 @@
 // src/materials/test/pendulum/pendulum.ts
-import { compute, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
+import { compute, writeUniformObject, type SimulationSchema } from '../../../core/SimulationRunner';
 
 // UI State
 const state = {

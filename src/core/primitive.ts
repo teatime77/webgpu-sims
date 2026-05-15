@@ -1,5 +1,5 @@
 // src/core/primitive.ts
-import { Vec3, vecSub, vecCross, vecNormalize } from './math/vec3';
+import { Vec3, vecNormalize } from './vec3';
 
 
 export function msg(txt : string){

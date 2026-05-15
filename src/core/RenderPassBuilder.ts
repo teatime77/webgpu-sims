@@ -1,8 +1,8 @@
-// src/core/builder/RenderPassBuilder.ts
+// src/core/RenderPassBuilder.ts
 
-import { theSchema } from "../../main";
-import type { NodeDef } from "../engine/SimulationRunner";
-import { MeshDef } from "../engine/utils";
+import { theSchema } from "../main";
+import type { NodeDef } from "./SimulationRunner";
+import { MeshDef } from "./utils";
 
 export interface RenderPassOptions {
     topology?: GPUPrimitiveTopology; // e.g., 'triangle-list', 'line-list', 'point-list'

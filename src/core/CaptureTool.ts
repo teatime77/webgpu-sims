@@ -1,6 +1,6 @@
-// src/core/utils/CaptureTool.ts
+// src/core/CaptureTool.ts
 
-import type { SimulationRunner } from "../engine/SimulationRunner";
+import type { SimulationRunner } from "./SimulationRunner";
 
 export function assert(ok : boolean){
     console.assert(ok);

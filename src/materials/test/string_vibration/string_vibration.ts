@@ -1,5 +1,5 @@
 // src/materials/test/string_vibration/string_vibration.ts
-import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../core/SimulationRunner';
 import { makeTube } from '../../../core/primitive';
 
 // UI State

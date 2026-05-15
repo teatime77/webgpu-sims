@@ -2,8 +2,7 @@
 // AST Node Classes
 // ============================================================================
 
-import { msg } from "../primitive";
-import { fetchText } from "../utils/CaptureTool";
+import { fetchText } from "./CaptureTool";
 
 // ============================================================================
 // Abstract Base Class

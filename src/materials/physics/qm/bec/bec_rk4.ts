@@ -1,5 +1,5 @@
 // src/materials/physics/qm/bec/bec_rk4.ts
-import { compute, render, swap, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, swap, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/SimulationRunner';
 
 const GW = 192;
 const dispatchXY = GW / 8;

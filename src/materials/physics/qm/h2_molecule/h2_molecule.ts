@@ -1,5 +1,5 @@
 // src/materials/physics/qm/h2_molecule/h2_molecule.ts
-import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/SimulationRunner';
 
 const state = {
     orbitalType: 0.0,    // 0 = Bonding (σg), 1 = Antibonding (σu*)

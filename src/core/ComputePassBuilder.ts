@@ -1,4 +1,4 @@
-// src/core/builder/ComputePassBuilder.ts
+// src/core/ComputePassBuilder.ts
 
 export class ComputePassBuilder {
     private device: GPUDevice;

@@ -1,5 +1,5 @@
 // src/materials/test/surface/surface.ts
-import { compute, render, writeUniformObject, type SimulationSchema } from '../../../core/engine/SimulationRunner';
+import { compute, render, writeUniformObject, type SimulationSchema } from '../../../core/SimulationRunner';
 
 // UI State
 const state = {

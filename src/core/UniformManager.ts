@@ -1,4 +1,4 @@
-// src/core/engine/UniformManager.ts
+// src/core/UniformManager.ts
 
 import { getElementSizeAlignment } from "./utils";
 

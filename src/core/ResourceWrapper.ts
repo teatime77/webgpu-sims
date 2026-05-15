@@ -1,4 +1,4 @@
-// src/core/engine/ResourceWrapper.ts
+// src/core/ResourceWrapper.ts
 
 import type { MeshDef } from "./utils";
 

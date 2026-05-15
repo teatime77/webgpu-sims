@@ -1,6 +1,6 @@
-import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "../engine/SimulationRunner";
+import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "./SimulationRunner";
 
-// src/core/ui/SimUI.ts
+// src/core/SimUI.ts
 
 export class SimUI {
     private container: HTMLElement;

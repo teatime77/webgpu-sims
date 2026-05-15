@@ -1,7 +1,6 @@
 import type { WgslFormat } from './UniformManager';
 import type { NodeDef, SimulationSchema } from './SimulationRunner';
-import { assert } from '../utils/CaptureTool';
-import { theSchema } from '../../main';
+import { assert } from './CaptureTool';
 
 export class MyError extends Error {
 }

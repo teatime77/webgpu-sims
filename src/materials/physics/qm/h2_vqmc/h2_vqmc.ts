@@ -1,5 +1,5 @@
 // src/materials/physics/qm/h2_vqmc/h2_vqmc.ts
-import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/SimulationRunner';
 
 const state = {
     spinState: 0.0,      // 0 = Singlet (Symmetric Space), 1 = Triplet (Antisymmetric Space via Slater Det)

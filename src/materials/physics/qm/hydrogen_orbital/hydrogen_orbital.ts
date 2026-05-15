@@ -1,5 +1,5 @@
 // src/materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts
-import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/SimulationRunner';
 
 // Object to hold simulation state
 const state = {

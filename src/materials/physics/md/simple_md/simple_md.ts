@@ -1,5 +1,5 @@
 // src/materials/physics/md/simple_md/simple_md.ts
-import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/engine/SimulationRunner';
+import { compute, render, writeStorage, writeUniformObject, type SimulationSchema } from '../../../../core/SimulationRunner';
 import { makeGeodesicPolyhedron } from '../../../../core/primitive'; // Assuming this path based on your example
 
 const state = {

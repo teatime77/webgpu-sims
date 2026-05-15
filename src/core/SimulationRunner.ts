@@ -1,13 +1,13 @@
-// src/core/engine/SimulationRunner.ts
+// src/core/SimulationRunner.ts
 import { UniformManager } from './UniformManager';
 import { ResourceWrapper } from './ResourceWrapper';
 import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef } from './utils';
-import type { ComputePassBuilder } from '../builder/ComputePassBuilder';
-import { RenderPassBuilder } from '../builder/RenderPassBuilder';
-import { makeGeodesicPolyhedron, makeTube, msg } from '../primitive';
-import { theSchema } from '../../main';
+import type { ComputePassBuilder } from './ComputePassBuilder';
+import { RenderPassBuilder } from './RenderPassBuilder';
+import { makeGeodesicPolyhedron, makeTube, msg } from './primitive';
+import { theSchema } from '../main';
 import { getElementSize, MyError } from './utils';
-import { assert } from '../utils/CaptureTool';
+import { assert } from './CaptureTool';
 
 export class ResourceBinding {
     group?: number;
