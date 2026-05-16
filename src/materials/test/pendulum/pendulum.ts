@@ -56,18 +56,7 @@ const schema: SimulationSchema = {
         { type: "range", obj: state, name: "baseLength", label: "String Length", min: 1.0, max: 10.0, step: 0.1 },
         { type: "range", obj: state, name: "bobRadius", label: "Bob Size", min: 0.1, max: 1.0, step: 0.05 },
         { type: "range", obj: state, name: "stringThickness", label: "String Thickness", min: 0.01, max: 0.2, step: 0.01 }
-    ],
-
-    script: function* () {
-        // Main Loop
-        while (true) {
-            writeUniformObject('Params', state);            
-            
-            compute('pendulum_comp');
-            
-            yield 'frame';
-        }
-    }
+    ]
 };
 
 export default schema;

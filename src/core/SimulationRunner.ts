@@ -115,7 +115,10 @@ export class ComputePassBuilder extends NodeDef{
      * Dispatches (executes) the compute pass.
      * Dynamically generates and sets BindGroups at runtime.
      */
-    dispatch(passEncoder: GPUComputePassEncoder, workgroupCountX: number, workgroupCountY: number = 1, workgroupCountZ: number = 1) {
+    dispatch(encoder : GPUCommandEncoder) {
+        assert(encoder != undefined);
+
+        const passEncoder = encoder.beginComputePass();
         passEncoder.setPipeline(this.pipeline);
 
         // Create and set BindGroups for all registered groups
@@ -127,8 +130,31 @@ export class ComputePassBuilder extends NodeDef{
             passEncoder.setBindGroup(groupIndex, bindGroup);
         }
 
+        let x:number;
+        let y:number;
+        let z:number;
+
+        if(this.workgroupCount == undefined){
+            throw new MyError();
+        }
+
+        if(typeof this.workgroupCount == "number"){
+            [x, y, z] = [this.workgroupCount, 1, 1];
+        }
+        else if(this.workgroupCount.length == 2){
+            [x, y] = this.workgroupCount; z = 1;
+        }
+        else if(this.workgroupCount.length == 3){
+            [x, y, z] = this.workgroupCount;
+        }
+        else{
+            throw new MyError();
+        }
+
         // Dispatch workgroups
-        passEncoder.dispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ);
+        passEncoder.dispatchWorkgroups(x, y, z);
+
+        passEncoder.end();
     }
     
     /**
@@ -327,7 +353,7 @@ export interface ISimulationSchema {
     resources: Record<string, ResourceDef>;
     shaders: NodeDef[];
     uis? : UIDef[];
-    script: () => Generator<PassCommand, void, unknown>;
+    script?: () => Generator<PassCommand, void, unknown>;
 }
 
 export class SimulationSchema {
@@ -336,7 +362,7 @@ export class SimulationSchema {
     shaders: NodeDef[];
     nodeMap : Map<string, NodeDef>;
     uis? : UIDef[];
-    script: () => Generator<PassCommand, void, unknown>;
+    script?: () => Generator<PassCommand, void, unknown>;
 
     constructor(device: GPUDevice, data: ISimulationSchema){
         this.name = data.name;
@@ -632,33 +658,9 @@ export class SimulationRunner {
         theSchema.resources.get(id)?.swap();
     }
 
-    compute(id: string) {
-        if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
-        const builder = theSchema.nodeMap.get(id) as ComputePassBuilder;
-
-        let x:number;
-        let y:number;
-        let z:number;
-
-        if(builder.workgroupCount == undefined){
-            throw new MyError();
-        }
-
-        if(typeof builder.workgroupCount == "number"){
-            [x, y, z] = [builder.workgroupCount, 1, 1];
-        }
-        else if(builder.workgroupCount.length == 2){
-            [x, y] = builder.workgroupCount; z = 1;
-        }
-        else if(builder.workgroupCount.length == 3){
-            [x, y, z] = builder.workgroupCount;
-        }
-        else{
-            throw new MyError();
-        }
-        const cPass = this.currentCommandEncoder.beginComputePass();
-        builder.dispatch(cPass, x, y, z);
-        cPass.end();
+    computeByShaderId(id: string) {
+        const shader = theSchema.nodeMap.get(id) as ComputePassBuilder;
+        shader.dispatch(this.currentCommandEncoder!);
     }
 
     initCanvas(canvasId : string){
@@ -741,8 +743,23 @@ export class SimulationRunner {
         return Array.from(this.schema.shaders).filter(x => x instanceof RenderPassBuilder && isRenderMesh(theSchema, x.node) ) as RenderPassBuilder[];
     }
 
+    getComputeShaders() : ComputePassBuilder[] {
+        return Array.from(this.schema.shaders).filter(x => x instanceof ComputePassBuilder) as ComputePassBuilder[];
+    }
+
+    getUniforms() : UniformDef[] {
+        return Array.from(this.schema.resources.values()).filter(x => x instanceof UniformDef && x.obj != undefined) as UniformDef[];
+    }
+
     initScript(){
-        this.generator = this.schema.script();
+        if(this.schema.script != undefined){
+
+            this.generator = this.schema.script();
+        }
+        else{
+
+            this.generator = runSchema(this);
+        }
         this.startTime = NaN;
 
         for(const [key, def] of theSchema.resources.entries()){
@@ -775,7 +792,7 @@ export function setRunner(runner : SimulationRunner){
 }
 
 export function compute(id: string){
-    simRunner.compute(id);
+    simRunner.computeByShaderId(id);
 }
 
 export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas'){
@@ -803,8 +820,25 @@ export function writeStorage(id: string, data: Float32Array | Uint32Array){
 }
 
 export function getMesh(node : NodeDef) : MeshDef | undefined {
-        assert(node.type == "render");
-        const mesh = node.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef)!;
+    assert(node.type == "render");
+    const mesh = node.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef)!;
 
-        return mesh;
+    return mesh;
+}
+
+export function* runSchema(runner : SimulationRunner) : Generator<PassCommand, void, unknown> {
+    const uniforms = runner.getUniforms();
+    const shaders = runner.getComputeShaders();
+
+    while(true){
+        for(const uni of uniforms){
+            uni.update(uni.obj);
+        }
+
+        for(const shader of shaders){
+            shader.dispatch(runner.currentCommandEncoder!);
+        }
+
+        yield 'frame';
     }
+}
