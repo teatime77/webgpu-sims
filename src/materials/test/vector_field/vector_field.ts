@@ -13,6 +13,7 @@ const state = {
 // 10x10x10 grid = 1,000 arrows (Much cleaner than 4096)
 const GRID_SIZE = 10;
 const NUM_ARROWS = GRID_SIZE * GRID_SIZE * GRID_SIZE;
+const dispatchX = Math.ceil(NUM_ARROWS / 64);
 
 // Arrow mesh constants
 const RADIAL_SEGMENTS = 8;
@@ -43,6 +44,7 @@ const schema: SimulationSchema = {
             id: 'field_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'GridPositions', varName: 'positions', access: 'read_write' },
@@ -77,7 +79,6 @@ const schema: SimulationSchema = {
     // 4. Execution Loop
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_ARROWS / 64);
 
         // Load the Arrow Mesh
         const arrowGeom = makeArrowMesh({ 
@@ -89,7 +90,7 @@ const schema: SimulationSchema = {
         // 3. Main execution loop
         while (true) {
             writeUniformObject('Params', state);            
-            compute('field_compute', dispatchX);
+            compute('field_compute');
             render('field_render', ARROW_VERTICES, NUM_ARROWS, true);
             
             yield 'frame';

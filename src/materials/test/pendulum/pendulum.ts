@@ -12,6 +12,7 @@ const state = {
 };
 
 const NUM_PENDULUMS = 10;
+const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
 
 const TUBE_DIVISIONS = 16;
 const TUBE_VERTEX_COUNT = (TUBE_DIVISIONS + 1) * 2;
@@ -44,6 +45,7 @@ const schema: SimulationSchema = {
             id: 'pendulum_comp',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'PendulumState', varName: 'stateBuffer', access: 'read_write' },
@@ -83,13 +85,12 @@ const schema: SimulationSchema = {
     ],
 
     script: function* () {
-        const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
 
         // Main Loop
         while (true) {
             writeUniformObject('Params', state);            
             
-            compute('pendulum_comp', dispatchX);
+            compute('pendulum_comp');
             
             yield 'frame';
         }

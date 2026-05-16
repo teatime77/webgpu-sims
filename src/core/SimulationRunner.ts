@@ -25,6 +25,7 @@ export abstract class NodeDef {
     id!: string;
     type!: 'compute' | 'render';
     workgroupSize?: number | string | (number | string)[];
+    workgroupCount? : number | [number, number] | [number, number, number];
     topology?: GPUPrimitiveTopology;
     blendMode?: 'opaque' | 'alpha' | 'add' | 'normal';
     depthTest?: boolean;
@@ -36,13 +37,6 @@ export abstract class NodeDef {
     constructor(data : any){
         data.bindings = data.bindings.map((x: any) => new ResourceBinding(x));
         Object.assign(this, data);
-    }
-
-    getMesh() : MeshDef | undefined {
-        assert(this.type == "render");
-        const mesh = this.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef)!;
-
-        return mesh;
     }
 }
 
@@ -627,9 +621,30 @@ export class SimulationRunner {
         theSchema.resources.get(id)?.swap();
     }
 
-    compute(id: string, x: number, y = 1, z = 1) {
+    compute(id: string) {
         if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
         const builder = theSchema.nodeMap.get(id) as ComputePassBuilder;
+
+        let x:number;
+        let y:number;
+        let z:number;
+
+        if(builder.workgroupCount == undefined){
+            throw new MyError();
+        }
+        
+        if(typeof builder.workgroupCount == "number"){
+            [x, y, z] = [builder.workgroupCount, 1, 1];
+        }
+        else if(builder.workgroupCount.length == 2){
+            [x, y] = builder.workgroupCount; z = 1;
+        }
+        else if(builder.workgroupCount.length == 3){
+            [x, y, z] = builder.workgroupCount;
+        }
+        else{
+            throw new MyError();
+        }
         const cPass = this.currentCommandEncoder.beginComputePass();
         builder.dispatch(cPass, x, y, z);
         cPass.end();
@@ -747,8 +762,8 @@ export function setRunner(runner : SimulationRunner){
     simRunner = runner;
 }
 
-export function compute(id: string, x: number, y = 1, z = 1){
-    simRunner.compute(id, x, y, z);
+export function compute(id: string){
+    simRunner.compute(id);
 }
 
 export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas'){
@@ -778,3 +793,10 @@ export function writeStorage(id: string, data: Float32Array | Uint32Array){
 export function writeMesh(id: string){
     simRunner.writeMesh(id);
 }
+
+export function getMesh(node : NodeDef) : MeshDef | undefined {
+        assert(node.type == "render");
+        const mesh = node.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef)!;
+
+        return mesh;
+    }

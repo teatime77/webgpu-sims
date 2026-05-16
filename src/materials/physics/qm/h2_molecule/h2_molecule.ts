@@ -12,6 +12,7 @@ const state = {
 
 // 1 Million particles to create a smooth, fuzzy electron probability cloud
 const NUM_PARTICLES = 1000000;
+const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
 const schema: SimulationSchema = {
     name: "H2 Molecule Electron Cloud (Hartree-Fock LCAO)",
@@ -37,6 +38,7 @@ const schema: SimulationSchema = {
             id: 'h2_hf_comp',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'ParticleData', varName: 'particles', access: 'read_write' },
@@ -75,7 +77,6 @@ const schema: SimulationSchema = {
     // 4. Execution Loop
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         // Initialize random number state buffer for the MCMC algorithm
         const rngState = new Uint32Array(NUM_PARTICLES);
@@ -88,7 +89,7 @@ const schema: SimulationSchema = {
         state.needsReset = 1.0;
         writeUniformObject('Params', state);
 
-        compute('h2_hf_comp', dispatchX);
+        compute('h2_hf_comp');
         yield 'frame';
 
         state.needsReset = 0.0;
@@ -98,7 +99,7 @@ const schema: SimulationSchema = {
             // Write 0.0 to needsReset during normal execution to perform standard MCMC steps
             writeUniformObject('Params', state);
             
-            compute('h2_hf_comp', dispatchX);
+            compute('h2_hf_comp');
             render('h2_hf_render', NUM_PARTICLES, 1, false);
             
             yield 'frame';

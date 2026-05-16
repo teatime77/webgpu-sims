@@ -11,6 +11,7 @@ const state = {
 };
 
 const NUM_PARTICLES = 1000000;
+const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
 const schema: SimulationSchema = {
     name: "Hydrogen Orbital V1.5",
@@ -35,6 +36,7 @@ const schema: SimulationSchema = {
         {
             id: 'hydrogen_orbital_comp',
             type: 'compute',
+            workgroupCount: dispatchX,
             bindings: [
                 { group: 0, binding: 0, resource: 'Params', varName: 'params' },
                 { group: 0, binding: 1, resource: 'ParticleData', varName: 'particles', access: 'read_write' },
@@ -70,7 +72,6 @@ const schema: SimulationSchema = {
     // 4. Execution generator (MCMC burn-in orchestration)
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         // Initialize random number state buffer
         const rngState = new Uint32Array(NUM_PARTICLES);
@@ -81,14 +82,14 @@ const schema: SimulationSchema = {
 
         state.needsReset = 1.0;
         writeUniformObject('Params', state);
-        compute('hydrogen_orbital_comp', dispatchX);
+        compute('hydrogen_orbital_comp');
         yield 'frame';
 
         state.needsReset = 0.0;
 
         while (true) {
             writeUniformObject('Params', state);
-            compute('hydrogen_orbital_comp', dispatchX);
+            compute('hydrogen_orbital_comp');
 
             // Rendering (Vertex count is NUM_PARTICLES since it's point-list)
             render('hydrogen_orbital_render', NUM_PARTICLES, 1, false);

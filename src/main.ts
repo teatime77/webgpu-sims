@@ -1,7 +1,7 @@
 // src/main.ts
 import { OrbitCamera } from './core/camera';
 import { CaptureTool } from './core/CaptureTool';
-import { ComputePassBuilder, RenderPassBuilder, writeUniformArray, writeUniformObject } from './core/SimulationRunner';
+import { ComputePassBuilder, getMesh, RenderPassBuilder, writeUniformArray, writeUniformObject } from './core/SimulationRunner';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
 import { makeUIs } from './core/SimUI';
 import { MeshDef, MyError, UniformDef } from './core/utils';
@@ -132,7 +132,7 @@ async function bootstrap() {
             shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
         }
         else if(node.type == "render"){
-            const mesh = node.getMesh();
+            const mesh = getMesh(node);
             if(mesh != undefined){
 
                 let fileName : string;

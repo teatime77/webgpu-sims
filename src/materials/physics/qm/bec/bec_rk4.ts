@@ -57,6 +57,7 @@ const schema: SimulationSchema = {
         {
             id: 'bec_init', type: 'compute',
             workgroupSize: [8, 8, 1],
+            workgroupCount: [dispatchXY, dispatchXY],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 0, varName: 'psiOut', access: 'read_write' },
@@ -66,6 +67,7 @@ const schema: SimulationSchema = {
         {
             id: 'bec_norm_partial', type: 'compute',
             workgroupSize: [8, 8, 1],
+            workgroupCount: [dispatchXY, dispatchXY],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 0, varName: 'psiR', access: 'read' },
@@ -74,6 +76,7 @@ const schema: SimulationSchema = {
         },
         {
             id: 'bec_norm_total', type: 'compute',
+            workgroupCount: 1,
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'PartialNorm', access: 'read' },
@@ -83,6 +86,7 @@ const schema: SimulationSchema = {
         {
             id: 'bec_norm_apply', type: 'compute',
             workgroupSize: [8, 8, 1],
+            workgroupCount: [dispatchXY, dispatchXY],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 0, varName: 'psiN', access: 'read_write' },
@@ -94,6 +98,7 @@ const schema: SimulationSchema = {
         {
             id: 'bec_rk4_k1', type: 'compute',
             workgroupSize: [8, 8, 1],
+            workgroupCount: [dispatchXY, dispatchXY],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },
@@ -103,6 +108,7 @@ const schema: SimulationSchema = {
         {
             id: 'bec_rk4_k2', type: 'compute',
             workgroupSize: [8, 8, 1],
+            workgroupCount: [dispatchXY, dispatchXY],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },
@@ -113,6 +119,7 @@ const schema: SimulationSchema = {
         {
             id: 'bec_rk4_k3', type: 'compute',
             workgroupSize: [8, 8, 1],
+            workgroupCount: [dispatchXY, dispatchXY],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },
@@ -123,6 +130,7 @@ const schema: SimulationSchema = {
         {
             id: 'bec_rk4_finish', type: 'compute',
             workgroupSize: [8, 8, 1],
+            workgroupCount: [dispatchXY, dispatchXY],
             bindings: [
                 { group: 0, binding: 0, resource: 'BecParams', varName: 'params' },
                 { group: 0, binding: 1, resource: 'Psi', historyLevel: 1, varName: 'psi0', access: 'read' },
@@ -201,10 +209,10 @@ const schema: SimulationSchema = {
         state.time = time;
         writeUniformObject('BecParams', state);
         
-        compute('bec_init', dispatchXY, dispatchXY);
-        compute('bec_norm_partial', dispatchXY, dispatchXY);
-        compute('bec_norm_total', 1);
-        compute('bec_norm_apply', dispatchXY, dispatchXY);
+        compute('bec_init');
+        compute('bec_norm_partial');
+        compute('bec_norm_total');
+        compute('bec_norm_apply');
         
         swap('Psi');
         yield 'frame';
@@ -215,22 +223,22 @@ const schema: SimulationSchema = {
             writeUniformObject('BecParams', state);
 
             // Execute the 4 steps of RK4 in sequence
-            compute('bec_rk4_k1', dispatchXY, dispatchXY);
+            compute('bec_rk4_k1');
             render('bec_debug_k1', 6, 1, false, 'canvas-k1');
 
-            compute('bec_rk4_k2', dispatchXY, dispatchXY);
+            compute('bec_rk4_k2');
             render('bec_debug_k2', 6, 1, false, 'canvas-k2');
 
-            compute('bec_rk4_k3', dispatchXY, dispatchXY);
+            compute('bec_rk4_k3');
             render('bec_debug_k3', 6, 1, false, 'canvas-k3');
 
-            compute('bec_rk4_finish', dispatchXY, dispatchXY);
+            compute('bec_rk4_finish');
             render('bec_debug_prenorm', 6, 1, false, 'canvas-prenorm');
 
             // Normalization
-            compute('bec_norm_partial', dispatchXY, dispatchXY);
-            compute('bec_norm_total', 1);
-            compute('bec_norm_apply', dispatchXY, dispatchXY);
+            compute('bec_norm_partial');
+            compute('bec_norm_total');
+            compute('bec_norm_apply');
             
             // Rendering
             render('bec_render', 6, 1, false);

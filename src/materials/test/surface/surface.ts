@@ -13,6 +13,7 @@ const state = {
 // 200x200 grid = 40,000 quads = 80,000 triangles = 240,000 vertices
 const GRID_SIZE = 200;
 const NUM_VERTICES = GRID_SIZE * GRID_SIZE * 6;
+const dispatchX = Math.ceil(NUM_VERTICES / 64);
 
 const schema: SimulationSchema = {
     name: "Procedural Wave Surface",
@@ -41,6 +42,7 @@ const schema: SimulationSchema = {
             id: 'wave_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'BaseGrid', varName: 'baseGrid', access: 'read_write' },
@@ -76,7 +78,6 @@ const schema: SimulationSchema = {
     // 4. Execution Loop
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_VERTICES / 64);
 
         // 2. Main execution loop
         while (true) {
@@ -84,7 +85,7 @@ const schema: SimulationSchema = {
             writeUniformObject('Params', state);
             
             // Calculate wave heights and analytical normals
-            compute('wave_compute', dispatchX);
+            compute('wave_compute');
             
             // Render the 240,000 vertices as 1 contiguous mesh instance
             render('wave_render', NUM_VERTICES, 1, true);

@@ -15,6 +15,7 @@ const state = {
 
 // 500,000 Walkers (each walker is a PAIR of electrons, so 1 million 3D vectors total)
 const NUM_WALKERS = 500000;
+const dispatchX = Math.ceil(NUM_WALKERS / 64);
 
 const schema: SimulationSchema = {
     name: "H2 VQMC (Slater Determinant & Correlation)",
@@ -42,6 +43,7 @@ const schema: SimulationSchema = {
             id: 'vqmc_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'Electron1Pos', varName: 'e1_pos', access: 'read_write' },
@@ -86,7 +88,6 @@ const schema: SimulationSchema = {
     // 4. Execution Loop
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_WALKERS / 64);
 
         // Initialize random states
         const rngState = new Uint32Array(NUM_WALKERS);
@@ -99,7 +100,7 @@ const schema: SimulationSchema = {
         state.needsReset = 1.0;
         writeUniformObject('Params', state);
 
-        compute('vqmc_compute', dispatchX);
+        compute('vqmc_compute');
         yield 'frame';
 
         state.needsReset = 0.0;
@@ -107,7 +108,7 @@ const schema: SimulationSchema = {
             writeUniformObject('Params', state);
             
             // 1. Move both electrons in 6D space according to the Slater Det * Jastrow
-            compute('vqmc_compute', dispatchX);
+            compute('vqmc_compute');
             
             // 2. Render Electron 2, filtering based on where Electron 1 is
             render('vqmc_render', NUM_WALKERS, 1, false);

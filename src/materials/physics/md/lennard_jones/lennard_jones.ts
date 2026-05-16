@@ -12,6 +12,8 @@ const state = {
 };
 
 const NUM_PARTICLES = 8192; // Doubled the particle count for better fluid dynamics
+const dispatchX = Math.ceil(NUM_PARTICLES / 64);
+
 const VERTEX_COUNT = 3840;
 
 const schema: SimulationSchema = {
@@ -40,6 +42,7 @@ const schema: SimulationSchema = {
             id: 'lj_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'ParticlePos', varName: 'positions', access: 'read_write' },
@@ -76,14 +79,13 @@ const schema: SimulationSchema = {
     // 4. Execution Loop
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         writeStorage('BaseMesh', makeGeodesicPolyhedron(1)); // Unit sphere
 
         while (true) {
             writeUniformObject('Params', state);
             
-            compute('lj_compute', dispatchX);
+            compute('lj_compute');
             render('lj_render', VERTEX_COUNT, NUM_PARTICLES, true);
             
             yield 'frame';

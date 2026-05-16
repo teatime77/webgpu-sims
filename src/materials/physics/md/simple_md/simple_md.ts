@@ -12,6 +12,8 @@ const state = {
 };
 
 const NUM_PARTICLES = 4096;
+const dispatchX = Math.ceil(NUM_PARTICLES / 64);
+
 const VERTEX_COUNT = 3840; // Vertex count for detail=1 geodesic polyhedron
 
 const schema: SimulationSchema = {
@@ -40,6 +42,7 @@ const schema: SimulationSchema = {
             id: 'md_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { group: 0, binding: 0, resource: 'Params', varName: 'params' },
                 { group: 0, binding: 1, resource: 'ParticlePos', varName: 'positions', access: 'read_write' },
@@ -70,7 +73,6 @@ const schema: SimulationSchema = {
     ],
 
     script: function* () {
-        const dispatchX = Math.ceil(NUM_PARTICLES / 64);
 
         // ★ Added: Generate a unit sphere (radius 1.0) to be scaled in the shader
         writeStorage('BaseMesh', makeGeodesicPolyhedron(1));
@@ -78,7 +80,7 @@ const schema: SimulationSchema = {
         while (true) {
             writeUniformObject('Params', state);
             
-            compute('md_compute', dispatchX);
+            compute('md_compute');
             
             // ★ Changed: vertexCount = VERTEX_COUNT, instanceCount = NUM_PARTICLES
             render('md_render', VERTEX_COUNT, NUM_PARTICLES, true);

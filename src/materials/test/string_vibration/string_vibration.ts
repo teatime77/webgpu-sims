@@ -13,6 +13,8 @@ const state = {
 
 // Simulation constants
 const NUM_SEGMENTS = 200;
+const dispatchX = Math.ceil(NUM_SEGMENTS / 64);
+
 const TUBE_DIVISIONS = 8;
 const TUBE_VERTEX_COUNT = (TUBE_DIVISIONS + 1) * 2; // Derived from makeTube logic
 
@@ -42,6 +44,7 @@ nodes: [
             id: 'string_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'Positions', varName: 'positions', access: 'read_write' },
@@ -77,7 +80,6 @@ nodes: [
     // 4. Execution Loop
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_SEGMENTS / 64);
 
         // Load the Tube Mesh
         const tubeGeom = makeTube(TUBE_DIVISIONS);
@@ -88,7 +90,7 @@ nodes: [
             writeUniformObject('Params', state);            
             
             // Calculate wave positions and tangents
-            compute('string_compute', dispatchX);
+            compute('string_compute');
             
             // Draw NUM_SEGMENTS instances of the tube segment
             render('string_render', TUBE_VERTEX_COUNT, NUM_SEGMENTS, true);

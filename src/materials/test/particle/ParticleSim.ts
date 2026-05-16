@@ -34,6 +34,7 @@ const schema: SimulationSchema = {
             id: 'particle_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: Math.ceil(20000 / 64),
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'ParticleData', varName: 'particles', access: 'read_write' }
@@ -58,7 +59,7 @@ const schema: SimulationSchema = {
     // ========================================================================
     script: function* () {
         writeUniformArray('Params', [1.0, 1.0, 0.7, 0.2, 1.0]);
-        compute('particle_compute', Math.ceil(20000 / 64));
+        compute('particle_compute');
 
         yield 'frame';
 
@@ -67,7 +68,7 @@ const schema: SimulationSchema = {
 
         // Standard TypeScript loop, immediately understandable by both AI and humans
         while (true) {
-            compute('particle_compute', Math.ceil(20000 / 64));
+            compute('particle_compute');
             render('particle_render', 3840, 10000, true);
             
             yield 'frame';

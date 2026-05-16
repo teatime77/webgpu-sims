@@ -13,6 +13,7 @@ const state = {
 };
 
 const NUM_PENDULUMS = 10;
+const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
 
 // Geometry constants
 const TUBE_DIVISIONS = 16;
@@ -58,6 +59,7 @@ const schema: SimulationSchema = {
             id: 'pendulum_compute',
             type: 'compute',
             workgroupSize: 64,
+            workgroupCount: dispatchX,
             bindings: [
                 { resource: 'Params', varName: 'params' },
                 { resource: 'PendulumState', varName: 'stateBuffer', access: 'read_write' }
@@ -105,7 +107,6 @@ const schema: SimulationSchema = {
     // 4. Execution Loop
     // ========================================================
     script: function* () {
-        const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
 
         // Load Geometries to GPU
         const tubeGeom = makeTube(TUBE_DIVISIONS);
@@ -120,7 +121,7 @@ const schema: SimulationSchema = {
             writeUniformObject('Params', state);            
             
             // Step physics
-            compute('pendulum_compute', dispatchX);
+            compute('pendulum_compute');
             
             // Draw the strings and the bobs using instancing
             render('string_render', TUBE_VERTEX_COUNT, NUM_PENDULUMS, true, true);
