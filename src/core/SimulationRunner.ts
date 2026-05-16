@@ -346,12 +346,20 @@ export class SimulationSchema {
             if(val.type == "mesh"){
                 const def = new MeshDef(id, val as any);
 
-                const elementSize = 4; // f32
-                const byteSize = elementSize * def.count;
+                switch(def.shape){
+                case "sphere":
+                    def.data = makeGeodesicPolyhedron(def.division);
+                    break;
+                case "tube":
+                    def.data = makeTube(def.division);
+                    break;
+                default:
+                    throw new Error();
+                }
 
                 const buffer = device.createBuffer({
                     label: `Storage_${id}`,
-                    size: byteSize,
+                    size: def.data.byteLength,
                     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
                 });
 
@@ -597,28 +605,6 @@ export class SimulationRunner {
         this.device.queue.writeBuffer(buf, 0, data);
     }
 
-    writeMesh(id: string) {
-        const res = theSchema.resources.get(id) as MeshDef;
-        if(res == undefined){
-            throw new Error();
-        }
-
-        let data: Float32Array;
-        switch(res.shape){
-        case "sphere":
-            data = makeGeodesicPolyhedron(res.division);
-            break;
-        case "tube":
-            data = makeTube(res.division);
-            break;
-        default:
-            throw new Error();
-        }
-
-        const buf = this.getStorageBuffer(id, 0);
-        this.device.queue.writeBuffer(buf, 0, data);
-    }
-
     swap(id: string) {
         theSchema.resources.get(id)?.swap();
     }
@@ -736,10 +722,11 @@ export class SimulationRunner {
         this.generator = this.schema.script();
         this.startTime = NaN;
 
-        for(const [key, value] of theSchema.resources.entries()){
-            if(value instanceof MeshDef){
+        for(const [key, def] of theSchema.resources.entries()){
+            if(def instanceof MeshDef){
                 msg(`mesh:${key}`);
-                writeMesh(key);
+
+                this.device.queue.writeBuffer(def.buffers[0], 0, def.data);
             }
         }        
     }
@@ -790,10 +777,6 @@ export function swap(id: string){
 
 export function writeStorage(id: string, data: Float32Array | Uint32Array){
     simRunner.writeStorage(id, data);
-}
-
-export function writeMesh(id: string){
-    simRunner.writeMesh(id);
 }
 
 export function getMesh(node : NodeDef) : MeshDef | undefined {

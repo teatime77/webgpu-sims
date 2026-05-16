@@ -4,6 +4,7 @@ import { assert } from './CaptureTool';
 export class MyError extends Error {
 }
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
+export type Shapes = "sphere" | "tube";
 
 export function getElementSizeAlignment(format : string) : [number, number] {
     let alignment;
@@ -40,26 +41,13 @@ export function getElementSize(format : string) : number {
 export abstract class ResourceDef {
     type!: 'uniform' | 'storage' | 'mesh';
 
-    public id!: string;
+    public id: string;
     public buffers!: GPUBuffer[];
     public bufferCount!: number;
     public currentIndex: number = 0;
-    mesh?: MeshDef;
 
-    constructor(){
-    }
-
-    initResource(id: string, buffers: GPUBuffer[], bufferCount: number, mesh?: MeshDef) {
-        // Assign inside constructor
+    constructor(id: string){
         this.id = id;
-        this.buffers = buffers;
-        if(this.bufferCount == undefined){
-            this.bufferCount = bufferCount;
-        }
-        else{
-            assert(this.bufferCount == bufferCount);
-        }
-        this.mesh = mesh;
     }
 
     /** historyLevel: 0 is the current write surface, 1 is the data from 1 step ago */
@@ -73,8 +61,6 @@ export abstract class ResourceDef {
     swap(): void {
         this.currentIndex = (this.currentIndex + 1) % this.bufferCount;
     }
-
-
 }
 
 export class StorageDef extends ResourceDef {
@@ -82,8 +68,8 @@ export class StorageDef extends ResourceDef {
     elementByteSize?: number;            // for storage (custom structs: e.g. 32 bytes)
     count?: number;                      // for storage
 
-    constructor(data : any){
-        super();
+    constructor(id: string, data : any){
+        super(id);
         Object.assign(this, data)
     }
 }
@@ -102,8 +88,8 @@ export class UniformDef extends ResourceDef {
     buffer!: GPUBuffer;
     obj? : any;
 
-    constructor(data : any){
-        super();
+    constructor(id: string, data : any){
+        super(id);
         Object.assign(this, data);
 
         if(this.fields == undefined){
@@ -183,10 +169,10 @@ export type MeshShape = 'sphere' | 'tube';
 export class MeshDef extends ResourceDef {
     shape!: MeshShape;
     division?: number;
-    count!: number;
+    data!: Float32Array;
 
-    constructor(data : any){
-        super();
+    constructor(id: string, data : any){
+        super(id);
         Object.assign(this, data)
         assert(this.type == 'mesh');
     }
