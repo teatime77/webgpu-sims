@@ -106,7 +106,7 @@ async function bootstrap() {
         }
 
         const simModule = await modules[targetPath]() as { default: SimulationSchema };
-        sim = new SimulationSchema(simModule.default as any);
+        sim = new SimulationSchema(runner.device, simModule.default as any);
     } catch (e) {
         console.error(`Failed to load schema: ${schemaPath}`, e);
         alert(`Schema "${schemaPath}" not found.`);
@@ -115,7 +115,7 @@ async function bootstrap() {
 
     theSchema = sim;
 
-    await runner.loadSchema(sim); 
+    runner.schema = sim; 
     setRunner(runner);
 
     if(sim.uis){

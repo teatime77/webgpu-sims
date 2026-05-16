@@ -338,31 +338,73 @@ export class SimulationSchema {
     uis? : UIDef[];
     script: () => Generator<PassCommand, void, unknown>;
 
-    constructor(data: ISimulationSchema){
+    constructor(device: GPUDevice, data: ISimulationSchema){
         this.name = data.name;
         this.resources = new Map<string, ResourceDef>();
-        for(const [key, val] of Object.entries(data.resources)){
-            switch(val.type){
-            case 'mesh':
-                this.resources.set(key, new MeshDef(val as any));
-                break;
+        for(const [id, val] of Object.entries(data.resources)){
+            // let def: ResourceDef;
+            if(val.type == "mesh"){
+                const def = new MeshDef(id, val as any);
 
-            case 'storage':
-                this.resources.set(key, new StorageDef(val as any));
-                break;
+                const elementSize = 4; // f32
+                const byteSize = elementSize * def.count;
 
-            case 'uniform':
-                this.resources.set(key, new UniformDef(val as any));
-                break;
+                const buffer = device.createBuffer({
+                    label: `Storage_${id}`,
+                    size: byteSize,
+                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
+                });
 
-            default:
+                def.buffers = [buffer];
+                def.bufferCount = 1;
+
+                this.resources.set(id, def);
+            }
+            else if(val.type == "storage"){
+                const def = new StorageDef(id, val as any);
+
+                const count = def.bufferCount || 1;
+                const buffers: GPUBuffer[] = [];
+                
+                // Calculate byte size of a single element from WGSL format
+                if(def.format == undefined){
+                    throw new MyError();
+                }
+                const elementSize = getElementSize(def.format);
+                
+                const byteSize = elementSize * (def.count || 1);
+
+                for (let i = 0; i < count; i++) {
+                    buffers.push(device.createBuffer({
+                        label: `Storage_${id}_${i}`,
+                        size: byteSize,
+                        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
+                    }));
+                }
+
+                def.buffers = buffers;
+                def.bufferCount = count;
+
+
+                this.resources.set(id, def);
+            }
+            else if(val.type == "uniform"){
+                const def = new UniformDef(id, val as any);
+
+                def.initUniform(device);
+
+                this.resources.set(id, def);
+            }
+            else{
                 throw new MyError();
             }
         }
 
         if(! this.resources.has("Camera")){
             const Camera = { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } };
-            this.resources.set("Camera", new UniformDef(Camera));
+            const def = new UniformDef("Camera", Camera);
+            def.initUniform(device);
+            this.resources.set("Camera", def);
             msg("make camera");
         }
 
@@ -386,8 +428,7 @@ export class SimulationSchema {
         this.nodeMap = new Map<string, NodeDef>(this.nodes.map(x => [x.id, x]));
 
         this.uis   = data.uis;
-        this.script = data.script;
-        
+        this.script = data.script;        
     }
 
     getNode(id:string) : NodeDef {
@@ -520,56 +561,6 @@ export class SimulationRunner {
         return result;
     }
 
-    /** Load the V1.5 schema (blueprint) and automatically generate GPU resources */
-    async loadSchema(schema: SimulationSchema) {
-        this.schema = schema;
-
-        // 1. Build resources
-        for (const [id, def] of schema.resources.entries()) {
-            if(def instanceof MeshDef){
-
-                const elementSize = 4; // f32
-                const byteSize = elementSize * def.count;
-
-                const buffer = this.device.createBuffer({
-                    label: `Storage_${id}`,
-                    size: byteSize,
-                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
-                });
-
-                def.initResource(id, [buffer], 1, def);
-            }
-            else{
-
-                if (def instanceof UniformDef) {
-                    // Delegate padding calculation to UniformManager
-                    def.initUniform(this.device);
-                } 
-                else if (def instanceof StorageDef) {
-                    const count = def.bufferCount || 1;
-                    const buffers: GPUBuffer[] = [];
-                    
-                    // Calculate byte size of a single element from WGSL format
-                    if(def.format == undefined){
-                        throw new MyError();
-                    }
-                    const elementSize = getElementSize(def.format);
-                    
-                    const byteSize = elementSize * (def.count || 1);
-
-                    for (let i = 0; i < count; i++) {
-                        buffers.push(this.device.createBuffer({
-                            label: `Storage_${id}_${i}`,
-                            size: byteSize,
-                            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
-                        }));
-                    }
-                    def.initResource(id, buffers, count);
-                }
-            }
-        }
-    }
-
     // --- Interfaces called from main.ts or schemas ---
 
     getFormat(): GPUTextureFormat {
@@ -607,18 +598,18 @@ export class SimulationRunner {
     }
 
     writeMesh(id: string) {
-        const res = theSchema.resources.get(id);
-        if(res == undefined || res.mesh == undefined){
+        const res = theSchema.resources.get(id) as MeshDef;
+        if(res == undefined){
             throw new Error();
         }
 
         let data: Float32Array;
-        switch(res.mesh.shape){
+        switch(res.shape){
         case "sphere":
-            data = makeGeodesicPolyhedron(res.mesh.division);
+            data = makeGeodesicPolyhedron(res.division);
             break;
         case "tube":
-            data = makeTube(res.mesh.division);
+            data = makeTube(res.division);
             break;
         default:
             throw new Error();
@@ -643,7 +634,7 @@ export class SimulationRunner {
         if(builder.workgroupCount == undefined){
             throw new MyError();
         }
-        
+
         if(typeof builder.workgroupCount == "number"){
             [x, y, z] = [builder.workgroupCount, 1, 1];
         }
