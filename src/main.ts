@@ -9,6 +9,32 @@ import { testParser } from './core/parser';
 
 export let theSchema : SimulationSchema;
 
+function selectSchema(urlParams: URLSearchParams, schemaPaths: string[]){
+    const container = document.getElementById('schema-selector-container')!;
+    const select = document.getElementById('schema-select') as HTMLSelectElement;
+    
+    if(urlParams.has("all")){
+        window.location.href = `?schema=${schemaPaths[0]}&idx=0`;
+        return;
+    }
+
+    for (const path of schemaPaths) {
+        const option = document.createElement('option');
+        option.value = path;
+        option.innerText = path;
+        select.appendChild(option);
+    }
+
+    select.onchange = () => {
+        if (select.value) {
+            window.location.href = `?schema=${select.value}`;
+        }
+    };
+
+    container.style.display = 'block';
+    return;
+}
+
 async function bootstrap() {
     await testParser();
 
@@ -42,31 +68,7 @@ async function bootstrap() {
         }).sort();
 
         if(!schemaParam){
-            const container = document.getElementById('schema-selector-container');
-            const select = document.getElementById('schema-select') as HTMLSelectElement;
-            
-            if (container && select) {
-
-                if(urlParams.has("all")){
-                    window.location.href = `?schema=${schemaPaths[0]}&idx=0`;
-                    return;
-                }
-
-                for (const path of schemaPaths) {
-                    const option = document.createElement('option');
-                    option.value = path;
-                    option.innerText = path;
-                    select.appendChild(option);
-                }
-
-                select.onchange = () => {
-                    if (select.value) {
-                        window.location.href = `?schema=${select.value}`;
-                    }
-                };
-
-                container.style.display = 'block';
-            }
+            selectSchema(urlParams, schemaPaths);
             return;
         }
     }

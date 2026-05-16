@@ -342,19 +342,30 @@ export class SimulationSchema {
         this.name = data.name;
         this.resources = new Map<string, ResourceDef>();
         for(const [key, val] of Object.entries(data.resources)){
-            if((val as any).shape != undefined){
-
+            switch(val.type){
+            case 'mesh':
                 this.resources.set(key, new MeshDef(val as any));
-            }
-            else{
-                if((val as any).type == 'uniform'){
-                    this.resources.set(key, new UniformDef(val as any));
-                }
-                else{
-                    this.resources.set(key, new StorageDef(val as any));
-                }
+                break;
+
+            case 'storage':
+                this.resources.set(key, new StorageDef(val as any));
+                break;
+
+            case 'uniform':
+                this.resources.set(key, new UniformDef(val as any));
+                break;
+
+            default:
+                throw new MyError();
             }
         }
+
+        if(! this.resources.has("Camera")){
+            const Camera = { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } };
+            this.resources.set("Camera", new UniformDef(Camera));
+            msg("make camera");
+        }
+
         this.nodes = data.nodes.map(x => {
             if(x.type == "compute"){
                 return new ComputePassBuilder(x);

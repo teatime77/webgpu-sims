@@ -25,7 +25,6 @@ const schema: SimulationSchema = {
     name: "Pendulum Wave (Material Architecture)",
 
     resources: {
-        Camera: { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } },
         Params: { 
             type: 'uniform', 
             obj : state
