@@ -37,7 +37,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 2. Node definitions
     // ========================================================
-    nodes: [
+    shaders: [
         {
             id: 'lj_compute',
             type: 'compute',

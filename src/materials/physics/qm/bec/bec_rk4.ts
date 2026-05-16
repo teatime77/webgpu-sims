@@ -53,7 +53,7 @@ const schema: SimulationSchema = {
     // ========================================================================
     // 2. Nodes: Define the 4 steps of RK4 as nodes
     // ========================================================================
-    nodes: [
+    shaders: [
         {
             id: 'bec_init', type: 'compute',
             workgroupSize: [8, 8, 1],

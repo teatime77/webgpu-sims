@@ -20,7 +20,7 @@ async function main() {
     
     const schema: SimulationSchema = module.default || module.schema;
         
-    if (!schema || !schema.nodes || !schema.resources) {
+    if (!schema || !schema.shaders || !schema.resources) {
         console.error("Invalid schema format. Expected 'resources' and 'nodes'.");
         process.exit(1);
     }
@@ -28,7 +28,7 @@ async function main() {
     console.log(`Generating skeleton for: ${schema.name}`);
 
     // Generate a .wgsl file for each node (pass) defined in the schema
-    for (const node of schema.nodes) {
+    for (const node of schema.shaders) {
         let code = `// ==========================================\n`;
         code += `// AUTO-GENERATED SKELETON FOR NODE: ${node.id}\n`;
         code += `// DO NOT MODIFY STRUCTS AND BINDINGS\n`;

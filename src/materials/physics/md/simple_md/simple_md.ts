@@ -37,7 +37,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 2. Node definitions
     // ========================================================
-    nodes: [
+    shaders: [
         {
             id: 'md_compute',
             type: 'compute',

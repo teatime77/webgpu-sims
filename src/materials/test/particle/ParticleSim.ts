@@ -29,7 +29,7 @@ const schema: SimulationSchema = {
     // 2. Node declarations (Fully V1 compatible)
     // This allows the Node.js generator to create a perfect WGSL skeleton
     // ========================================================================
-    nodes: [
+    shaders: [
         {
             id: 'particle_compute',
             type: 'compute',

@@ -127,7 +127,7 @@ async function bootstrap() {
     // ========================================================
     // ★ Build passes (Builder)
     // ========================================================
-    for (const node of sim.nodes) {
+    for (const node of sim.shaders) {
         let shaderUrl : string;
         if (node.type === 'compute'){
 

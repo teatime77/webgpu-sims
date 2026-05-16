@@ -36,7 +36,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 2. Node definitions
     // ========================================================
-    nodes: [
+    shaders: [
         {
             id: 'pendulum_comp',
             type: 'compute',

@@ -33,7 +33,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 2. Node definitions
     // ========================================================
-    nodes: [
+    shaders: [
         {
             id: 'h2_hf_comp',
             type: 'compute',

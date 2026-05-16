@@ -32,7 +32,7 @@ const schema: SimulationSchema = {
     // ========================================================
     // 2. Node (pass) definitions
     // ========================================================
-    nodes: [
+    shaders: [
         {
             id: 'hydrogen_orbital_comp',
             type: 'compute',

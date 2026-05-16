@@ -325,7 +325,7 @@ export type PassCommand = 'frame' | undefined;
 export interface ISimulationSchema {
     name?: string;
     resources: Record<string, ResourceDef>;
-    nodes: NodeDef[];
+    shaders: NodeDef[];
     uis? : UIDef[];
     script: () => Generator<PassCommand, void, unknown>;
 }
@@ -333,7 +333,7 @@ export interface ISimulationSchema {
 export class SimulationSchema {
     name?: string;
     resources: Map<string, ResourceDef>;
-    nodes: NodeDef[];
+    shaders: NodeDef[];
     nodeMap : Map<string, NodeDef>;
     uis? : UIDef[];
     script: () => Generator<PassCommand, void, unknown>;
@@ -416,7 +416,7 @@ export class SimulationSchema {
             msg("make camera");
         }
 
-        this.nodes = data.nodes.map(x => {
+        this.shaders = data.shaders.map(x => {
             if(x.type == "compute"){
                 return new ComputePassBuilder(x);
             }
@@ -448,22 +448,22 @@ export class SimulationSchema {
             }
 
             const render = new RenderPassBuilder(renderDef);
-            this.nodes.push(render);
+            this.shaders.push(render);
         }
 
-        this.nodes.forEach(node => node.bindings.forEach(b => {
+        this.shaders.forEach(node => node.bindings.forEach(b => {
             b.resourceDef = this.resources.get(b.resource);
             assert(b.resourceDef != undefined);            
         }));
 
-        this.nodeMap = new Map<string, NodeDef>(this.nodes.map(x => [x.id, x]));
+        this.nodeMap = new Map<string, NodeDef>(this.shaders.map(x => [x.id, x]));
 
         this.uis   = data.uis;
         this.script = data.script;        
     }
 
     getNode(id:string) : NodeDef {
-        const node = this.nodes.find(x => x.id == id)!;
+        const node = this.shaders.find(x => x.id == id)!;
         assert(node != undefined);
 
         return node;
@@ -738,7 +738,7 @@ export class SimulationRunner {
     }
 
     getMeshRenders() : RenderPassBuilder[] {
-        return Array.from(this.schema.nodes).filter(x => x instanceof RenderPassBuilder && isRenderMesh(theSchema, x.node) ) as RenderPassBuilder[];
+        return Array.from(this.schema.shaders).filter(x => x instanceof RenderPassBuilder && isRenderMesh(theSchema, x.node) ) as RenderPassBuilder[];
     }
 
     initScript(){
