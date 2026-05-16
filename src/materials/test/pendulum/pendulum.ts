@@ -15,9 +15,6 @@ const NUM_PENDULUMS = 10;
 const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
 
 const TUBE_DIVISIONS = 16;
-const TUBE_VERTEX_COUNT = (TUBE_DIVISIONS + 1) * 2;
-const BOB_FACES = 320;
-const BOB_VERTEX_COUNT = BOB_FACES * 3;
 const TUBE_STRIDE = 12;
 const SPHERE_STRIDE = 8;
 
@@ -30,8 +27,8 @@ const schema: SimulationSchema = {
             obj : state
         },
         PendulumState: { type: 'storage', format: 'vec4<f32>', count: NUM_PENDULUMS },
-        Tubes: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TUBE_STRIDE },
-        Spheres: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * SPHERE_STRIDE },
+        Tubes: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TUBE_STRIDE, meshRef:"TubeMesh" },
+        Spheres: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * SPHERE_STRIDE, meshRef:"SphereMesh" },
         TubeMesh: { type: 'mesh', shape:"tube", division:TUBE_DIVISIONS },
         SphereMesh: { type: 'mesh', shape: 'sphere' }
     },
@@ -51,28 +48,6 @@ const schema: SimulationSchema = {
                 { resource: 'Tubes', access: 'read_write' },
                 { resource: 'Spheres', access: 'read_write' }
             ]
-        },
-        {
-            id: 'tube_render',
-            type: 'render',
-            vertexCount: TUBE_VERTEX_COUNT,
-            instanceCount: NUM_PENDULUMS,
-            bindings: [
-                { resource: 'Camera' },
-                { resource: 'Tubes', varName: 'instances' },
-                { resource: 'TubeMesh', varName: 'vertexData' }
-            ]
-        },
-        {
-            id: 'bob_render',
-            type: 'render',
-            vertexCount: BOB_VERTEX_COUNT,
-            instanceCount: NUM_PENDULUMS,
-            bindings: [
-                { resource: 'Camera' },
-                { resource: 'Spheres', varName: 'instances' },
-                { resource: 'SphereMesh', varName: 'vertexData' }
-            ]
         }
     ],
 
@@ -84,7 +59,6 @@ const schema: SimulationSchema = {
     ],
 
     script: function* () {
-
         // Main Loop
         while (true) {
             writeUniformObject('Params', state);            

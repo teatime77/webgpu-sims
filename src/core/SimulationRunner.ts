@@ -1,5 +1,5 @@
 // src/core/SimulationRunner.ts
-import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef } from './utils';
+import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride } from './utils';
 import { makeGeodesicPolyhedron, makeTube, msg } from './primitive';
 import { theSchema } from '../main';
 import { getElementSize, MyError } from './utils';
@@ -427,6 +427,29 @@ export class SimulationSchema {
                 throw new MyError();
             }
         });
+
+        const shapeReses = Array.from(this.resources.values()).filter(x => x instanceof StorageDef && x.meshRef != undefined) as StorageDef[];
+        for(const res of shapeReses){
+            const mesh = this.resources.get(res.meshRef!)! as MeshDef;
+            assert(mesh instanceof MeshDef);
+
+            const stride = getShapeStride(mesh.shape);
+
+            const renderDef = {
+                id: `${res.id}_render`,
+                type: 'render',
+                vertexCount: mesh.data.length / (3 + 3),    // position + norm
+                instanceCount: res.count! / stride,
+                bindings: [
+                    { resource: 'Camera' },
+                    { resource: res.id, varName: 'instances' },
+                    { resource: mesh.id, varName: 'vertexData' }
+                ]
+            }
+
+            const render = new RenderPassBuilder(renderDef);
+            this.nodes.push(render);
+        }
 
         this.nodes.forEach(node => node.bindings.forEach(b => {
             b.resourceDef = this.resources.get(b.resource);

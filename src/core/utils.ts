@@ -6,6 +6,9 @@ export class MyError extends Error {
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
 export type Shapes = "sphere" | "tube";
 
+const TUBE_STRIDE = 12;
+const SPHERE_STRIDE = 8;
+
 export function getElementSizeAlignment(format : string) : [number, number] {
     let alignment;
     let size;
@@ -38,6 +41,15 @@ export function getElementSize(format : string) : number {
     return size;
 }
 
+export function getShapeStride(shape: Shapes) : number {
+    switch(shape){
+    case "sphere": return SPHERE_STRIDE;
+    case "tube"  : return TUBE_STRIDE;
+    default:       throw new MyError();
+    }
+}
+
+
 export abstract class ResourceDef {
     type!: 'uniform' | 'storage' | 'mesh';
 
@@ -67,6 +79,7 @@ export class StorageDef extends ResourceDef {
     format?: WgslFormat;                 // for storage (e.g. vec4<f32>)
     elementByteSize?: number;            // for storage (custom structs: e.g. 32 bytes)
     count?: number;                      // for storage
+    meshRef? : string;
 
     constructor(id: string, data : any){
         super(id);
