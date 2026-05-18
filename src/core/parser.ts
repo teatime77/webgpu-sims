@@ -3,6 +3,8 @@
 // ============================================================================
 
 import { fetchText } from "./CaptureTool";
+import { msg } from "./primitive";
+import { MyError } from "./utils";
 
 // ============================================================================
 // Abstract Base Class
@@ -179,6 +181,39 @@ export class FunctionExpression extends BaseASTNode {
     }
 }
 
+export class MemberExpression extends BaseASTNode {
+    readonly type = 'MemberExpression';
+    object: BaseASTNode;
+    property: Identifier;
+
+    constructor(object: BaseASTNode, property: Identifier) {
+        super();
+        this.object = object;
+        this.property = property;
+    }
+
+    toSource(): string {
+        return `${this.object.toSource()}.${this.property.toSource()}`;
+    }
+}
+
+export class CallExpression extends BaseASTNode {
+    readonly type = 'CallExpression';
+    callee: BaseASTNode;
+    arguments: BaseASTNode[];
+
+    constructor(callee: BaseASTNode, args: BaseASTNode[]) {
+        super();
+        this.callee = callee;
+        this.arguments = args;
+    }
+
+    toSource(): string {
+        const args = this.arguments.map(a => a.toSource()).join(', ');
+        return `${this.callee.toSource()}(${args})`;
+    }
+}
+
 // ============================================================================
 // Example Usage
 // ============================================================================
@@ -248,11 +283,22 @@ export class Lexer {
 
         const start = this.pos;
         const char = this.source[this.pos];
+        const nextChar = this.pos + 1 < this.source.length ? this.source[this.pos + 1] : `\0`;
 
         // Check for double-character punctuators first
         if (char === '*' && this.source[this.pos + 1] === '*') {
             this.pos += 2;
             return { type: 'Punctuator', value: '**', start, end: this.pos };
+        }
+
+        // Numbers (Handles decimals)
+        if (/[0-9]/.test(char) || char == '.' && /[0-9]/.test(nextChar)) {
+            let numStr = '';
+            while (this.pos < this.source.length && /[0-9\.]/.test(this.source[this.pos])) {
+                numStr += this.source[this.pos];
+                this.pos++;
+            }
+            return { type: 'Number', value: numStr, start, end: this.pos };
         }
 
         // Punctuators (Added +, /, %, and simplified the regex)
@@ -275,16 +321,6 @@ export class Lexer {
             }
             this.pos++; // Skip closing quote
             return { type: 'String', value: str, start, end: this.pos };
-        }
-
-        // Numbers (Handles decimals)
-        if (/[0-9]/.test(char)) {
-            let numStr = '';
-            while (this.pos < this.source.length && /[0-9\.]/.test(this.source[this.pos])) {
-                numStr += this.source[this.pos];
-                this.pos++;
-            }
-            return { type: 'Number', value: numStr, start, end: this.pos };
         }
 
         // Identifiers and Keywords
@@ -323,6 +359,7 @@ export class Parser {
 
     private advance() {
         this.currentToken = this.lexer.nextToken();
+        // msg(`token:${this.currentToken.value} ${this.currentToken.type}`);
     }
 
     private peek(): Token {
@@ -341,9 +378,29 @@ export class Parser {
     public parse(): Program {
         const body: VariableDeclaration[] = [];
         while (this.peek().type !== 'EOF') {
-            body.push(this.parseVariableDeclaration());
+            switch(this.currentToken.value){
+            case "import":
+            case "export":
+                this.parseImportExport();
+                break;
+            case "const":
+                body.push(this.parseVariableDeclaration());
+                break;
+            default:
+                throw new MyError();
+            }
         }
         return new Program(body);
+    }
+
+    parseImportExport(){
+        while(true){
+            const token = this.currentToken;
+            this.advance();
+            if(token.value == ";"){
+                break;
+            }
+        }
     }
 
     private parseVariableDeclaration(): VariableDeclaration {
@@ -418,59 +475,89 @@ export class Parser {
     // 4. Level: Unary, Groupings, Primitives, Identifiers, Objects, Arrays
     private parsePrimary(): BaseASTNode {
         const token = this.peek();
+        let node: BaseASTNode;
 
         // Handle Parentheses for Math Groupings e.g. (1 + 2) * 3
         if (token.type === 'Punctuator' && token.value === '(') {
             this.consume('(');
             const expr = this.parseExpression();
             this.consume(')');
-            return new GroupExpression(expr);
+            node = new GroupExpression(expr);
         }
 
         // Handle Unary Minus (e.g., -0.7)
-        if (token.type === 'Punctuator' && token.value === '-') {
+        else if (token.type === 'Punctuator' && token.value === '-') {
             this.consume('-');
             const argument = this.parsePrimary();
             return new UnaryExpression('-', argument);
         }
 
         // Handle Objects
-        if (token.type === 'Punctuator' && token.value === '{') {
-            return this.parseObject();
+        else if (token.type === 'Punctuator' && token.value === '{') {
+            node = this.parseObject();
         }
 
         // Handle Arrays
-        if (token.type === 'Punctuator' && token.value === '[') {
-            return this.parseArray();
+        else if (token.type === 'Punctuator' && token.value === '[') {
+            node = this.parseArray();
         }
 
         // Handle Functions (Reads body as raw string)
-        if (token.type === 'Keyword' && token.value === 'function') {
-            return this.parseFunction();
+        else if (token.type === 'Keyword' && token.value === 'function') {
+            node = this.parseFunction();
         }
 
         // Primitives & Identifiers
-        if (token.type === 'String') {
+        else if (token.type === 'String') {
             this.consume();
-            return new Literal(token.value, 'string');
+            node = new Literal(token.value, 'string');
         }
 
-        if (token.type === 'Number') {
+        else if (token.type === 'Number') {
             this.consume();
-            return new Literal(parseFloat(token.value), 'number');
+            node = new Literal(parseFloat(token.value), 'number');
         }
 
-        if (token.type === 'Keyword' && (token.value === 'true' || token.value === 'false')) {
+        else if (token.type === 'Keyword' && (token.value === 'true' || token.value === 'false')) {
             this.consume();
-            return new Literal(token.value === 'true', 'boolean');
+            node = new Literal(token.value === 'true', 'boolean');
         }
 
-        if (token.type === 'Identifier') {
+        else if (token.type === 'Identifier') {
             this.consume();
-            return new Identifier(token.value);
+            node = new Identifier(token.value);
         }
 
-        throw new Error(`Unexpected token '${token.value}' at index ${token.start}`);
+        else {
+            throw new Error(`Unexpected token '${token.value}' at index ${token.start}`);
+        }
+
+        // Handle trailing property accesses and method calls
+        while (true) {
+            if (this.peek().value === '.') {
+                this.consume('.');
+                const propToken = this.consume();
+                if (propToken.type !== 'Identifier') {
+                    throw new Error(`Expected Identifier after '.' at index ${propToken.start}`);
+                }
+                node = new MemberExpression(node, new Identifier(propToken.value));
+            } else if (this.peek().value === '(') {
+                this.consume('(');
+                const args: BaseASTNode[] = [];
+                while (this.peek().value !== ')') {
+                    args.push(this.parseExpression());
+                    if (this.peek().value === ',') {
+                        this.consume(',');
+                    }
+                }
+                this.consume(')');
+                node = new CallExpression(node, args);
+            } else {
+                break;
+            }
+        }
+
+        return node;
     }
 
     private parseObject(): ObjectExpression {
@@ -540,8 +627,11 @@ export class Parser {
 }
 
 export async function testParser(){
-    const text = await fetchText("./tmp/test.js");
-    const parser = new Parser(text);
-    const prg = parser.parse();
-    // msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
+    for(const path of ["./tmp/test.js", "src/materials/test/pendulum/pendulum.ts"]){
+        const text = await fetchText(path);
+        const parser = new Parser(text);
+        const prg = parser.parse();
+        msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
+
+    }
 }
