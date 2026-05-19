@@ -138,7 +138,7 @@ export class SimUI {
         this.addRange(data.label, data.min, data.max, data.step, initial, onChange);
     }
 
-    makeSelect(runner:SimulationRunner, schema: SimulationSchema, data : SelectDef){
+    makeSelect(runner:SimulationRunner, data : SelectDef){
         async function onChange(val: number) : Promise<void> {
             data.obj[data.name] = val;
 
@@ -164,7 +164,7 @@ export function makeUIs(runner:SimulationRunner, schema: SimulationSchema){
             break;
 
         case "select":
-            simUI.makeSelect(runner, schema, ui);
+            simUI.makeSelect(runner, ui);
             break;
 
         default:

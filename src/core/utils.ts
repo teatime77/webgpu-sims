@@ -1,4 +1,4 @@
-import { theRunner, type NodeDef, type SimulationSchema } from './SimulationRunner';
+import { theRunner, type NodeDef } from './SimulationRunner';
 import { assert } from './CaptureTool';
 
 export class MyError extends Error {
@@ -191,7 +191,7 @@ export class MeshDef extends ResourceDef {
     }
 }
 
-export function isRenderMesh(sim: SimulationSchema, node: NodeDef) : boolean {
+export function isRenderMesh(node: NodeDef) : boolean {
     if(node.type == "render"){
         const mesh = node.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef);
         return mesh != undefined;

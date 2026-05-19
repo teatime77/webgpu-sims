@@ -5,7 +5,7 @@
 import { assert, fetchText } from "./CaptureTool";
 import { msg } from "./primitive";
 import type { ButtonDef, ISimulationSchema, RangeDef, SelectDef, UIDef } from "./SimulationRunner";
-import { MeshDef, MyError, ResourceDef, StorageDef, UniformDef } from "./utils";
+import { MyError } from "./utils";
 
 type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string;
 

@@ -3,8 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
 import type { SimulationSchema } from './SimulationRunner';
-import { MeshDef, StorageDef, UniformDef } from './utils';
-// import { MeshDef } from '../src/core/utils';
+import { StorageDef, UniformDef } from './utils';
 
 async function main() {
     const targetFile = process.argv[2];

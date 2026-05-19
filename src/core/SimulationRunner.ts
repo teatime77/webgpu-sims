@@ -743,7 +743,7 @@ export class SimulationRunner {
     }
 
     getMeshRenders() : RenderPassBuilder[] {
-        return Array.from(this.schema.shaders).filter(x => x instanceof RenderPassBuilder && isRenderMesh(theSchema, x.node) ) as RenderPassBuilder[];
+        return Array.from(this.schema.shaders).filter(x => x instanceof RenderPassBuilder && isRenderMesh(x.node) ) as RenderPassBuilder[];
     }
 
     getComputeShaders() : ComputePassBuilder[] {
