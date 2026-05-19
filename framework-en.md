@@ -1,14 +1,8 @@
-# WebGPU Simulation Architecture Overview
 
-This architecture is an advanced framework designed to integrate TypeScript, WebGPU, and WGSL for running highly efficient and safe physical simulations and graphics rendering directly in the browser.
-
-The fundamental design philosophy is **the strict separation of the simulation's "blueprint" (a declarative schema) from its "orchestration" (procedural execution flow)**. By representing the entire pipeline through pure TypeScript objects and generator functions, the architecture ensures maximum transparency, maintainability, and control over complex GPU calculations.
-
----
 
 ## 1. The Declarative Schema: Defining the Simulation
 
-A complete simulation is defined as a single TypeScript object, typically located within a directory like `src/materials/test/` (e.g., `ParticleSim.ts`). This schema is divided into four distinct sections:
+A complete simulation is defined as a single TypeScript object. This schema is divided into four distinct sections:
 
 ### ① Resources (`resources`)
 

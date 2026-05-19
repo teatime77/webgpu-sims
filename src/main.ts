@@ -5,7 +5,7 @@ import { ComputePassBuilder, getMesh, RenderPassBuilder, writeUniformArray, writ
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
 import { makeUIs } from './core/SimUI';
 import { MeshDef, MyError, UniformDef } from './core/utils';
-import { testParser } from './core/parser';
+import { parseSchema } from './core/parser';
 
 export let theSchema : SimulationSchema;
 
@@ -36,8 +36,6 @@ function selectSchema(urlParams: URLSearchParams, schemaPaths: string[]){
 }
 
 async function bootstrap() {
-    await testParser();
-
     const runner = new SimulationRunner();
     if (!await runner.init()) return;
 
@@ -92,6 +90,7 @@ async function bootstrap() {
     new CaptureTool(runner, schemaName.toLowerCase());
 
     let sim: SimulationSchema;
+    let jsonPath : string | null;
     try {
         // 1. Search for the specified path exactly (e.g., ./materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts)
         let targetPath = `./materials/${schemaPath}.ts`;
@@ -105,8 +104,16 @@ async function bootstrap() {
             throw new Error(`Path not found in glob: ${targetPath}`);
         }
 
-        const simModule = await modules[targetPath]() as { default: SimulationSchema };
-        sim = new SimulationSchema(runner.device, simModule.default as any);
+        jsonPath = urlParams.get("json");
+        if(jsonPath != undefined){
+            const schemaDef = await parseSchema(`${jsonPath}.js`);
+            sim = new SimulationSchema(runner.device, schemaDef);
+        }
+        else{
+
+            const simModule = await modules[targetPath]() as { default: SimulationSchema };
+            sim = new SimulationSchema(runner.device, simModule.default as any);
+        }
     } catch (e) {
         console.error(`Failed to load schema: ${schemaPath}`, e);
         alert(`Schema "${schemaPath}" not found.`);
@@ -131,7 +138,15 @@ async function bootstrap() {
         let shaderUrl : string;
         if (node.type === 'compute'){
 
-            shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+            if(jsonPath != null){
+                const k = jsonPath.lastIndexOf('/');
+
+                shaderUrl = `${jsonPath.substring(0, k)}/${node.id}.wgsl`;
+            }
+            else{
+
+                shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+            }
         }
         else if(node.type == "render"){
             const mesh = getMesh(node);
@@ -141,6 +156,7 @@ async function bootstrap() {
                 switch(mesh.shape){
                 case "sphere": fileName = "sphere_render.wgsl"; break;
                 case "tube"  : fileName = "tube_render.wgsl"; break;
+                case "arrow" : fileName = "arrow_render.wgsl"; break;
                 default: throw new MyError();
                 }
                 shaderUrl = `./src/core/wgsl/${fileName}`;

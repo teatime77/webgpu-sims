@@ -2,11 +2,6 @@
 
 This document explains the step-by-step workflow for creating WebGPU physics simulations in this project. As an AI assistant, you must strictly follow this process to ensure compatibility with the project's custom engine.
 
-## The 3-Step Workflow
-
-1.  **Generate the TypeScript Definition:** Write a `.ts` file that exports a `SimulationSchema` object. This defines the simulation's state, resources (buffers), compute/render nodes, initialization, and execution loop.
-2.  **Generate the WGSL Skeleton (User Action):** The user will run `tools/generate_skeleton.ts <path-to-schema.ts>`. This script automatically creates `.wgsl` files for each node defined in the schema.
-3.  **Implement the WGSL Logic:** You (the AI) will be provided with the generated `.wgsl` skeleton files. You must implement ONLY the core logic inside the generated functions (`vs_main`, `fs_main`, or `main`).
 
 ---
 

@@ -4,9 +4,10 @@ import { assert } from './CaptureTool';
 export class MyError extends Error {
 }
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
-export type Shapes = "sphere" | "tube";
+export type MeshShape = "sphere" | "tube" | "arrow";
 
 const TUBE_STRIDE = 12;
+const ARROW_STRIDE = 12;
 const SPHERE_STRIDE = 8;
 
 export function getElementSizeAlignment(format : string) : [number, number] {
@@ -41,10 +42,11 @@ export function getElementSize(format : string) : number {
     return size;
 }
 
-export function getShapeStride(shape: Shapes) : number {
+export function getShapeStride(shape: MeshShape) : number {
     switch(shape){
     case "sphere": return SPHERE_STRIDE;
     case "tube"  : return TUBE_STRIDE;
+    case "arrow" : return ARROW_STRIDE;
     default:       throw new MyError();
     }
 }
@@ -176,8 +178,6 @@ export class UniformDef extends ResourceDef {
         theRunner.device.queue.writeBuffer(this.buffer, 0, arrayBuffer);
     }
 }
-
-export type MeshShape = 'sphere' | 'tube';
 
 export class MeshDef extends ResourceDef {
     shape!: MeshShape;

@@ -2,9 +2,14 @@
 // AST Node Classes
 // ============================================================================
 
-import { fetchText } from "./CaptureTool";
+import { assert, fetchText } from "./CaptureTool";
 import { msg } from "./primitive";
-import { MyError } from "./utils";
+import type { ButtonDef, ISimulationSchema, RangeDef, SelectDef, UIDef } from "./SimulationRunner";
+import { MeshDef, MyError, ResourceDef, StorageDef, UniformDef } from "./utils";
+
+type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string;
+
+const constValues = new Map<string, ValueType>();
 
 // ============================================================================
 // Abstract Base Class
@@ -15,6 +20,47 @@ export abstract class BaseASTNode {
 
     // Generates code back from the AST
     abstract toSource(): string;
+
+    getString() : string {
+        const value = this.getValue();
+        assert(typeof value == "string");
+        return value as string;
+    }
+
+    getBoolean() : boolean {
+        const value = this.getValue();
+        assert(typeof value == "boolean");
+        return value as boolean;
+    }
+
+    getNumber() : number {
+        const value = this.getValue();
+        assert(typeof value == "number");
+        return value as number;
+    }
+
+    getInt() : number {
+        const n = this.getNumber();
+        assert(n == Math.floor(n));
+
+        return n;
+    }
+
+    getNumeric() : number | number[] {
+        const value = this.getValue();
+        assert(typeof value == "number" || Array.isArray(value) && value.every(x => typeof x == "number"));
+        return value as (number | number[]);
+    }
+
+    getValue() : ValueType {
+        throw new MyError();
+    }
+
+    toObject() : any {
+        const value = this.getValue();
+        assert(typeof value == "object");
+        return value;
+    }
 }
 
 // ============================================================================
@@ -23,15 +69,19 @@ export abstract class BaseASTNode {
 
 export class Program extends BaseASTNode {
     readonly type = 'Program';
-    body: VariableDeclaration[];
+    body: Map<string, VariableDeclaration>;
 
-    constructor(body: VariableDeclaration[]) {
+    constructor(body: Map<string, VariableDeclaration>) {
         super();
         this.body = body;
     }
 
+    variables() : VariableDeclaration[] {
+        return Array.from(this.body.values());
+    }
+
     toSource(): string {
-        return this.body.map(decl => decl.toSource()).join('\n\n');
+        return this.variables().map(decl => decl.toSource()).join('\n\n');
     }
 }
 
@@ -69,6 +119,19 @@ export class ObjectExpression extends BaseASTNode {
             .join(',\n');
         return `{\n${props}\n}`;
     }
+
+    toObject() : any {
+        const data : any = {};
+        for(const {key, value} of this.properties){
+            data[key] = value.getValue();
+        }
+
+        return data;
+    }
+
+    getValue() : ValueType {
+        return this.toObject();
+    }
 }
 
 export class ArrayExpression extends BaseASTNode {
@@ -83,6 +146,10 @@ export class ArrayExpression extends BaseASTNode {
     toSource(): string {
         const elements = this.elements.map(e => e.toSource()).join(', ');
         return `[${elements}]`;
+    }
+
+    getValue() : ValueType {
+        return this.elements.map(x => x.getValue());
     }
 }
 
@@ -103,6 +170,10 @@ export class Literal extends BaseASTNode {
         }
         return String(this.value);
     }
+
+    getValue() : ValueType {
+        return this.value;
+    }
 }
 
 export class Identifier extends BaseASTNode {
@@ -116,6 +187,13 @@ export class Identifier extends BaseASTNode {
 
     toSource(): string {
         return this.name;
+    }
+
+    getValue() : ValueType {
+        const value = constValues.get(this.name)!;
+        assert(value != undefined);
+
+        return value;
     }
 }
 
@@ -132,6 +210,12 @@ export class UnaryExpression extends BaseASTNode {
 
     toSource(): string {
         return `${this.operator}${this.argument.toSource()}`;
+    }
+
+    getValue() : ValueType {
+        assert(this.operator == "-");
+        const n = this.argument.getNumber();
+        return - n;
     }
 }
 
@@ -150,6 +234,18 @@ export class BinaryExpression extends BaseASTNode {
 
     toSource(): string {
         return `${this.left.toSource()} ${this.operator} ${this.right.toSource()}`;
+    }
+
+    getValue() : ValueType {
+        const n1 = this.left.getNumber();
+        const n2 = this.right.getNumber();
+        switch(this.operator){
+        case "+": return n1 + n2;
+        case "-": return n1 - n2;
+        case "*": return n1 * n2;
+        case "/": return n1 / n2;
+        default: throw new MyError();
+        }
     }
 }
 
@@ -212,31 +308,25 @@ export class CallExpression extends BaseASTNode {
         const args = this.arguments.map(a => a.toSource()).join(', ');
         return `${this.callee.toSource()}(${args})`;
     }
+
+    getValue() : ValueType {
+        if(this.callee instanceof MemberExpression){
+            if(this.callee.object instanceof Identifier){
+                if(this.callee.object.name == "Math"){
+                    switch(this.callee.property.name){
+                    case "ceil":{
+                        assert(this.arguments.length == 1);
+                        const n = this.arguments[0].getNumber();
+                        return Math.ceil(n);
+                    }                    
+                    }
+                }
+            }
+        }
+
+        throw new MyError();
+    }
 }
-
-// ============================================================================
-// Example Usage
-// ============================================================================
-
-// Manually constructing an AST to test the classes
-const stateDeclaration = new VariableDeclaration(
-    "state",
-    new ObjectExpression([
-        { key: "spinState", value: new Literal(0.0, 'number') },
-        { key: "pinX", value: new UnaryExpression("-", new Literal(0.7, 'number')) }
-    ])
-);
-
-const program = new Program([stateDeclaration]);
-
-// Because we added the `toSource()` method, the AST can execute behavior:
-console.log(program.toSource());
-/* Output:
-const state = {
-    spinState: 0,
-    pinX: -0.7
-};
-*/
 
 // ============================================================================
 // 2. Lexical Analyzer (Tokenizer)
@@ -376,16 +466,19 @@ export class Parser {
     }
 
     public parse(): Program {
-        const body: VariableDeclaration[] = [];
+        const body = new Map<string, VariableDeclaration>();
         while (this.peek().type !== 'EOF') {
             switch(this.currentToken.value){
             case "import":
             case "export":
                 this.parseImportExport();
                 break;
-            case "const":
-                body.push(this.parseVariableDeclaration());
+            case "const":{
+                const va = this.parseVariableDeclaration();
+                body.set(va.name, va);
                 break;
+
+            }
             default:
                 throw new MyError();
             }
@@ -425,7 +518,12 @@ export class Parser {
             this.consume(';');
         }
 
-        return new VariableDeclaration(nameToken.value, init, typeAnnotation);
+        const va = new VariableDeclaration(nameToken.value, init, typeAnnotation);
+
+        const value = init.getValue();
+        constValues.set(va.name, value);
+
+        return va;
     }
 
     public parseExpression(): BaseASTNode {
@@ -626,12 +724,198 @@ export class Parser {
     }
 }
 
-export async function testParser(){
-    for(const path of ["./tmp/test.js", "src/materials/test/pendulum/pendulum.ts"]){
-        const text = await fetchText(path);
-        const parser = new Parser(text);
-        const prg = parser.parse();
-        msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
+function getObj(value : Identifier){
+    assert(value instanceof Identifier);
+    const obj = constValues.get(value.name);
+    assert(typeof obj == "object");
+    return obj;
+}
 
+function readResource(resourceObj:ObjectExpression) {
+    assert(resourceObj instanceof ObjectExpression);
+
+    const data : any = {};
+
+    for(const {key, value} of resourceObj.properties){
+        switch(key){
+        case "type":
+            data[key] = value.getString();
+            break;
+        case "format":
+            data[key] = value.getString();
+            break;
+        case "count":
+            data[key] = value.getNumber();
+            break;
+        case "meshRef":
+            data[key] = value.getString();
+            break;
+        case "shape":
+            data[key] = value.getString();
+            break;
+        case "obj":
+            data[key] = getObj(value as Identifier);
+            break;
+        case "division":
+            data[key] = value.getNumber();
+            break;
+        default:
+            throw new MyError();
+        }
     }
+
+    return data;
+}
+
+function readResources(resourceObj:ObjectExpression){
+    assert(resourceObj instanceof ObjectExpression);
+    const data : any = {};
+    for(const {key, value} of resourceObj.properties){
+        data[key] = readResource(value as ObjectExpression);
+    }
+
+    return data;
+}
+
+function readBindings(binding:ArrayExpression) {
+    assert(binding instanceof ArrayExpression);
+    return binding.elements.map(x => x.toObject());
+}
+
+function readShaders(shaders:ArrayExpression){
+    assert(shaders.elements.every(x => x instanceof ObjectExpression));
+    
+    const shadersData = [];
+    for(const shaderObj of shaders.elements as ObjectExpression[]){
+        const shader : any = {};
+        for(const {key, value} of shaderObj.properties){
+            switch(key){
+            case "id":
+                shader.id = value.getString();
+                break;
+            case "type":
+                shader.type = value.getString();
+                break;
+            case "workgroupSize":
+                shader.workgroupSize = value.getNumeric();
+                break;
+            case "workgroupCount":
+                shader.workgroupCount = value.getNumeric();
+                break;
+            case "bindings":
+                shader.bindings = readBindings(value as ArrayExpression);
+                break;
+            default:
+                throw new MyError();
+            }
+        }
+
+        shadersData.push(shader);
+    }
+
+    return shadersData;
+}
+
+function readOption(obj : ObjectExpression){
+    assert(obj instanceof ObjectExpression);
+    const data : any = {};
+    for(const {key, value} of obj.properties){
+        switch(key){
+        case "value":
+            data[key] = value.getNumber();
+            break;
+        case "text":
+            data[key] = value.getString();
+            break;
+        default:
+            throw new MyError();
+        }
+    }
+
+    return data;
+}
+
+function readUIs(obj : ObjectExpression) : UIDef {
+    assert(obj instanceof ObjectExpression);
+    const data : any = {};
+    for(const {key, value} of obj.properties){
+        switch(key){
+        case "type":
+        case "name":
+        case "label":
+            data[key] = value.getString();
+            break;
+        case "obj":
+            data[key] = getObj(value as Identifier);
+            break;
+        case "min":
+        case "max":
+        case "step":
+            data[key] = value.getNumber();
+            break;
+        case "reset":
+            data[key] = value.getBoolean();
+            break;
+        case "options":{
+            assert(value instanceof ArrayExpression);
+            data[key] = (value as ArrayExpression).elements.map(x => readOption(x as ObjectExpression))
+            break;
+        }
+        default:
+            throw new MyError();
+        }
+    }
+
+    switch(data.type){
+    case "range" : return data as RangeDef;
+    case "select": return data as SelectDef;
+    case "button": return data as ButtonDef;
+    default      : throw new MyError();
+    }
+}
+
+function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
+    const schema : any = {};
+
+    for(const {key, value} of schemaObj.properties){
+        switch(key){
+        case "name":
+            schema[key] = value;
+            break;
+        case "resources":
+            schema[key] = readResources(value as ObjectExpression);
+            break;
+        case "shaders":
+            schema[key] = readShaders(value as ArrayExpression);
+            break;
+        case "uis":
+            assert(value instanceof ArrayExpression);
+            schema[key] = (value as ArrayExpression).elements.map(x => readUIs(x as ObjectExpression));
+            break;
+        default:
+            msg(`skip property:${key}`);
+            break;
+        }
+    }
+
+    return schema as ISimulationSchema;
+}
+
+export async function parseSchema(path : string) : Promise<ISimulationSchema> {
+    constValues.clear();
+
+    const text = await fetchText(path);
+    const parser = new Parser(text);
+    const prg = parser.parse();
+    msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
+
+    const schemaVar = prg.variables().find(x => x.typeAnnotation == "SimulationSchema");
+    if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
+        const schema = makeSchema(schemaVar.init);
+        msg(`${"=".repeat(50)} ${path}\n ${JSON.stringify(schema, null, 4)} ${"=".repeat(50)}`);
+
+        return schema;
+    }
+
+    throw new MyError();
 }

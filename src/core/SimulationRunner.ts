@@ -1,6 +1,6 @@
 // src/core/SimulationRunner.ts
 import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride } from './utils';
-import { makeGeodesicPolyhedron, makeTube, msg } from './primitive';
+import { makeArrowMesh, makeGeodesicPolyhedron, makeTube, msg } from './primitive';
 import { theSchema } from '../main';
 import { getElementSize, MyError } from './utils';
 import { assert } from './CaptureTool';
@@ -378,6 +378,9 @@ export class SimulationSchema {
                     break;
                 case "tube":
                     def.data = makeTube(def.division);
+                    break;
+                case "arrow":
+                    def.data = makeArrowMesh({});
                     break;
                 default:
                     throw new Error();
