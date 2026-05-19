@@ -2,8 +2,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import type { SimulationSchema } from '../src/core/SimulationRunner';
-import { MeshDef } from '../src/core/utils';
+import type { SimulationSchema } from './SimulationRunner';
+import { MeshDef, StorageDef, UniformDef } from './utils';
+// import { MeshDef } from '../src/core/utils';
 
 async function main() {
     const targetFile = process.argv[2];
@@ -41,13 +42,22 @@ async function main() {
         const generatedStructs = new Set<string>();
         for (const bind of node.bindings) {
             const res = bind.resourceDef!;
-            if (!(res instanceof MeshDef) && res.type === 'uniform' && res.fields) {
-                if (generatedStructs.has(bind.resource)) continue;
+            if (res instanceof UniformDef) {
+                if (generatedStructs.has(bind.resource)){
+                    continue;
+                } 
                 generatedStructs.add(bind.resource);
 
                 code += `struct ${bind.resource}Struct {\n`;
-                for (const [fieldName, fieldType] of Object.entries(res.fields)) {
-                    code += `    ${fieldName}: ${fieldType},\n`;
+                let offset = 0;
+                let padIdx = 0;
+                for (const fld of res.fieldDefs) {
+                    while(offset < fld.offset){
+
+                        code += `    pad${padIdx}: f32,\n`;
+                        offset += 4;
+                    }
+                    code += `    ${fld.name}: ${fld.format},\n`;
                 }
                 code += `};\n\n`;
             }
@@ -66,7 +76,7 @@ async function main() {
             if (res.type === 'uniform') {
                 code += `@group(${group}) @binding(${bindingNum}) var<uniform> ${varName}: ${bind.resource}Struct;\n`;
             } 
-            else if (res.type === 'storage') {
+            else if (res instanceof StorageDef) {
                 // Safety Measure: Force 'read' access for render passes to avoid WebGPU validation errors.
                 let access = bind.access || 'read';
                 if (node.type === 'render') access = 'read';
@@ -75,12 +85,6 @@ async function main() {
                 if (isAtomic) access = 'read_write';
 
                 code += `@group(${group}) @binding(${bindingNum}) var<storage, ${access}> ${varName}: array<${res.format}>;\n`;
-            }
-            else if (res.type === 'texture') {
-                code += `@group(${group}) @binding(${bindingNum}) var ${varName}: texture_2d<f32>;\n`;
-            }
-            else if (res.type === 'sampler') {
-                code += `@group(${group}) @binding(${bindingNum}) var ${varName}: sampler;\n`;
             }
         }
 
