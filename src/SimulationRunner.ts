@@ -1,7 +1,7 @@
-// src/core/SimulationRunner.ts
+// src/SimulationRunner.ts
 import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride } from './utils';
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube, msg } from './primitive';
-import { theSchema } from '../main';
+import { theSchema } from './main';
 import { getElementSize, MyError } from './utils';
 import { assert } from './CaptureTool';
 

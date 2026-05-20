@@ -1,11 +1,11 @@
 // src/main.ts
-import { OrbitCamera } from './core/camera';
-import { assert, CaptureTool } from './core/CaptureTool';
-import { ComputePassBuilder, getMesh, RenderPassBuilder, writeUniformArray } from './core/SimulationRunner';
-import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
-import { makeUIs } from './core/SimUI';
-import { MeshDef, MyError, UniformDef } from './core/utils';
-import { parseSchema } from './core/parser';
+import { OrbitCamera } from './camera';
+import { assert, CaptureTool } from './CaptureTool';
+import { ComputePassBuilder, getMesh, RenderPassBuilder, writeUniformArray } from './SimulationRunner';
+import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './SimulationRunner';
+import { makeUIs } from './SimUI';
+import { MeshDef, MyError, UniformDef } from './utils';
+import { parseSchema } from './parser';
 
 export let theSchema : SimulationSchema;
 
@@ -76,7 +76,7 @@ async function bootstrap() {
                 case "arrow" : fileName = "arrow_render.wgsl"; break;
                 default: throw new MyError();
                 }
-                shaderUrl = `./src/core/wgsl/${fileName}`;
+                shaderUrl = `./src/wgsl/${fileName}`;
             }
             else{
                 throw new MyError();

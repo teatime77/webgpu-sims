@@ -1,4 +1,4 @@
-// src/core/math/vec3.ts
+// src/math/vec3.ts
 export class Vec3 {
     x: number;
     y: number;

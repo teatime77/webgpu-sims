@@ -1,4 +1,4 @@
-// src/core/CaptureTool.ts
+// src/CaptureTool.ts
 
 import type { SimulationRunner } from "./SimulationRunner";
 import { MyError } from "./utils";

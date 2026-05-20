@@ -1,4 +1,4 @@
-// src/core/primitive.ts
+// src/primitive.ts
 import { Vec3, vecNormalize } from './vec3';
 
 
