@@ -9,7 +9,7 @@ import { parseSchema } from './parser';
 
 export let theSchema : SimulationSchema;
 
-async function bootstrap() {
+export async function bootstrap() {
     const runner = new SimulationRunner();
     if (!await runner.init()) return;
 
@@ -163,5 +163,3 @@ async function bootstrap() {
 
     frame();
 }
-
-bootstrap();

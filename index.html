@@ -1,23 +1,105 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebGPU STEM Labs</title>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGPU STEM Labs</title>
+  <!-- <style>
+    body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
+    #app { display: flex; height: 100vh; justify-content: center; align-items: center; }
+  </style>
+
     <style>
       body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; background-color: #111; color: white; font-family: sans-serif; padding: 20px; box-sizing: border-box; }
       canvas { border: 1px solid #444; border-radius: 8px; }
       .sub-canvas-wrapper { text-align: center; }
       .sub-canvas-label { font-size: 14px; margin-bottom: 4px; }
       .debug-canvas { border: 1px solid red; }
-    </style>
-  </head>
-  <body>
+    </style> -->
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" >
+
+
+
+
+</head>
+<body>
+<header class="container">
+  <nav>
+    <ul>
+      <li>
+        <a href="/" aria-label="GPUSims Home">
+          <img src="path/to/logo.png" alt="GPUSims" style="height: 3rem; vertical-align: middle;">
+        </a>
+      </li>
+    </ul>
+
+    <ul>
+      <li style="width: 100%; max-width: 400px;">
+        <input 
+          type="search" 
+          id="headerSearch" 
+          name="search" 
+          placeholder="記事のタイトルやキーワードで検索..." 
+          aria-label="Search"
+          style="margin-bottom: 0;" 
+        >
+      </li>
+    </ul>
+
+    <ul id="headerAuthActions">
+      </ul>
+  </nav>
+</header>
+
+<main class="container app-layout">
+  <aside class="sidebar">
+    <nav>
+      <ul>
+        <li><strong>カテゴリー</strong></li>
+        <li><a href="#" class="secondary">すべて</a></li>
+        <li><a href="#">JSONET</a></li>
+        <li><a href="#">WGSL / WebGPU</a></li>
+        <li><a href="#">Markdown</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <section class="content-area">
+    <div class="article-grid">
+      
+      <article class="article-card">
+        <div class="thumbnail-wrapper">
+          <img src="https://via.placeholder.com/300x180" alt="サムネイル">
+        </div>
+        
+        <div class="card-body">
+          <h5 class="article-title">WebGPUで作る量子色力学(Lattice QCD)シミュレータ</h5>
+        </div>
+        
+        <footer class="card-footer">
+          <div class="user-meta">
+            <img src="https://via.placeholder.com/32" alt="ユーザーアイコン" class="user-icon">
+            <span class="user-id">@ko_hamada</span>
+          </div>
+          <div class="article-meta">
+            <time class="post-date">2026/05/20</time>
+            <span class="like-count">❤️ 128</span>
+          </div>
+        </footer>
+      </article>
+
+      </div>
+  </section>
+</main>
+
+
+  <!-- SPAのマウントポイント -->
+  <div id="app"></div>
+
     <canvas id="main-canvas" width="512" height="512"></canvas>
-
-    <!-- Container for dynamically added canvases -->
     <div id="sub-canvases" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;"></div>
-
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+  
+  <script type="module" src="/src/start.ts"> </script>
+</body>
 </html>

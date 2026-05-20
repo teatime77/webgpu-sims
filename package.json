@@ -18,6 +18,9 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
-    "gl-matrix": "^3.4.4"
+    "firebase": "^10.14.1",
+    "firebaseui": "^6.1.0",
+    "gl-matrix": "^3.4.4",
+    "tslib": "^2.8.1"
   }
 }
