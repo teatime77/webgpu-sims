@@ -1,6 +1,6 @@
 // src/main.ts
 import { OrbitCamera } from './core/camera';
-import { CaptureTool } from './core/CaptureTool';
+import { assert, CaptureTool } from './core/CaptureTool';
 import { ComputePassBuilder, getMesh, RenderPassBuilder, writeUniformArray } from './core/SimulationRunner';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './core/SimulationRunner';
 import { makeUIs } from './core/SimUI';
@@ -8,32 +8,6 @@ import { MeshDef, MyError, UniformDef } from './core/utils';
 import { parseSchema } from './core/parser';
 
 export let theSchema : SimulationSchema;
-
-function selectSchema(urlParams: URLSearchParams, schemaPaths: string[]){
-    const container = document.getElementById('schema-selector-container')!;
-    const select = document.getElementById('schema-select') as HTMLSelectElement;
-    
-    if(urlParams.has("all")){
-        window.location.href = `?schema=${schemaPaths[0]}&idx=0`;
-        return;
-    }
-
-    for (const path of schemaPaths) {
-        const option = document.createElement('option');
-        option.value = path;
-        option.innerText = path;
-        select.appendChild(option);
-    }
-
-    select.onchange = () => {
-        if (select.value) {
-            window.location.href = `?schema=${select.value}`;
-        }
-    };
-
-    container.style.display = 'block';
-    return;
-}
 
 async function bootstrap() {
     const runner = new SimulationRunner();
@@ -47,78 +21,29 @@ async function bootstrap() {
     camera.distance = 5.0;
 
     // ========================================================
-    // ★ Dynamic loading of simulation schema (Vite compliant)
-    // ========================================================
-    const modules = import.meta.glob('./materials/**/*.ts');
-
-    // ========================================================
     // ★ Parse URL parameters (supporting deep directory hierarchies)
     // ========================================================
     const urlParams = new URLSearchParams(window.location.search);
-    const schemaParam = urlParams.get('schema');
-    const idxStr = urlParams.get("idx");
-
-    let schemaPaths : string[] = [];
-
-    if (!schemaParam || idxStr != undefined) {
-        schemaPaths = Object.keys(modules).map(key => {
-            return key.replace(/^\.\/materials\//, '').replace(/\.ts$/, '');
-        }).sort();
-
-        if(!schemaParam){
-            selectSchema(urlParams, schemaPaths);
-            return;
-        }
-    }
-
-    if(idxStr != undefined){
-        const idx = parseInt(idxStr) + 1;
-        if(idx < schemaPaths.length){
-            setTimeout(()=>{
-                window.location.href = `?schema=${schemaPaths[idx]}&idx=${idx}`;
-            }, 1000);
-        }
-    }
-
-    const schemaPath = schemaParam;
-
-    // Accurately separate directory and filename based on the last '/' in the path
-    const lastSlashIdx = schemaPath.lastIndexOf('/');
-    const directory = lastSlashIdx !== -1 ? schemaPath.substring(0, lastSlashIdx) : 'test';
-    const schemaName = lastSlashIdx !== -1 ? schemaPath.substring(lastSlashIdx + 1) : schemaPath;
-
-    new CaptureTool(runner, schemaName.toLowerCase());
 
     let sim: SimulationSchema;
-    let jsonPath : string | null;
+    let jsonPath : string | null = null;
     try {
-        // 1. Search for the specified path exactly (e.g., ./materials/physics/qm/hydrogen_orbital/hydrogen_orbital.ts)
-        let targetPath = `./materials/${schemaPath}.ts`;
-        
-        // 2. If not found, append 'Sim.ts' for backward compatibility (e.g., ./materials/test/ParticleSim.ts)
-        if (!modules[targetPath]) {
-            targetPath = `./materials/${schemaPath}Sim.ts`;
-        }
 
-        if (!modules[targetPath]) {
-            throw new Error(`Path not found in glob: ${targetPath}`);
-        }
-
-        jsonPath = urlParams.get("json");
-        if(jsonPath != undefined){
-            const schemaDef = await parseSchema(`${jsonPath}.js`);
-            sim = new SimulationSchema(runner.device, schemaDef);
-        }
-        else{
-
-            const simModule = await modules[targetPath]() as { default: SimulationSchema };
-            sim = new SimulationSchema(runner.device, simModule.default as any);
-        }
+        jsonPath = urlParams.get("json")!;
+        assert(jsonPath != null)
+        const schemaDef = await parseSchema(`${jsonPath}.js`);
+        sim = new SimulationSchema(runner.device, schemaDef);
     } catch (e) {
-        console.error(`Failed to load schema: ${schemaPath}`, e);
-        alert(`Schema "${schemaPath}" not found.`);
+        console.error(`Failed to load schema: ${jsonPath}`, e);
+        alert(`Schema "${jsonPath}" not found.`);
         return;
     }
+
+    const k = jsonPath.lastIndexOf('/');
+    const jsonDir = jsonPath.substring(0, k);
+    const jsonName = jsonPath.substring(k + 1);
+
+    new CaptureTool(runner, jsonName);
 
     theSchema = sim;
 
@@ -138,15 +63,7 @@ async function bootstrap() {
         let shaderUrl : string;
         if (node.type === 'compute'){
 
-            if(jsonPath != null){
-                const k = jsonPath.lastIndexOf('/');
-
-                shaderUrl = `${jsonPath.substring(0, k)}/${node.id}.wgsl`;
-            }
-            else{
-
-                shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
-            }
+            shaderUrl = `${jsonDir}/${node.id}.wgsl`;
         }
         else if(node.type == "render"){
             const mesh = getMesh(node);
@@ -162,9 +79,7 @@ async function bootstrap() {
                 shaderUrl = `./src/core/wgsl/${fileName}`;
             }
             else{
-
-                // ★ Fix: Use the extracted directory instead of category
-                shaderUrl = `./src/materials/${directory}/${node.id}.wgsl`;
+                throw new MyError();
             }
         }
         else{
