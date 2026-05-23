@@ -230,7 +230,8 @@ $btn("headerPostBtn").addEventListener("click", async() => {
     msg("投稿画面へ移動");
     showView(editView);
     await bootstrap();
-    initSyntaxHighlightEditor();
+    initSyntaxHighlightEditor("schema-editor");
+    initSyntaxHighlightEditor("wgsl-editor");
 });
 
 $btn("articleBtn").addEventListener("click", ()=>{

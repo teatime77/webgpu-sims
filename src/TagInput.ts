@@ -240,7 +240,7 @@ export function testTagInput(){
     const myInput = new TagInput({
     element: document.getElementById('my-tag-input')!,
     availableOptions: webGpuTags.map(x => x.replaceAll("-", " ")),
-    initialTags: ["TypeScript"] // Optional starting state
+    initialTags: [] // Optional starting state
     });
 
 }

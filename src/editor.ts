@@ -132,7 +132,6 @@ class SyntaxHighlightEditor {
     }
 }
 
-export function initSyntaxHighlightEditor(){
-    const schemaEditor = new SyntaxHighlightEditor("schema-editor");
-    const wgslEditor = new SyntaxHighlightEditor("wgsl-editor");
+export function initSyntaxHighlightEditor(editorId: string){
+    return new SyntaxHighlightEditor(editorId);
 }
