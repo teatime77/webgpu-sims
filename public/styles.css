@@ -48,11 +48,7 @@ header > .at-right {
 
 #article-view{
     display: grid;
-    grid-template-rows: auto 1fr auto; 
-}
-
-#categories-sel{
-    width: 21rem;
+    grid-template-rows: auto auto auto 1fr; 
 }
 
 /* ============================
