@@ -4,102 +4,111 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGPU STEM Labs</title>
-  <!-- <style>
-    body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
-    #app { display: flex; height: 100vh; justify-content: center; align-items: center; }
-  </style>
-
-    <style>
-      body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; background-color: #111; color: white; font-family: sans-serif; padding: 20px; box-sizing: border-box; }
-      canvas { border: 1px solid #444; border-radius: 8px; }
-      .sub-canvas-wrapper { text-align: center; }
-      .sub-canvas-label { font-size: 14px; margin-bottom: 4px; }
-      .debug-canvas { border: 1px solid red; }
-    </style> -->
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" >
-
-
-
-
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="TagInput.css">
 </head>
 <body>
-<header class="container">
-  <nav>
-    <ul>
-      <li>
-        <a href="/" aria-label="GPUSims Home">
-          <img src="path/to/logo.png" alt="GPUSims" style="height: 3rem; vertical-align: middle;">
-        </a>
-      </li>
-    </ul>
 
-    <ul>
-      <li style="width: 100%; max-width: 400px;">
-        <input 
-          type="search" 
-          id="headerSearch" 
-          name="search" 
-          placeholder="記事のタイトルやキーワードで検索..." 
-          aria-label="Search"
-          style="margin-bottom: 0;" 
-        >
-      </li>
-    </ul>
+<!-- 【A】ログイン前画面（認証コンテナをそのまま配置） -->
+  <div id="login-view">
+    <h1 style="text-align: center; margin-top: 50px;">アプリにログイン</h1>
+    <div id="firebaseui-auth-container"></div>
+  </div>
 
-    <ul id="headerAuthActions">
-      </ul>
-  </nav>
-</header>
+  <!-- 【B】ログイン後のメイン画面 -->
+  <div id="main-view" class="view">
 
-<main class="container app-layout">
-  <aside class="sidebar">
-    <nav>
-      <ul>
-        <li><strong>カテゴリー</strong></li>
-        <li><a href="#" class="secondary">すべて</a></li>
-        <li><a href="#">JSONET</a></li>
-        <li><a href="#">WGSL / WebGPU</a></li>
-        <li><a href="#">Markdown</a></li>
-      </ul>
-    </nav>
-  </aside>
+    <header>
+      <a href="/" class="at-left">
+        <img src="path/to/logo.png" alt="GPUSims" style="height: 3rem; vertical-align: middle;">
+      </a>
 
-  <section class="content-area">
-    <div class="article-grid">
-      
-      <article class="article-card">
-        <div class="thumbnail-wrapper">
-          <img src="https://via.placeholder.com/300x180" alt="サムネイル">
-        </div>
-        
-        <div class="card-body">
-          <h5 class="article-title">WebGPUで作る量子色力学(Lattice QCD)シミュレータ</h5>
-        </div>
-        
-        <footer class="card-footer">
-          <div class="user-meta">
-            <img src="https://via.placeholder.com/32" alt="ユーザーアイコン" class="user-icon">
-            <span class="user-id">@ko_hamada</span>
+      <input 
+        type="search" 
+        id="headerSearch" 
+        name="search" 
+        placeholder="記事のタイトルやキーワードで検索..." 
+        size="30"
+        class="at-center"
+      >
+
+      <button id="headerLoginBtn" class="at-right" >サインイン</button>
+      <span id="logged-in" class="at-right">
+        <button id="headerLogoutBtn" >サインアウト</button>
+        <button id="headerPostBtn" style="margin-bottom:0;">投稿</button>
+        <button id="articleBtn" style="margin-bottom:0;">記事</button>
+        <span id="headerUserId" style="font-weight: bold; font-size: 0.9rem;"></span>
+      </span>
+    </header>
+
+    <main>
+      <p>ここにアプリのメインコンテンツが入ります。</p>
+    </main>
+    <footer>
+      <div id="error-msg">Loading...</div>
+    </footer>
+  </div>
+
+  <div id="edit-view">
+    <header  style="height: 50px;">
+      <span class="at-left">
+        <button id="capture-btn" >Capture</button>
+        <button id="burst-btn">Burst xN</button>
+        <label for="capture-count" >N:
+          <input id="capture-count"   type="number" min="1" max="200" step="1" value="10" />
+        </label>
+
+        <label >interval:
+          <input id="capture-interval"  type="number" min="10" max="5000" step="10" value="100" />
+        </label>
+      </span>
+
+      <span class="at-center">
+        <button>Save</button>
+      </span>
+
+      <!-- <span class="at-right"></span> -->
+    </header>
+    <main>
+      <div class="header">
+          <div class="at-left">
+            <canvas id="main-canvas" width="512" height="512" ></canvas>
           </div>
-          <div class="article-meta">
-            <time class="post-date">2026/05/20</time>
-            <span class="like-count">❤️ 128</span>
-          </div>
-        </footer>
-      </article>
-
+          <div class="at-center" ></div>
+          <div id="main1"  class="at-right" style="width: 512px;" ></div>
       </div>
-  </section>
-</main>
 
+      <div id="sub-canvases" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;"></div>
 
-  <!-- SPAのマウントポイント -->
-  <div id="app"></div>
+      <h3>schema</h3>
+      <textarea cols="160" rows="20"></textarea>
+      <p></p>
+      <h4>WGSL</h4>
+      <textarea cols="160" rows="20"></textarea>
+    </main>
+  </div>
 
-    <canvas id="main-canvas" width="512" height="512"></canvas>
-    <div id="sub-canvases" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;"></div>
-  
+  <div id="user-view">
+    <h2>ユーザーIDの初期設定</h2>
+    <p>他のユーザーに公開される一意のID（publicId）を決めてください。</p>
+    <input type="text" id="publicIdInput" placeholder="例: ko_hamada" />
+    <button id="registerBtn">登録する</button>
+  </div>
+
+  <div id="article-view">
+      <input id="title" type="text"/>
+      <div id="my-tag-input"></div>
+      <div>
+        <select id="categories-sel">
+          <option value="" selected disabled hidden>カテゴリーを選択してください。</option>
+        </select>
+        <input id="keywords" type="text"/>
+      </div>
+          
+      </div>
+
+  </div>
+
   <script type="module" src="/src/start.ts"> </script>
 </body>
 </html>

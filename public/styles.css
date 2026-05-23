@@ -1,0 +1,255 @@
+
+body {
+  margin: 0;
+}
+
+/* 全体を囲む view クラスの設定 */
+.view {
+  min-height: 100vh;  /* 最低でも画面の高さ（100%）を確保する */
+  display: grid;      /* グリッドレイアウトを有効化 */
+  
+  /* 上・中央・下の高さを割り当てる */
+  /* auto にすると、headerとfooterは「中身の高さ」に自動で合わせます */
+  /* 1fr が「残りの空きスペースすべて」を意味し、mainを限界まで広げます */
+  grid-template-rows: auto 1fr auto; 
+}
+
+/* メインエリアのスクロール設定（推奨） */
+main {
+  overflow-y: auto;   /* 中身がはみ出した場合は、mainの中だけでスクロールさせる */
+}
+
+/* headerタグ自体をGridコンテナにする */
+header {
+  display: grid;
+  align-items: center; /* 縦方向の中央揃え */
+  padding: 0 16px;     /* 左右が画面端にピッタリくっつかないように少し余白を設ける（お好みで） */
+}
+
+/* headerの直下にある3つのクラスを、すべて同じ「1行目・1列目」に重ねて配置する */
+header > .at-left,
+header > .at-center,
+header > .at-right {
+  grid-area: 1 / 1;
+}
+
+/* それぞれ独立して横方向の配置場所を指定 */
+.at-left {
+  justify-self: start;  /* 左端へ配置 */
+}
+
+.at-center {
+  justify-self: center; /* 中央へ配置 */
+}
+
+.at-right {
+  justify-self: end;    /* 右端へ配置 */
+}
+
+#article-view{
+    display: grid;
+    grid-template-rows: auto 1fr auto; 
+}
+
+#categories-sel{
+    width: 21rem;
+}
+
+/* ============================
+   CSS VARIABLES (THEME)
+   ============================ */
+:root {
+  /* Tells the browser's native UI (like suggestion popups) to use dark mode */
+  color-scheme: dark; 
+
+  /* Backgrounds */
+  --bg-page: #121212;
+  --bg-element: #27272a;
+  --bg-element-hover: #3f3f46;
+  
+  /* Text */
+  --text-main: #e4e4e7;
+  
+  /* Borders */
+  --border-idle: #3f3f46;
+  --border-hover: #52525b;
+  
+  /* Accent Colors */
+  --accent-base: #3730a3;   
+  --accent-hover: #312e81;  
+  --accent-active: #1e1b4b; 
+  --accent-focus: #4338ca;  
+}
+
+/* Base page background */
+/* body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  padding: 20px;
+} */
+
+/* ============================
+   1. BUTTON
+   ============================ */
+button {
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 24px; 
+  background-color: var(--accent-base);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--accent-hover);
+}
+
+button:active {
+  background-color: var(--accent-active);
+}
+
+/* ============================
+   2. TEXT, SEARCH, NUMBER, TEXTAREA & SELECT
+   ============================ */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+textarea,
+select {
+  -webkit-appearance: none; 
+  appearance: none;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-family: inherit;
+  border: 2px solid var(--border-idle);
+  border-radius: 12px; 
+  background-color: var(--bg-element);
+  color: var(--text-main);
+  outline: none; 
+}
+
+/* Hover State */
+input[type="text"]:hover,
+input[type="search"]:hover,
+input[type="number"]:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--border-hover);
+  background-color: var(--bg-element-hover);
+}
+
+/* Focus/Click State */
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-focus);
+}
+
+/* 
+  FIX FOR BROWSER AUTOFILL / SUGGESTION POPUPS
+  Overrides the forced white background and black text on autofill 
+*/
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-main);
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-element) inset;
+}
+
+/* Maintain hover background color during autofill */
+input:-webkit-autofill:hover,
+textarea:-webkit-autofill:hover,
+select:-webkit-autofill:hover {
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-element-hover) inset;
+}
+
+/* Specifics for Select */
+select {
+  cursor: pointer;
+}
+
+/* Specifics for Textarea */
+textarea {
+  resize: vertical;
+  min-height: 80px; 
+}
+
+/* ============================
+   3. INPUT: RANGE
+   ============================ */
+input[type="range"] {
+  -webkit-appearance: none; 
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  outline: none;
+}
+
+/* Range Track (Webkit/Blink) */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 12px;
+  background-color: var(--border-idle);
+  border-radius: 12px; 
+}
+
+input[type="range"]:hover::-webkit-slider-runnable-track {
+  background-color: var(--border-hover);
+}
+
+/* Range Thumb (Webkit/Blink) */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  width: 24px;
+  background-color: var(--accent-base);
+  border-radius: 50%; 
+  margin-top: -6px; 
+  cursor: pointer;
+  border: none;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  background-color: var(--accent-hover);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  background-color: var(--accent-active);
+}
+
+/* Range Track (Firefox) */
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 12px;
+  background-color: var(--border-idle);
+  border-radius: 12px;
+}
+
+input[type="range"]:hover::-moz-range-track {
+  background-color: var(--border-hover);
+}
+
+/* Range Thumb (Firefox) */
+input[type="range"]::-moz-range-thumb {
+  height: 24px;
+  width: 24px;
+  background-color: var(--accent-base);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+  background-color: var(--accent-hover);
+}
+
+input[type="range"]:active::-moz-range-thumb {
+  background-color: var(--accent-active);
+}

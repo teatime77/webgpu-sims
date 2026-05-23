@@ -10,6 +10,43 @@ const TUBE_STRIDE = 12;
 const ARROW_STRIDE = 12;
 const SPHERE_STRIDE = 8;
 
+const $dic = new Map<string, HTMLElement>();
+
+export function $(id : string) : HTMLElement {
+    let ele = $dic.get(id);
+    if(ele == undefined){
+        ele = document.getElementById(id)!;
+        $dic.set(id, ele);
+    }
+
+    return ele;
+}
+
+export function $div(id : string) : HTMLDivElement {
+    return $(id) as HTMLDivElement;
+}
+
+export function $btn(id : string) : HTMLButtonElement {
+    return $(id) as HTMLButtonElement;
+}
+
+export function $inp(id : string) : HTMLInputElement {
+    return $(id) as HTMLInputElement;
+}
+
+export function $dlg(id : string) : HTMLDialogElement {
+    return $(id) as HTMLDialogElement;
+}
+
+export function showHtml(ele: HTMLElement){
+    ele.style.display = "inline-block";    
+}
+
+export function hideHtml(ele: HTMLElement){
+    ele.style.display = "none";
+}
+
+
 export function getElementSizeAlignment(format : string) : [number, number] {
     let alignment;
     let size;

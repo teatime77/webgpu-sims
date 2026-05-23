@@ -1,4 +1,5 @@
 import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "./SimulationRunner";
+import { $div } from "./utils";
 
 // src/SimUI.ts
 
@@ -14,9 +15,9 @@ export class SimUI {
         // Floating container following V1 design
         this.container = document.createElement('div');
         this.container.id = 'sim-ui-container';
-        this.container.style.position = 'absolute'; // Changed from fixed to absolute (relative to canvas)
-        this.container.style.top = '10px';
-        this.container.style.right = '10px';
+        // this.container.style.position = 'absolute';
+        // this.container.style.top = '10px';
+        // this.container.style.right = '10px';
         this.container.style.background = 'rgba(20, 20, 25, 0.85)';
         this.container.style.color = 'white';
         this.container.style.padding = '12px';
@@ -24,7 +25,9 @@ export class SimUI {
         this.container.style.fontFamily = 'sans-serif';
         this.container.style.border = '1px solid #444';
         this.container.style.zIndex = '1000';
-        document.body.appendChild(this.container);
+
+
+        $div("main1").appendChild(this.container);
 
         // ★ Create elements for HUD
         this.hud = document.createElement('div');
