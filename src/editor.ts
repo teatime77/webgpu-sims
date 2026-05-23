@@ -1,5 +1,6 @@
 // 1. TYPES & INTERFACES
 
+import { msg } from "./primitive";
 import { $, $div } from "./utils";
 
 // Define exactly what types of tokens our lexer is allowed to produce
@@ -27,6 +28,7 @@ const theme: Record<TokenType, string> = {
   bracket: '#ffd700'    
 };
 
+
 class SyntaxHighlightEditor {
     textarea : HTMLTextAreaElement;
     canvas   : HTMLCanvasElement;
@@ -45,12 +47,53 @@ class SyntaxHighlightEditor {
         this.ctx.textBaseline = 'top';
         this.charWidth = this.ctx.measureText('M').width;
 
+        // Use a ResizeObserver to watch the textarea container
+        // This guarantees the canvas stays perfectly synced even if the user resizes the browser window
+        const resizeObserver = new ResizeObserver(this.syncCanvasSize.bind(this));
+
+        // Start watching the textarea
+        resizeObserver.observe(this.textarea);
+
         // 6. EVENT BINDING
         this.textarea.addEventListener('input', this.render.bind(this));
         this.textarea.addEventListener('scroll', this.render.bind(this));
 
+        // The initial render is now handled by the ResizeObserver firing on load, 
+        // but it's safe to keep an explicit call just in case.
+        this.syncCanvasSize();
+
         // Run the initial render
         this.render();    
+    }
+
+    // 7. HANDLE RESIZING & HIGH-DPI DISPLAYS
+    syncCanvasSize(): void {
+        // 1. Get the screen's pixel density (e.g., 2 on MacBooks, 1 on standard monitors)
+        const dpr: number = window.devicePixelRatio || 1;
+
+        // 2. Get the actual CSS pixel dimensions of the textarea
+        const cssWidth: number = this.textarea.clientWidth;
+        const cssHeight: number = this.textarea.clientHeight;
+
+        // 3. Multiply the internal canvas resolution by the DPR for sharpness
+        this.canvas.width = cssWidth * dpr;
+        this.canvas.height = cssHeight * dpr;
+
+        // 4. Force the CSS display size to match the original dimensions
+        // (If we don't do this, the canvas will visually expand to double its size!)
+        this.canvas.style.width = `${cssWidth}px`;
+        this.canvas.style.height = `${cssHeight}px`;
+
+        // 5. Scale the drawing context
+        // This is the magic trick: it means we DO NOT have to rewrite any of our 
+        // render() loop math. 1 unit of math will now draw 2 physical pixels.
+        this.ctx.scale(dpr, dpr);
+
+        // 6. Reapply context settings (reset by canvas size change)
+        this.ctx.font = `${fontSize}px ${fontFamily}`;
+        this.ctx.textBaseline = 'top';
+
+        this.render();
     }
 
     // 4. THE WGSL LEXER
@@ -92,8 +135,8 @@ class SyntaxHighlightEditor {
 
     // 5. THE RENDER LOOP
     render(): void {
-        // Clear the canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // We clear using the CSS dimensions, because ctx.scale() multiplies it for us automatically
+        this.ctx.clearRect(0, 0, this.textarea.clientWidth, this.textarea.clientHeight);
 
         const scrollX: number = this.textarea.scrollLeft;
         const scrollY: number = this.textarea.scrollTop;

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGPU STEM Labs</title>
+  
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/TagInput.css">
   <link rel="stylesheet" href="css/editor.css">
@@ -103,7 +104,7 @@
     <button id="registerBtn">登録する</button>
   </div>
 
-  <div id="article-view">
+  <div id="article-view" style="display: grid; grid-template-rows: auto auto auto 1fr;">
       <header>
         <span class="at-right">
           <button>Save</button>
@@ -112,10 +113,13 @@
       </header>
       <input id="title" type="text" placeholder="Title"  />
       <div id="my-tag-input"></div>
-      <div>
-
+      <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; min-height: 0;">
+        <div id="markdown-editor" class="editor-container">
+            <textarea id="markdown-text" class="hidden-textarea" spellcheck="false"></textarea>
+            <canvas class="render-canvas" width="800" height="800" ></canvas>
+        </div>
+        <div id="markdown-preview" ></div>
       </div>
-
   </div>
 
   <script type="module" src="/src/start.ts"> </script>
