@@ -24,6 +24,7 @@ import { $, $btn, $div, $dlg, $inp, hideHtml, MyError, showHtml } from "./utils"
 import { msg } from "./primitive";
 import { initArticle } from "./article";
 import { testTagInput } from "./TagInput";
+import { initSyntaxHighlightEditor } from "./editor";
 
 // -------------------------------------------------------------
 // 1. Firebase 初期化
@@ -229,12 +230,13 @@ $btn("headerPostBtn").addEventListener("click", async() => {
     msg("投稿画面へ移動");
     showView(editView);
     await bootstrap();
+    initSyntaxHighlightEditor();
 });
 
 $btn("articleBtn").addEventListener("click", ()=>{
     showView(articleView);
     testTagInput();
-})
+});
 
 // ログアウトボタンのイベントリスナー
 document.getElementById("headerLogoutBtn")?.addEventListener("click", () => {
@@ -249,9 +251,8 @@ registerBtn.addEventListener("click", () => onRegisterBtn());
 
 export interface CreateArticleParams {
   authorId: string;
-  categoryId: string;
   title: string;
-  keywords: string[];
+  tags: string[];
   thumbnailCanvas: HTMLCanvasElement; // Canvas要素を受け取る
   contentText: string;                // アプリ内のテキストデータを受け取る
   parentId: string | null;
@@ -280,9 +281,8 @@ const getCanvasBlob = (canvas: HTMLCanvasElement, mimeType = "image/jpeg", quali
 export async function createArticle(params: CreateArticleParams): Promise<string> {
   const {
     authorId,
-    categoryId,
     title,
-    keywords,
+    tags,
     thumbnailCanvas,
     contentText,
     parentId,
@@ -317,9 +317,8 @@ export async function createArticle(params: CreateArticleParams): Promise<string
     // 3. Firestore に記事データを保存
     const articleData = {
       authorId,
-      categoryId,
       title,
-      keywords,
+      tags,
       thumbnailUrl,
       contentFileUrl,
       likeCount: 0,
@@ -353,9 +352,8 @@ export async function createArticle(params: CreateArticleParams): Promise<string
 export interface ArticleData {
   id: string;
   authorId: string;
-  categoryId: string;
   title: string;
-  keywords: string[];
+  tags: string[];
   thumbnailUrl: string;
   contentFileUrl: string;
   likeCount: number;
@@ -367,19 +365,17 @@ export interface ArticleData {
 
 /**
  * カテゴリーとキーワードで記事を検索し、最新20件を取得する
- * @param categoryId 絞り込むカテゴリーID
- * @param searchKeyword 検索する単語（完全一致）
+ * @param searchTag 検索する単語（完全一致）
  * @returns 検索結果の記事配列
  */
-export async function fetchLatestArticlesByKeyword(categoryId: string, searchKeyword: string): Promise<ArticleData[]>{
+export async function fetchLatestArticlesByKeyword(searchTag: string): Promise<ArticleData[]>{
   try {
     const articlesRef = collection(db, "articles");
 
     // クエリの構築
     const q = query(
       articlesRef,
-      where("categoryId", "==", categoryId),          // カテゴリーで一致
-      where("keywords", "array-contains", searchKeyword), // 配列内にキーワードが含まれるか
+      where("tags", "array-contains", searchTag), // 配列内にキーワードが含まれるか
       orderBy("updatedAt", "desc"),                   // 更新日時の降順
       limit(20)                                       // 20件取得
     );

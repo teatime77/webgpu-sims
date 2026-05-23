@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGPU STEM Labs</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="TagInput.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/TagInput.css">
+  <link rel="stylesheet" href="css/editor.css">
 </head>
 <body>
 
@@ -81,10 +82,17 @@
       <div id="sub-canvases" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;"></div>
 
       <h3>schema</h3>
-      <textarea cols="160" rows="20"></textarea>
+      <div id="schema-editor" class="editor-container">
+          <textarea class="hidden-textarea" spellcheck="false"></textarea>
+          <canvas class="render-canvas" width="800" height="400"></canvas>
+      </div>
+
       <p></p>
       <h4>WGSL</h4>
-      <textarea cols="160" rows="20"></textarea>
+      <div id="wgsl-editor" class="editor-container">
+          <textarea class="hidden-textarea" spellcheck="false"></textarea>
+          <canvas class="render-canvas" width="800" height="400"></canvas>
+      </div>
     </main>
   </div>
 
@@ -96,15 +104,16 @@
   </div>
 
   <div id="article-view">
-      <input id="title" type="text"/>
+      <header>
+        <span class="at-right">
+          <button>Save</button>
+          <button>Publish</button>
+        </span>
+      </header>
+      <input id="title" type="text" placeholder="Title"  />
       <div id="my-tag-input"></div>
       <div>
-        <select id="categories-sel">
-          <option value="" selected disabled hidden>カテゴリーを選択してください。</option>
-        </select>
-        <input id="keywords" type="text"/>
-      </div>
-          
+
       </div>
 
   </div>
