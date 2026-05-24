@@ -2,10 +2,9 @@
 // AST Node Classes
 // ============================================================================
 
-import { assert, fetchText } from "./CaptureTool";
+import { assert, fetchText, MyError } from "./utils";
 import { msg } from "./primitive";
 import type { ButtonDef, ISimulationSchema, RangeDef, SelectDef, UIDef } from "./SimulationRunner";
-import { MyError } from "./utils";
 
 type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string;
 
@@ -901,10 +900,9 @@ function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
     return schema as ISimulationSchema;
 }
 
-export async function parseSchema(path : string) : Promise<ISimulationSchema> {
+export async function parseSchema(text : string) : Promise<ISimulationSchema> {
     constValues.clear();
 
-    const text = await fetchText(path);
     const parser = new Parser(text);
     const prg = parser.parse();
     msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
@@ -912,7 +910,7 @@ export async function parseSchema(path : string) : Promise<ISimulationSchema> {
     const schemaVar = prg.variables().find(x => x.typeAnnotation == "SimulationSchema");
     if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
         const schema = makeSchema(schemaVar.init);
-        msg(`${"=".repeat(50)} ${path}\n ${JSON.stringify(schema, null, 4)} ${"=".repeat(50)}`);
+        msg(`${"=".repeat(50)} \n ${JSON.stringify(schema, null, 4)} ${"=".repeat(50)}`);
 
         return schema;
     }

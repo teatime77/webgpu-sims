@@ -3,19 +3,6 @@
 import type { SimulationRunner } from "./SimulationRunner";
 import { MyError } from "./utils";
 
-export function assert(ok : boolean){
-    if(!ok){
-        throw new MyError();
-    }
-}
-
-export async function fetchText(fileURL: string) {
-    const response = await fetch(fileURL);
-    const text = await response!.text();
-
-    return text;
-}
-
 export class CaptureTool {
     private isCapturing = false;
 

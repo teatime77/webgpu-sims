@@ -20,13 +20,14 @@ import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage } from "fire
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
 import { bootstrap } from "./main";
-import { $, $btn, $div, $dlg, $inp, hideHtml, MyError, showHtml } from "./utils";
-import { msg } from "./primitive";
-import { initArticle } from "./article";
+import { assert, $, $btn, $div, $dlg, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml } from "./utils";
+import { msg, range } from "./primitive";
+import { initArticle, makeArticleData, makeContentText } from "./article";
 import { testTagInput } from "./TagInput";
 import { initSyntaxHighlightEditor } from "./editor";
 
 export let captureThumbnailFlag = false;
+export let thumbnailBlob : Blob;
 
 // -------------------------------------------------------------
 // 1. Firebase 初期化
@@ -47,10 +48,16 @@ const db = getFirestore(app);
 export const storage = getStorage(app);
 
 let theUser : User | null = null;
+let publicId : string | null;
 
 const registerBtn = $btn("registerBtn");
 const publicIdInput = $inp("publicIdInput");
 const errorMsg = $div("error-msg");
+
+export function getPublicId() : string {
+    assert(publicId != null);
+    return publicId!;
+}
 
 function showMsg(text: string){
     errorMsg.textContent = text;
@@ -80,7 +87,7 @@ function showView(view: HTMLDivElement){
 onAuthStateChanged(auth, async (user: User | null) => {
 
     theUser = user;
-    let publicId;
+    publicId = null;
     if (user) {
         showView(mainView);
         try {
@@ -236,8 +243,15 @@ $btn("headerPostBtn").addEventListener("click", async() => {
     initSyntaxHighlightEditor("wgsl-editor");
 });
 
-$btn("publish-btn").addEventListener("click", ()=>{
+$btn("download-btn").addEventListener("click", ()=>{
+    const contentText = makeContentText();
+    const fileName = downloadMarkdownFile(contentText)
+    msg(`save:${fileName}`);
+});
 
+$btn("publish-btn").addEventListener("click", async()=>{
+    const params = makeArticleData();
+    await createArticle(params);
 });
 
 $btn("thumbnail-btn").addEventListener("click", ()=>{
@@ -267,9 +281,16 @@ export function captureThumbnail(){
         if(blob == null){
             throw new MyError();
         }
+        thumbnailBlob = blob;
+
         const imageUrl = URL.createObjectURL(blob);
         const img = $("thumbnail-img") as HTMLImageElement;
-        // img.width = 400; 
+
+        // 1. Clean up the old blob URL if one exists
+        if (img.src.startsWith('blob:')) {
+            URL.revokeObjectURL(img.src);
+        }
+
         img.src = imageUrl;
     }, 'image/png');
 
@@ -295,40 +316,16 @@ export interface CreateArticleParams {
   authorId: string;
   title: string;
   tags: string[];
-  thumbnailCanvas: HTMLCanvasElement; // Canvas要素を受け取る
   contentText: string;                // アプリ内のテキストデータを受け取る
-  parentId: string | null;
-  treePath: string[];
 }
 
-/**
- * CanvasからBlobを生成するヘルパー関数
- */
-const getCanvasBlob = (canvas: HTMLCanvasElement, mimeType = "image/jpeg", quality = 0.8): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error("Canvasから画像の生成に失敗しました。"));
-        }
-      },
-      mimeType,
-      quality
-    );
-  });
-};
 
 export async function createArticle(params: CreateArticleParams): Promise<string> {
   const {
     authorId,
     title,
     tags,
-    thumbnailCanvas,
     contentText,
-    parentId,
-    treePath,
   } = params;
 
   // アップロード成功後に保持しておくStorageの参照（ロールバック用）
@@ -338,7 +335,6 @@ export async function createArticle(params: CreateArticleParams): Promise<string
     const timestamp = Date.now();
 
     // 1. Canvasから画像Blobを生成し、Cloud Storage にアップロード
-    const thumbnailBlob = await getCanvasBlob(thumbnailCanvas, "image/jpeg", 0.8);
     const thumbnailPath = `thumbnails/${authorId}/${timestamp}_thumbnail.jpg`;
     const thumbnailRef = ref(storage, thumbnailPath);
     
@@ -361,16 +357,18 @@ export async function createArticle(params: CreateArticleParams): Promise<string
       authorId,
       title,
       tags,
+      thumbnailPath,
       thumbnailUrl,
+      contentPath,
       contentFileUrl,
       likeCount: 0,
-      parentId,
-      treePath,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
     const docRef = await addDoc(collection(db, "articles"), articleData);
+
+    msg(`create Article OK`)
     return docRef.id;
 
   } catch (error) {
@@ -410,14 +408,15 @@ export interface ArticleData {
  * @param searchTag 検索する単語（完全一致）
  * @returns 検索結果の記事配列
  */
-export async function fetchLatestArticlesByKeyword(searchTag: string): Promise<ArticleData[]>{
+export async function fetchLatestArticlesByKeyword(): Promise<ArticleData[]>{
+    // searchTag: string
   try {
     const articlesRef = collection(db, "articles");
 
     // クエリの構築
     const q = query(
       articlesRef,
-      where("tags", "array-contains", searchTag), // 配列内にキーワードが含まれるか
+    //   where("tags", "array-contains", searchTag), // 配列内にキーワードが含まれるか
       orderBy("updatedAt", "desc"),                   // 更新日時の降順
       limit(20)                                       // 20件取得
     );
@@ -438,4 +437,40 @@ export async function fetchLatestArticlesByKeyword(searchTag: string): Promise<A
   }
 };
 
+async function getContents(){
+    const articles = await fetchLatestArticlesByKeyword();
+
+    const div = $div("articles");
+    for(const doc of articles){
+        msg(`doc: ${doc.authorId} ${doc.title} ${doc.thumbnailUrl}`);
+
+        const box = document.createElement("div");
+        box.className = "box";
+
+        const img = document.createElement("img");
+        img.className = "box-thumbnail";
+        img.src = doc.thumbnailUrl!;
+
+        box.appendChild(img);
+
+        const title = document.createElement("span");
+        title.textContent = doc.title;
+
+        box.appendChild(title);
+
+        const user = document.createElement("span");
+        user.textContent = doc.authorId;
+
+        box.appendChild(user);
+
+
+        const a = document.createElement("a");
+        a.appendChild(box);
+        a.href = "";
+
+        div.appendChild(a);
+    }
+}
+
 initArticle();
+await getContents();

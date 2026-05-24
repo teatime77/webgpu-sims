@@ -1,5 +1,4 @@
 import { theRunner, type NodeDef } from './SimulationRunner';
-import { assert } from './CaptureTool';
 
 export class MyError extends Error {
 }
@@ -9,6 +8,12 @@ export type MeshShape = "sphere" | "tube" | "arrow";
 const TUBE_STRIDE = 12;
 const ARROW_STRIDE = 12;
 const SPHERE_STRIDE = 8;
+
+export function assert(ok : boolean){
+    if(!ok){
+        throw new MyError();
+    }
+}
 
 const $dic = new Map<string, HTMLElement>();
 
@@ -38,6 +43,10 @@ export function $dlg(id : string) : HTMLDialogElement {
     return $(id) as HTMLDialogElement;
 }
 
+export function $txt(id : string) : HTMLTextAreaElement {
+    return $(id) as HTMLTextAreaElement;
+}
+
 export function showHtml(ele: HTMLElement){
     ele.style.display = "inline-block";    
 }
@@ -46,6 +55,59 @@ export function hideHtml(ele: HTMLElement){
     ele.style.display = "none";
 }
 
+export async function fetchText(fileURL: string) {
+    const response = await fetch(fileURL);
+    const text = await response!.text();
+
+    return text;
+}
+
+function generateTimestamp(): string {
+  const now = new Date();
+
+  // 1. Extract local date components
+  const yy = String(now.getFullYear()).slice(-2); // Gets last 2 digits of year (e.g., '26')
+  const mm = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed, add 1
+  const dd = String(now.getDate()).padStart(2, '0');
+
+  // 2. Extract local time components
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+
+  // 3. Assemble the string
+  return `${yy}-${mm}-${dd}-${hh}-${min}-${ss}`;
+}
+
+/**
+ * Triggers a browser download for a raw string as a local file.
+ * @param content  The text or markdown string to download
+ * @param filename The desired filename (e.g., 'document.md')
+ */
+export function downloadMarkdownFile(content: string): string {
+    const filename = `markdown-${generateTimestamp()}.md`;
+
+    // 1. Create a Blob with the markdown content and explicitly set the MIME type
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
+
+    // 2. Generate a temporary URL pointing to that Blob object
+    const url = URL.createObjectURL(blob);
+
+    // 3. Create an invisible anchor (<a>) element in memory
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+
+    // 4. Temporarily append to the DOM, trigger a programatic click, and clean up
+    document.body.appendChild(link);
+    link.click();
+    
+    // 5. Free up memory and remove the element
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    return filename;
+}
 
 export function getElementSizeAlignment(format : string) : [number, number] {
     let alignment;

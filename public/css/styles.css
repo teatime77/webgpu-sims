@@ -90,6 +90,28 @@ header > .at-right {
     margin-left: 20px;
 }
 
+#articles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    align-content: flex-start;
+}
+
+.box {
+    width: 200px;
+    height: 200px;
+    border: ridge;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.box-thumbnail {
+    width : 128px;
+    height: auto;
+}
+
 /* ============================
    CSS VARIABLES (THEME)
    ============================ */

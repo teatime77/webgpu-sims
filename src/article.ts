@@ -1,8 +1,10 @@
-import { $, $div } from "./utils";
+import { $, $div, $inp, $txt } from "./utils";
 import { marked } from 'marked';
 import renderMathInElement from 'katex/contrib/auto-render';
 import mermaid from 'mermaid';
 import { initSyntaxHighlightEditor } from "./editor";
+import { createArticle, getPublicId, type CreateArticleParams } from "./start";
+import { theTagInput } from "./TagInput";
 
 let textarea : HTMLTextAreaElement;
 let previewDiv : HTMLDivElement;
@@ -59,4 +61,29 @@ export function initArticle(){
 
     // Run the initial render pipelines
     updatePreview();
+}
+
+export function makeContentText(){
+    const markdownText = $txt("markdown-text").value.trim();
+    const schemaText   = $txt("schema-text").value.trim();
+    const wgslText     = $txt("wgsl-text").value.trim();
+
+    const contentText = markdownText + "\n"
+    + "<!-- START OF SCHEMA. DO NOT REMOVE THIS COMMENT!!! -->\n"
+    + "```jsonet\n" + schemaText + "\n```\n"
+    + "<!-- START OF WGSL. DO NOT REMOVE THIS COMMENT!!! -->\n"
+    + "```wgsl\n" + wgslText + "\n```\n";
+
+    return contentText;
+}
+
+export function makeArticleData(){
+    const params: CreateArticleParams = {
+        authorId : getPublicId(),
+        title : $inp("title").value.trim(),
+        tags  : theTagInput.getTags(),
+        contentText: makeContentText()
+    }
+
+    return params;
 }

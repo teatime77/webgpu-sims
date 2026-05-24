@@ -43,7 +43,7 @@
     </header>
 
     <main>
-      <p>ここにアプリのメインコンテンツが入ります。</p>
+        <div id="articles"></div>
     </main>
     <footer>
       <div id="error-msg">Loading...</div>
@@ -69,6 +69,7 @@
       </span>
 
       <!-- <span class="at-right"></span> -->
+      <button id="download-btn" class="at-right">Download</button>
     </header>
     <main>
       <div class="one-row">
@@ -91,14 +92,14 @@
 
       <h3>schema</h3>
       <div id="schema-editor" class="editor-container">
-          <textarea class="hidden-textarea" spellcheck="false"></textarea>
+          <textarea id="schema-text" class="hidden-textarea" spellcheck="false"></textarea>
           <canvas class="render-canvas" width="800" height="400"></canvas>
       </div>
 
       <p></p>
       <h4>WGSL</h4>
       <div id="wgsl-editor" class="editor-container">
-          <textarea class="hidden-textarea" spellcheck="false"></textarea>
+          <textarea id="wgsl-text" class="hidden-textarea" spellcheck="false"></textarea>
           <canvas class="render-canvas" width="800" height="400"></canvas>
       </div>
     </main>
@@ -114,7 +115,6 @@
   <div id="article-view" style="display: grid; grid-template-rows: auto auto auto 1fr;">
       <header>
         <span class="at-right">
-          <button>Save</button>
           <button id="publish-btn">Publish</button>
         </span>
       </header>

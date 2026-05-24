@@ -2,8 +2,7 @@
 import { isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride } from './utils';
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube, msg } from './primitive';
 import { theSchema } from './main';
-import { getElementSize, MyError } from './utils';
-import { assert } from './CaptureTool';
+import { assert, getElementSize, MyError } from './utils';
 
 export let theRunner : SimulationRunner;
 

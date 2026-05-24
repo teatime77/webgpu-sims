@@ -1,10 +1,10 @@
 // src/main.ts
 import { OrbitCamera } from './camera';
-import { assert, CaptureTool } from './CaptureTool';
+import { CaptureTool } from './CaptureTool';
 import { ComputePassBuilder, getMesh, RenderPassBuilder, writeUniformArray } from './SimulationRunner';
 import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './SimulationRunner';
 import { makeUIs } from './SimUI';
-import { MeshDef, MyError, UniformDef } from './utils';
+import { $txt, assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
 import { parseSchema } from './parser';
 import { captureThumbnail, captureThumbnailFlag } from './start';
 
@@ -32,7 +32,15 @@ export async function bootstrap() {
 
         jsonPath = urlParams.get("json")!;
         assert(jsonPath != null)
-        const schemaDef = await parseSchema(`${jsonPath}.js`);
+
+        let jsonText = await fetchText(`${jsonPath}.js`);
+        const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
+        if(k != -1){
+            jsonText = jsonText.substring(0, k);
+        }
+        $txt("schema-text").value = jsonText;
+
+        const schemaDef = await parseSchema(jsonText);
         sim = new SimulationSchema(runner.device, schemaDef);
     } catch (e) {
         console.error(`Failed to load schema: ${jsonPath}`, e);
@@ -87,6 +95,7 @@ export async function bootstrap() {
             throw new MyError();
         }
         const shader = await (await fetch(shaderUrl)).text();
+        $txt("wgsl-text").value = shader;
         
         if (node instanceof ComputePassBuilder) {
             node.initComputePass(runner.device, shader, 'main');

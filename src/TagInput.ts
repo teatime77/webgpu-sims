@@ -1,3 +1,5 @@
+export let theTagInput : TagInput;
+
 interface TagInputConfig {
     element: HTMLElement;
     availableOptions: string[];
@@ -237,10 +239,9 @@ export function testTagInput(){
     // Pre-downloaded/local array of options
 
     // Initialize the component
-    const myInput = new TagInput({
+    theTagInput = new TagInput({
     element: document.getElementById('my-tag-input')!,
     availableOptions: webGpuTags.map(x => x.replaceAll("-", " ")),
     initialTags: [] // Optional starting state
     });
-
 }
