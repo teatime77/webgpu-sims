@@ -33,6 +33,19 @@ header > .at-right {
   grid-area: 1 / 1;
 }
 
+.one-row {
+  display: grid;
+  align-items: center; /* 縦方向の中央揃え */
+  padding: 0 16px;     /* 左右が画面端にピッタリくっつかないように少し余白を設ける（お好みで） */
+}
+
+/* headerの直下にある3つのクラスを、すべて同じ「1行目・1列目」に重ねて配置する */
+.one-row > .at-left,
+.one-row > .at-center,
+.one-row > .at-right {
+  grid-area: 1 / 1;
+}
+
 /* それぞれ独立して横方向の配置場所を指定 */
 .at-left {
   justify-self: start;  /* 左端へ配置 */

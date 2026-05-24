@@ -6,6 +6,7 @@ import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, Simulati
 import { makeUIs } from './SimUI';
 import { MeshDef, MyError, UniformDef } from './utils';
 import { parseSchema } from './parser';
+import { captureThumbnail, captureThumbnailFlag } from './start';
 
 export let theSchema : SimulationSchema;
 
@@ -157,6 +158,11 @@ export async function bootstrap() {
         }
 
         runner.device.queue.submit([runner.currentCommandEncoder.finish()]);
+
+        if(captureThumbnailFlag){
+            captureThumbnail();
+        }
+        
         runner.currentCommandEncoder = null;
         requestAnimationFrame(frame);
     }

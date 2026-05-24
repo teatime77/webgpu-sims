@@ -26,6 +26,8 @@ import { initArticle } from "./article";
 import { testTagInput } from "./TagInput";
 import { initSyntaxHighlightEditor } from "./editor";
 
+export let captureThumbnailFlag = false;
+
 // -------------------------------------------------------------
 // 1. Firebase 初期化
 // -------------------------------------------------------------
@@ -234,7 +236,46 @@ $btn("headerPostBtn").addEventListener("click", async() => {
     initSyntaxHighlightEditor("wgsl-editor");
 });
 
-$btn("articleBtn").addEventListener("click", ()=>{
+$btn("publish-btn").addEventListener("click", ()=>{
+
+});
+
+$btn("thumbnail-btn").addEventListener("click", ()=>{
+    captureThumbnailFlag = true;
+});
+
+export function captureThumbnail(){
+    captureThumbnailFlag = false;
+
+    const canvas = $("main-canvas") as HTMLCanvasElement;
+
+    // 2. Create a temporary 2D canvas
+    // const tempCanvas = $("temp-canvas") as HTMLCanvasElement
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const ctx = tempCanvas.getContext('2d');
+    if(ctx == null){
+        throw new MyError();
+    }
+
+    // 3. Draw the WebGPU canvas onto the 2D canvas immediately
+    ctx.drawImage(canvas, 0, 0);
+
+    // 4. Capture the image from the 2D canvas
+    tempCanvas.toBlob((blob) => {
+        if(blob == null){
+            throw new MyError();
+        }
+        const imageUrl = URL.createObjectURL(blob);
+        const img = $("thumbnail-img") as HTMLImageElement;
+        // img.width = 400; 
+        img.src = imageUrl;
+    }, 'image/png');
+
+}
+
+$btn("add-details").addEventListener("click", ()=>{
     showView(articleView);
     testTagInput();
 });

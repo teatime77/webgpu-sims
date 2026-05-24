@@ -38,7 +38,6 @@
       <span id="logged-in" class="at-right">
         <button id="headerLogoutBtn" >サインアウト</button>
         <button id="headerPostBtn" style="margin-bottom:0;">投稿</button>
-        <button id="articleBtn" style="margin-bottom:0;">記事</button>
         <span id="headerUserId" style="font-weight: bold; font-size: 0.9rem;"></span>
       </span>
     </header>
@@ -72,15 +71,23 @@
       <!-- <span class="at-right"></span> -->
     </header>
     <main>
-      <div class="header">
+      <div class="one-row">
           <div class="at-left">
             <canvas id="main-canvas" width="512" height="512" ></canvas>
           </div>
           <div class="at-center" ></div>
-          <div id="main1"  class="at-right" style="width: 512px;" ></div>
+          <div class="at-right" >
+            <div id="main1"   style="width: 256px;" ></div>
+            <p></p>
+            <button id="thumbnail-btn" class="at-right" >thumbnail</button><br/>
+            <img id="thumbnail-img" style="width: 256px; height: 256px;" /><br/>
+            <button id="add-details">Add Details</button>
+          </div>
       </div>
 
-      <div id="sub-canvases" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;"></div>
+      <div class="one-row">
+        <div id="sub-canvases" class="at-left" style="width: 800px; height: 800px;"></div>
+      </div>
 
       <h3>schema</h3>
       <div id="schema-editor" class="editor-container">
@@ -108,7 +115,7 @@
       <header>
         <span class="at-right">
           <button>Save</button>
-          <button>Publish</button>
+          <button id="publish-btn">Publish</button>
         </span>
       </header>
       <input id="title" type="text" placeholder="Title"  />

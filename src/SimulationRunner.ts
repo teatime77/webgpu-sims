@@ -575,6 +575,7 @@ export class SimulationRunner {
             device: this.device,
             format: this.format,
             alphaMode: 'premultiplied',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
         });
 
         this.contexts.set(canvasId, context);
