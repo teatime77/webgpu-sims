@@ -904,12 +904,12 @@ export async function parseSchema(text : string) : Promise<ISimulationSchema> {
 
     const parser = new Parser(text);
     const prg = parser.parse();
-    msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
+    // msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
 
     const schemaVar = prg.variables().find(x => x.typeAnnotation == "SimulationSchema");
     if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
         const schema = makeSchema(schemaVar.init);
-        msg(`${"=".repeat(50)} \n ${JSON.stringify(schema, null, 4)} ${"=".repeat(50)}`);
+        // msg(`${"=".repeat(50)} \n ${JSON.stringify(schema, null, 4)} ${"=".repeat(50)}`);
 
         return schema;
     }

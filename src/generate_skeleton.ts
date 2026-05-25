@@ -1,34 +1,13 @@
-// tools/generate_skeleton.ts
-import * as fs from 'fs';
-import * as path from 'path';
-import { pathToFileURL } from 'url';
 import type { SimulationSchema } from './SimulationRunner';
-import { StorageDef, UniformDef } from './utils';
+import { msg, StorageDef, UniformDef } from './utils';
 
-async function main() {
-    const targetFile = process.argv[2];
-    if (!targetFile) {
-        console.error("Usage: npx tsx tools/generate_skeleton.ts <path/to/schema.ts>");
-        process.exit(1);
-    }
+export function makeWgslSkeleton(schema: SimulationSchema) {
+    msg(`Generating skeleton for: ${schema.name}`);
 
-    const fullPath = path.resolve(targetFile);
-    const dirName = path.dirname(fullPath);
-    
-    // Convert absolute path to file:// URL for Windows compatibility
-    const module = await import(pathToFileURL(fullPath).href);
-    
-    const schema: SimulationSchema = module.default || module.schema;
-        
-    if (!schema || !schema.shaders || !schema.resources) {
-        console.error("Invalid schema format. Expected 'resources' and 'nodes'.");
-        process.exit(1);
-    }
-
-    console.log(`Generating skeleton for: ${schema.name}`);
+    const codes = new Map<string, string>();
 
     // Generate a .wgsl file for each node (pass) defined in the schema
-    for (const node of schema.shaders) {
+    for (const node of schema.shaders.filter(x => x.type == "compute")) {
         let code = `// ==========================================\n`;
         code += `// AUTO-GENERATED SKELETON FOR NODE: ${node.id}\n`;
         code += `// DO NOT MODIFY STRUCTS AND BINDINGS\n`;
@@ -104,7 +83,6 @@ async function main() {
             }
             code += `@compute @workgroup_size(${wgX}, ${wgY}, ${wgZ})\n`;
             code += `fn main(@builtin(global_invocation_id) id: vec3<u32>) {\n`;
-            code += `    let idx = id.x;\n`;
             code += `    // TODO: Write compute logic for ${node.id}\n`;
             code += `}\n`;
         } 
@@ -126,17 +104,11 @@ async function main() {
             code += `}\n`;
         }
 
-        // Output file (e.g., src/materials/cfd/step_velocity.wgsl)
-        const outFileName = `${node.id}.wgsl`;
-        const outFilePath = path.join(dirName, outFileName);
-        fs.writeFileSync(outFilePath, code, 'utf-8');
-        console.log(`  -> Created: ${outFileName}`);
+        codes.set(node.id, code);
+
+        msg(`${"=".repeat(50)}\nSkeleton: ${node.id}\n${code}\n${"=".repeat(50)}`);
     }
 
-    console.log("Skeleton generation complete!");
+    msg("Skeleton generation complete!");
+    return codes;
 }
-
-main().catch(err => {
-    console.error(err);
-    process.exit(1);
-});

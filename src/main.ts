@@ -7,6 +7,7 @@ import { makeUIs } from './SimUI';
 import { $txt, assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
 import { parseSchema } from './parser';
 import { captureThumbnail, captureThumbnailFlag } from './start';
+import { makeWgslSkeleton } from './generate_skeleton';
 
 export let theSchema : SimulationSchema;
 
@@ -37,6 +38,8 @@ export async function bootstrap(jsonText:string, wgslText : string) {
         alert(`Schema not found.`);
         return;
     }
+
+    makeWgslSkeleton(sim);
 
     new CaptureTool(runner);
 
