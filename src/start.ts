@@ -230,13 +230,49 @@ document.addEventListener('DOMContentLoaded', () => {
     showView(mainView);
 });
 
+function splitContentText(contentText : string){
+    const lines = contentText.replaceAll("\r", "").split("\n");
+    const startJsonet = lines.findIndex(x => x.startsWith("<!-- START OF SCHEMA."));
+    const endJsonet = lines.findIndex((x, i) => startJsonet < i && x == "```");
+
+    const startWgsl   = lines.findIndex(x => x.startsWith("<!-- START OF WGSL."));
+    const endWgsl     = lines.findIndex((x, i) => startWgsl < i && x == "```");
+
+    assert(startJsonet != -1 && startJsonet < endJsonet && endJsonet < startWgsl && startWgsl < endWgsl);
+    assert(lines[startJsonet + 1] == "```jsonet" && lines[startWgsl + 1] == "```wgsl")
+    const jsonText = lines.slice(startJsonet + 2, endJsonet).join("\n");
+    const wgslText   = lines.slice(startWgsl   + 2, endWgsl).join("\n");
+    const markdownText = lines.slice(0, startJsonet).join("\n");
+
+    return [markdownText, jsonText, wgslText];
+}
+
 // --- 1. 画面の描画関数 ---
 // URL（パス）に応じてDOMを書き換える
 async function renderPage(path: string) {
     if (path === '/' || path === '/home') {
         docId = undefined;
+
+        $txt("schema-text").value = "";
+        $txt("wgsl-text").value = "";
+
+        $inp("title").value = "";
+        $txt("markdown-text").value = "";
+
         showView(mainView);
     } 
+    else if(path == "/new"){
+        showView(editView);
+
+        $inp("title").value = "";
+
+        theTagInput.clearTags();
+
+        $txt("markdown-text").value = "";
+        
+        initSyntaxHighlightEditor("schema-editor");
+        initSyntaxHighlightEditor("wgsl-editor");
+    }
     else if (path.startsWith("/post/")) {
         showView(editView);
         const texts = path.split("/");
@@ -247,27 +283,14 @@ async function renderPage(path: string) {
         const article = theArticles[idx];
         docId = article.id;
         const contentText = await fetchText(article.contentFileUrl);
-        const lines = contentText.replaceAll("\r", "").split("\n");
-        const startJsonet = lines.findIndex(x => x.startsWith("<!-- START OF SCHEMA."));
-        const endJsonet = lines.findIndex((x, i) => startJsonet < i && x == "```");
-
-        const startWgsl   = lines.findIndex(x => x.startsWith("<!-- START OF WGSL."));
-        const endWgsl     = lines.findIndex((x, i) => startWgsl < i && x == "```");
-
-        assert(startJsonet != -1 && startJsonet < endJsonet && endJsonet < startWgsl && startWgsl < endWgsl);
-        assert(lines[startJsonet + 1] == "```jsonet" && lines[startWgsl + 1] == "```wgsl")
-        const jsonText = lines.slice(startJsonet + 2, endJsonet).join("\n");
-        const wgslText   = lines.slice(startWgsl   + 2, endWgsl).join("\n");
-
-        // msg(`schema:${jsonet}`);
-        // msg(`wgsl:${wgsl}`);
+        const [markdownText, jsonText, wgslText] = splitContentText(contentText);
 
         $inp("title").value = article.title;
 
         theTagInput.clearTags();
         article.tags.forEach(x => theTagInput.addTag(x));
 
-        $txt("markdown-text").value = lines.slice(0, startJsonet).join("\n");
+        $txt("markdown-text").value = markdownText;
         updatePreview();
 
         await bootstrap(jsonText, wgslText);
@@ -318,7 +341,25 @@ $btn("headerLoginBtn").addEventListener("click", () => {
 $btn("headerPostBtn").addEventListener("click", async() => {
     // 投稿画面への遷移処理など
     msg("投稿画面へ移動");
-    navigateTo('/post');
+    navigateTo('/new');
+});
+
+$btn("instructions-btn").addEventListener("click", async()=>{
+    const text = await fetchText("schema.md");
+
+    try {
+        await navigator.clipboard.writeText(text);
+        msg('コピーに成功しました！');
+    } catch (error) {
+        msg(`コピーに失敗しました:${error}`);
+    }
+});
+
+$btn("run-btn").addEventListener("click", async ()=>{
+    const jsonText = $txt("schema-text").value;
+    const wgslText = $txt("wgsl-text").value;
+
+    await bootstrap(jsonText, wgslText);
 });
 
 $btn("download-btn").addEventListener("click", ()=>{

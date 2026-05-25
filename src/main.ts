@@ -1,10 +1,10 @@
 // src/main.ts
 import { OrbitCamera } from './camera';
 import { CaptureTool } from './CaptureTool';
-import { ComputePassBuilder, getMesh, RenderPassBuilder, writeUniformArray } from './SimulationRunner';
-import { SimulationRunner, type ResourceBinding, setRunner, renderMesh, SimulationSchema } from './SimulationRunner';
+import { ComputePassBuilder, getMesh, RenderPassBuilder, simRunner, writeUniformArray } from './SimulationRunner';
+import { SimulationRunner, type ResourceBinding, setRunner, SimulationSchema } from './SimulationRunner';
 import { makeUIs } from './SimUI';
-import { $txt, assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
+import { $txt, assert, fetchText, isRenderMesh, MeshDef, MyError, UniformDef } from './utils';
 import { parseSchema } from './parser';
 import { captureThumbnail, captureThumbnailFlag } from './start';
 import { makeWgslSkeleton } from './generate_skeleton';
@@ -66,23 +66,42 @@ export async function bootstrap(jsonText:string, wgslText : string) {
             // shader = await fetchText("tmp/json/pendulum/pendulum_comp.wgsl");
             $txt("wgsl-text").value = shader;
         }
-        else if(node.type == "render"){
+        else if(node instanceof RenderPassBuilder){
+            let fileName : string;
             const mesh = getMesh(node);
             if(mesh != undefined){
 
-                let fileName : string;
                 switch(mesh.shape){
-                case "sphere": fileName = "sphere_render.wgsl"; break;
-                case "tube"  : fileName = "tube_render.wgsl"; break;
-                case "arrow" : fileName = "arrow_render.wgsl"; break;
+                case "sphere": 
+                    fileName = "sphere_render.wgsl"; 
+                    node.topology = 'triangle-list';
+                    break;
+                case "tube"  : 
+                    fileName = "tube_render.wgsl"; 
+                    node.topology = 'triangle-strip';
+                    break;
+                case "arrow" : 
+                    fileName = "arrow_render.wgsl"; 
+                    node.topology = 'triangle-list';
+                    break;
                 default: throw new MyError();
                 }
-                const shaderUrl = `src/wgsl/${fileName}`;
-                shader = await fetchText(shaderUrl);
+            }
+            else if(node.topology != undefined){
+                switch(node.topology){
+                case "point-list":
+                    fileName = "point_render.wgsl"; 
+                    break;
+                default:
+                    throw new MyError();
+                }
             }
             else{
                 throw new MyError();
             }
+
+            const shaderUrl = `src/wgsl/${fileName}`;
+            shader = await fetchText(shaderUrl);
         }
         else{
             throw new MyError();
@@ -108,8 +127,8 @@ export async function bootstrap(jsonText:string, wgslText : string) {
 
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
-            node.initRenderPass(runner.device, node, shader, format, { 
-                topology: node.topology || 'triangle-list',
+            node.initRenderPass(runner.device, shader, format, { 
+                topology: node.topology,
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
             });
@@ -152,9 +171,12 @@ export async function bootstrap(jsonText:string, wgslText : string) {
             if (val === 'frame') break;
         }
 
-        const meshRenders = runner.getMeshRenders();
-        for(const [idx, render] of meshRenders.entries()){
-            renderMesh(render.node.id, idx == 0);
+        const renders = runner.getRenders();
+        for(const [idx, render] of renders.entries()){
+            if(render.vertexCount == undefined){
+                throw new MyError();
+            }
+            simRunner.render(render.id, render.vertexCount, render.instanceCount, true, idx == 0, render.canvasId);
         }
 
         runner.device.queue.submit([runner.currentCommandEncoder.finish()]);

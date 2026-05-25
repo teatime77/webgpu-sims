@@ -98,6 +98,10 @@ header > .at-right {
     align-content: flex-start;
 }
 
+#sub-canvases {
+    display: none;
+}
+
 .box {
     width: 200px;
     height: 200px;

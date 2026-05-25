@@ -1,5 +1,5 @@
 // src/SimulationRunner.ts
-import { msg, isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride } from './utils';
+import { msg, isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, getTopologyStride } from './utils';
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive';
 import { theSchema } from './main';
 import { assert, getElementSize, MyError } from './utils';
@@ -25,7 +25,6 @@ export abstract class NodeDef {
     type!: 'compute' | 'render';
     workgroupSize?: number | string | (number | string)[];
     workgroupCount? : number | [number, number] | [number, number, number];
-    topology?: GPUPrimitiveTopology;
     blendMode?: 'opaque' | 'alpha' | 'add' | 'normal';
     depthTest?: boolean;
     bindings!: ResourceBinding[];
@@ -35,7 +34,18 @@ export abstract class NodeDef {
 
     constructor(data : any){
         data.bindings = data.bindings.map((x: any) => new ResourceBinding(x));
-        Object.assign(this, data);
+    }
+
+    getNodeResources() : ResourceDef[] {
+        return this.bindings.map(b => theSchema.resources.get(b.resource)!);
+    }
+
+    getMeshDef() : MeshDef | undefined {
+        return this.getNodeResources().find(res => res instanceof MeshDef);
+    }
+
+    getRenderResources() : ResourceDef[] {
+        return this.getNodeResources().filter(x => x.topology != undefined);
     }
 }
 
@@ -52,6 +62,7 @@ export class ComputePassBuilder extends NodeDef{
 
     constructor(data : any){
         super(data);
+        Object.assign(this, data);
     }
 
     initComputePass(device: GPUDevice, shaderCode: string, entryPoint: string = 'main') {
@@ -181,27 +192,20 @@ export class RenderPassBuilder extends NodeDef {
     private currentGroupIndex: number = 0;
     private currentBindingIndex: number = 0;
     hasDepth : boolean = true;
-    node! : NodeDef;
+    topology?: GPUPrimitiveTopology;
+
+    constructor(data : any){
+        super(data);
+        Object.assign(this, data);
+    }
 
     initRenderPass(
         device: GPUDevice, 
-        node : NodeDef,
         shaderCode: string, 
         presentationFormat: GPUTextureFormat,
         options: RenderPassOptions = {}
     ) {
         this.device = device;
-        this.node   = node;
-
-        let topology: GPUPrimitiveTopology;
-        const mesh = node.bindings.map(b => theSchema.resources.get(b.resource)!).find(res => res instanceof MeshDef);
-        if(mesh != undefined && mesh.shape == "tube"){
-            topology = 'triangle-strip';
-        }
-        else{
-
-            topology = options.topology || 'triangle-list';
-        }
 
         // 1. Create shader module (assuming VS and FS are written in a single file)
         const module = device.createShaderModule({
@@ -251,7 +255,7 @@ export class RenderPassBuilder extends NodeDef {
                 }]
             },
             primitive: { 
-                topology: topology,
+                topology: this.topology,
                 cullMode: 'none' // Can be changed to 'back' etc. as needed
             },
             depthStencil: depthStencil
@@ -479,6 +483,24 @@ export class SimulationSchema {
             this.shaders.push(render);
         }
 
+        const topologyReses = Array.from(this.resources.values()).filter(x => x instanceof StorageDef && x.topology != undefined) as StorageDef[];
+        for(const res of topologyReses){
+
+            const renderDef = {
+                id: `${res.id}_render`,
+                type: 'render',
+                topology: res.topology,
+                vertexCount: res.count,
+                bindings: [
+                    { resource: 'Camera' },
+                    { resource: res.id, varName: 'instances' },
+                ]
+            }
+
+            const render = new RenderPassBuilder(renderDef);
+            this.shaders.push(render);
+        }
+
         this.shaders.forEach(node => node.bindings.forEach(b => {
             b.resourceDef = this.resources.get(b.resource);
             assert(b.resourceDef != undefined);            
@@ -673,7 +695,8 @@ export class SimulationRunner {
 
         // Automatically create a canvas if it does not exist in the DOM
         if (!document.getElementById(canvasId)) {
-            const container = document.getElementById('sub-canvases') || document.body;
+            const container = $div('sub-canvases');
+            container.style.display = "block";
             
             const wrapper = document.createElement('div');
             wrapper.className = 'sub-canvas-wrapper';
@@ -732,18 +755,8 @@ export class SimulationRunner {
         rPass.end();
     }
 
-    renderMesh(id: string, clearScreen: boolean){
-        const builder = this.schema.getNode(id) as RenderPassBuilder;
-        const node = builder.node;
-        if(builder == undefined || node.vertexCount == undefined || node.instanceCount == undefined){
-            throw new Error();
-        }
-
-        this.render(id, node.vertexCount, node.instanceCount, true, clearScreen, node.canvasId);
-    }
-
-    getMeshRenders() : RenderPassBuilder[] {
-        return Array.from(this.schema.shaders).filter(x => x instanceof RenderPassBuilder && isRenderMesh(x.node) ) as RenderPassBuilder[];
+    getRenders() : RenderPassBuilder[] {
+        return Array.from(this.schema.shaders).filter(x => x instanceof RenderPassBuilder) as RenderPassBuilder[];
     }
 
     getComputeShaders() : ComputePassBuilder[] {
@@ -788,7 +801,7 @@ export class SimulationRunner {
     }
 }
 
-let simRunner : SimulationRunner;
+export let simRunner : SimulationRunner;
 
 export function setRunner(runner : SimulationRunner){
     simRunner = runner;
@@ -800,10 +813,6 @@ export function compute(id: string){
 
 export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas'){
     simRunner.render(id, vertexCount, instanceCount, hasDepth, clearScreen, canvasId)
-}
-
-export function renderMesh(id: string, clearScreen: boolean = true){
-    simRunner.renderMesh(id, clearScreen);
 }
 
 export function writeUniformObject(name:string, data: any){

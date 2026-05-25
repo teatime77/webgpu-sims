@@ -757,6 +757,9 @@ function readResource(resourceObj:ObjectExpression) {
         case "division":
             data[key] = value.getNumber();
             break;
+        case "topology":
+            data[key] = value.getString();
+            break;
         default:
             throw new MyError();
         }

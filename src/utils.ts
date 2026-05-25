@@ -55,6 +55,10 @@ export function $txt(id : string) : HTMLTextAreaElement {
     return $(id) as HTMLTextAreaElement;
 }
 
+export function $canvas(id : string) : HTMLCanvasElement {
+    return $(id) as HTMLCanvasElement;
+}
+
 export function showHtml(ele: HTMLElement){
     ele.style.display = "inline-block";    
 }
@@ -166,6 +170,12 @@ export function getShapeStride(shape: MeshShape) : number {
     }
 }
 
+export function getTopologyStride(topology: GPUPrimitiveTopology) : number {
+    switch(topology){
+    case "point-list": return 8;
+    default:       throw new MyError();
+    }
+}
 
 export abstract class ResourceDef {
     type!: 'uniform' | 'storage' | 'mesh';
@@ -174,6 +184,7 @@ export abstract class ResourceDef {
     public buffers!: GPUBuffer[];
     public bufferCount!: number;
     public currentIndex: number = 0;
+    topology?: GPUPrimitiveTopology;
 
     constructor(id: string){
         this.id = id;
