@@ -10,7 +10,7 @@ import { captureThumbnail, captureThumbnailFlag } from './start';
 
 export let theSchema : SimulationSchema;
 
-export async function bootstrap() {
+export async function bootstrap(jsonText:string, wgslText : string) {
     const runner = new SimulationRunner();
     if (!await runner.init()) return;
 
@@ -21,19 +21,9 @@ export async function bootstrap() {
     const camera = new OrbitCamera(canvas);
     camera.distance = 5.0;
 
-    // ========================================================
-    // ★ Parse URL parameters (supporting deep directory hierarchies)
-    // ========================================================
-    const urlParams = new URLSearchParams(window.location.search);
-
     let sim: SimulationSchema;
-    let jsonPath : string | null = null;
     try {
 
-        jsonPath = urlParams.get("json")!;
-        assert(jsonPath != null)
-
-        let jsonText = await fetchText(`${jsonPath}.js`);
         const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
         if(k != -1){
             jsonText = jsonText.substring(0, k);
@@ -43,16 +33,12 @@ export async function bootstrap() {
         const schemaDef = await parseSchema(jsonText);
         sim = new SimulationSchema(runner.device, schemaDef);
     } catch (e) {
-        console.error(`Failed to load schema: ${jsonPath}`, e);
-        alert(`Schema "${jsonPath}" not found.`);
+        console.error(`Failed to load schema:`, e);
+        alert(`Schema not found.`);
         return;
     }
 
-    const k = jsonPath.lastIndexOf('/');
-    const jsonDir = jsonPath.substring(0, k);
-    const jsonName = jsonPath.substring(k + 1);
-
-    new CaptureTool(runner, jsonName);
+    new CaptureTool(runner);
 
     theSchema = sim;
 
@@ -69,10 +55,13 @@ export async function bootstrap() {
     // ★ Build passes (Builder)
     // ========================================================
     for (const node of sim.shaders) {
-        let shaderUrl : string;
+        let shader : string;
+
         if (node.type === 'compute'){
 
-            shaderUrl = `${jsonDir}/${node.id}.wgsl`;
+            shader = wgslText;
+            // shader = await fetchText("tmp/json/pendulum/pendulum_comp.wgsl");
+            $txt("wgsl-text").value = shader;
         }
         else if(node.type == "render"){
             const mesh = getMesh(node);
@@ -85,7 +74,8 @@ export async function bootstrap() {
                 case "arrow" : fileName = "arrow_render.wgsl"; break;
                 default: throw new MyError();
                 }
-                shaderUrl = `./src/wgsl/${fileName}`;
+                const shaderUrl = `src/wgsl/${fileName}`;
+                shader = await fetchText(shaderUrl);
             }
             else{
                 throw new MyError();
@@ -94,8 +84,6 @@ export async function bootstrap() {
         else{
             throw new MyError();
         }
-        const shader = await (await fetch(shaderUrl)).text();
-        $txt("wgsl-text").value = shader;
         
         if (node instanceof ComputePassBuilder) {
             node.initComputePass(runner.device, shader, 'main');

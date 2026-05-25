@@ -6,8 +6,8 @@ import { MyError } from "./utils";
 export class CaptureTool {
     private isCapturing = false;
 
-    constructor(engine: SimulationRunner, prefix: string = "sim") {
-        this.setupCapturePanel(engine, prefix);
+    constructor(engine: SimulationRunner) {
+        this.setupCapturePanel(engine);
     }
 
     private async captureCanvasPng(canvas: HTMLCanvasElement, filename: string): Promise<void> {
@@ -30,7 +30,7 @@ export class CaptureTool {
         });
     }
 
-    private setupCapturePanel(engine: SimulationRunner, prefix: string): void {
+    private setupCapturePanel(engine: SimulationRunner): void {
         if (document.getElementById("capture-panel")) return;
 
         const panel = document.createElement("div");
@@ -89,8 +89,8 @@ export class CaptureTool {
                 
                 for (const { id, canvas } of canvases) {
                     const filename = canvases.length > 1 
-                        ? `${prefix}_${id}_${stamp}.png` 
-                        : `${prefix}_${stamp}.png`;
+                        ? `capture_${id}_${stamp}.png` 
+                        : `capture_${stamp}.png`;
                     await this.captureCanvasPng(canvas, filename);
                 }
             } finally {
@@ -115,8 +115,8 @@ export class CaptureTool {
                     
                     for (const { id, canvas } of canvases) {
                         const filename = canvases.length > 1 
-                            ? `${prefix}_${id}_${base}_${frameStr}.png` 
-                            : `${prefix}_${base}_${frameStr}.png`;
+                            ? `capture_${id}_${base}_${frameStr}.png` 
+                            : `capture_${base}_${frameStr}.png`;
                         await this.captureCanvasPng(canvas, filename);
                     }
                     

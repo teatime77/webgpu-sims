@@ -10,7 +10,7 @@ let textarea : HTMLTextAreaElement;
 let previewDiv : HTMLDivElement;
 
 // 6. THE PREVIEW ENGINE (DOM/HTML)
-async function updatePreview(): Promise<void> {
+export async function updatePreview(): Promise<void> {
   const rawMarkdown = textarea.value;
 
   // Step 1: Parse Markdown to HTML

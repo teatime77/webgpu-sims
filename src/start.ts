@@ -14,16 +14,16 @@ import {
     getDoc,
     runTransaction,
     serverTimestamp,
-    collection, addDoc, query, where, orderBy, limit, getDocs
+    collection, addDoc, query, where, orderBy, limit, getDocs,
+    setDoc
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage } from "firebase/storage";
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
 import { bootstrap } from "./main";
-import { assert, $, $btn, $div, $dlg, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml } from "./utils";
-import { msg, range } from "./primitive";
-import { initArticle, makeArticleData, makeContentText } from "./article";
-import { testTagInput } from "./TagInput";
+import { msg, range, assert, $, $btn, $div, $dlg, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt } from "./utils";
+import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
+import { initTagInput, theTagInput } from "./TagInput";
 import { initSyntaxHighlightEditor } from "./editor";
 
 export let captureThumbnailFlag = false;
@@ -49,6 +49,9 @@ export const storage = getStorage(app);
 
 let theUser : User | null = null;
 let publicId : string | null;
+
+let theArticles : ArticleData[] = [];
+let docId : string | undefined;
 
 const registerBtn = $btn("registerBtn");
 const publicIdInput = $inp("publicIdInput");
@@ -227,6 +230,84 @@ document.addEventListener('DOMContentLoaded', () => {
     showView(mainView);
 });
 
+// --- 1. 画面の描画関数 ---
+// URL（パス）に応じてDOMを書き換える
+async function renderPage(path: string) {
+    if (path === '/' || path === '/home') {
+        docId = undefined;
+        showView(mainView);
+    } 
+    else if (path.startsWith("/post/")) {
+        showView(editView);
+        const texts = path.split("/");
+        assert(texts.length == 3);
+        const idx = parseInt(texts[2]);
+        assert(!(isNaN(idx)) && 0 <= idx && idx < theArticles.length)
+        // msg(`post:${texts}`);
+        const article = theArticles[idx];
+        docId = article.id;
+        const contentText = await fetchText(article.contentFileUrl);
+        const lines = contentText.replaceAll("\r", "").split("\n");
+        const startJsonet = lines.findIndex(x => x.startsWith("<!-- START OF SCHEMA."));
+        const endJsonet = lines.findIndex((x, i) => startJsonet < i && x == "```");
+
+        const startWgsl   = lines.findIndex(x => x.startsWith("<!-- START OF WGSL."));
+        const endWgsl     = lines.findIndex((x, i) => startWgsl < i && x == "```");
+
+        assert(startJsonet != -1 && startJsonet < endJsonet && endJsonet < startWgsl && startWgsl < endWgsl);
+        assert(lines[startJsonet + 1] == "```jsonet" && lines[startWgsl + 1] == "```wgsl")
+        const jsonText = lines.slice(startJsonet + 2, endJsonet).join("\n");
+        const wgslText   = lines.slice(startWgsl   + 2, endWgsl).join("\n");
+
+        // msg(`schema:${jsonet}`);
+        // msg(`wgsl:${wgsl}`);
+
+        $inp("title").value = article.title;
+
+        theTagInput.clearTags();
+        article.tags.forEach(x => theTagInput.addTag(x));
+
+        $txt("markdown-text").value = lines.slice(0, startJsonet).join("\n");
+        updatePreview();
+
+        await bootstrap(jsonText, wgslText);
+        initSyntaxHighlightEditor("schema-editor");
+        initSyntaxHighlightEditor("wgsl-editor");
+    }
+}
+
+// --- 2. 画面遷移の処理（履歴の追加） ---
+function navigateTo(path: string) {
+    // 第1引数: 保存したい状態(state)
+    // 第2引数: タイトル(現在はほとんどのブラウザで無視されるため空文字でOK)
+    // 第3引数: 新しいURLパス
+    window.history.pushState({ path }, '', path);
+
+    // URLが変わったので画面を再描画する
+    renderPage(path);
+}
+
+// --- 3. 「戻る」「進む」ボタンの検知 ---
+window.addEventListener('popstate', (event: PopStateEvent) => {
+    // pushStateで保存した state オブジェクトを取得
+    const state = event.state;
+
+    // stateが存在すればそのパスを、なければ現在のURLのパスを再描画する
+    const currentPath = state?.path || window.location.pathname;
+    renderPage(currentPath);
+});
+
+// --- 4. 初回読み込み時の設定 ---
+window.addEventListener('DOMContentLoaded', () => {
+    const initialPath = window.location.pathname;
+
+    // 初期表示のURLもHistory APIのstateに登録しておく（最初に戻ってきた時用）
+    window.history.replaceState({ path: initialPath }, '', initialPath);
+
+    // 初期画面を描画
+    renderPage(initialPath);
+});
+
 $btn("headerLoginBtn").addEventListener("click", () => {
     // ログイン画面（FirebaseUI表示状態）へ遷移させる処理
     // 例: navigateTo("SHOW_LOGIN");
@@ -237,10 +318,7 @@ $btn("headerLoginBtn").addEventListener("click", () => {
 $btn("headerPostBtn").addEventListener("click", async() => {
     // 投稿画面への遷移処理など
     msg("投稿画面へ移動");
-    showView(editView);
-    await bootstrap();
-    initSyntaxHighlightEditor("schema-editor");
-    initSyntaxHighlightEditor("wgsl-editor");
+    navigateTo('/post');
 });
 
 $btn("download-btn").addEventListener("click", ()=>{
@@ -298,7 +376,6 @@ export function captureThumbnail(){
 
 $btn("add-details").addEventListener("click", ()=>{
     showView(articleView);
-    testTagInput();
 });
 
 // ログアウトボタンのイベントリスナー
@@ -366,12 +443,22 @@ export async function createArticle(params: CreateArticleParams): Promise<string
       updatedAt: serverTimestamp(),
     };
 
-    const docRef = await addDoc(collection(db, "articles"), articleData);
+    if(docId == undefined){
 
-    msg(`create Article OK`)
-    return docRef.id;
+        const docRef = await addDoc(collection(db, "articles"), articleData);
 
-  } catch (error) {
+        msg(`create Article OK`);
+        return docRef.id;
+    }
+    else{
+        const docRef = doc(db, "articles", docId);        
+        await setDoc(docRef, articleData);
+
+        msg(`update Article OK`);
+        return docRef.id;
+    }
+  } 
+  catch (error) {
     console.error("記事の投稿中にエラーが発生しました:", error);
 
     // 【疑似ロールバック】Firestoreの保存に失敗した場合、アップロード済みのファイルを削除
@@ -438,14 +525,18 @@ export async function fetchLatestArticlesByKeyword(): Promise<ArticleData[]>{
 };
 
 async function getContents(){
-    const articles = await fetchLatestArticlesByKeyword();
+    theArticles = await fetchLatestArticlesByKeyword();
 
     const div = $div("articles");
-    for(const doc of articles){
+    for(const [idx, doc] of theArticles.entries()){
         msg(`doc: ${doc.authorId} ${doc.title} ${doc.thumbnailUrl}`);
 
         const box = document.createElement("div");
         box.className = "box";
+
+        box.addEventListener("click", (ev:PointerEvent)=>{
+            navigateTo(`/post/${idx}`);
+        });
 
         const img = document.createElement("img");
         img.className = "box-thumbnail";
@@ -463,14 +554,10 @@ async function getContents(){
 
         box.appendChild(user);
 
-
-        const a = document.createElement("a");
-        a.appendChild(box);
-        a.href = "";
-
-        div.appendChild(a);
+        div.appendChild(box);
     }
 }
 
 initArticle();
+initTagInput();
 await getContents();

@@ -15,6 +15,14 @@ export function assert(ok : boolean){
     }
 }
 
+export function msg(txt : string){
+    console.log(txt);
+}
+
+export function range(n: number) : number[]{
+    return [...Array(n).keys()];
+}
+
 const $dic = new Map<string, HTMLElement>();
 
 export function $(id : string) : HTMLElement {
@@ -56,6 +64,14 @@ export function hideHtml(ele: HTMLElement){
 }
 
 export async function fetchText(fileURL: string) {
+    if(!fileURL.startsWith("http")){
+        const url = document.location.href;
+        const parser = new URL(url);
+        fileURL = `${parser.origin}/${fileURL}`;
+        msg(`fetch Text:${fileURL}`);
+    }
+
+
     const response = await fetch(fileURL);
     const text = await response!.text();
 

@@ -105,6 +105,11 @@ header > .at-right {
 
     display: flex;
     flex-direction: column;
+    cursor: pointer;
+}
+
+.box:hover {
+  background-color: var(--accent-hover);
 }
 
 .box-thumbnail {

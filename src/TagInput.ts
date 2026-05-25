@@ -26,6 +26,10 @@ export class TagInput {
         this.renderTags();
     }
 
+    clearTags(){
+        this.tags.clear();
+    }
+
     /**
      * Initializes the DOM structure inside the provided container.
      */
@@ -235,7 +239,7 @@ export const webGpuTags: string[] = [
 
 // You can retrieve the selected tags at any time:
 // console.log(myInput.getTags());
-export function testTagInput(){
+export function initTagInput(){
     // Pre-downloaded/local array of options
 
     // Initialize the component
