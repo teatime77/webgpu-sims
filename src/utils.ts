@@ -170,13 +170,6 @@ export function getShapeStride(shape: MeshShape) : number {
     }
 }
 
-export function getTopologyStride(topology: GPUPrimitiveTopology) : number {
-    switch(topology){
-    case "point-list": return 8;
-    default:       throw new MyError();
-    }
-}
-
 export abstract class ResourceDef {
     type!: 'uniform' | 'storage' | 'mesh';
 

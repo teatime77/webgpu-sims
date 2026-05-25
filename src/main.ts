@@ -92,6 +92,9 @@ export async function bootstrap(jsonText:string, wgslText : string) {
                 case "point-list":
                     fileName = "point_render.wgsl"; 
                     break;
+                case "line-list":
+                    fileName = "line_render.wgsl"; 
+                    break;
                 default:
                     throw new MyError();
                 }

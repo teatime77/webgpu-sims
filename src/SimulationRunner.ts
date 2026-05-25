@@ -1,5 +1,5 @@
 // src/SimulationRunner.ts
-import { msg, isRenderMesh, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, getTopologyStride } from './utils';
+import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div } from './utils';
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive';
 import { theSchema } from './main';
 import { assert, getElementSize, MyError } from './utils';
@@ -485,17 +485,31 @@ export class SimulationSchema {
 
         const topologyReses = Array.from(this.resources.values()).filter(x => x instanceof StorageDef && x.topology != undefined) as StorageDef[];
         for(const res of topologyReses){
+            let vertexCount = 1;
+            let instanceCount = res.count || 1;
+
+            if (res.topology === 'point-list') {
+                vertexCount = 1;               // 1 vertex per dot
+                instanceCount = res.count! / 8; // 8 floats per point stride (POINT_STRIDE)
+            } else if (res.topology === 'line-list') {
+                vertexCount = 2;                // 2 vertices per line segment
+                instanceCount = res.count! / 12; // 12 floats per line stride (LINE_STRIDE)
+            } else {
+                vertexCount = res.count || 1;
+                instanceCount = 1;
+            }
 
             const renderDef = {
                 id: `${res.id}_render`,
                 type: 'render',
                 topology: res.topology,
-                vertexCount: res.count,
+                vertexCount: vertexCount,
+                instanceCount: instanceCount, // 🌟 Now properly passed to passEncoder.draw()
                 bindings: [
                     { resource: 'Camera' },
                     { resource: res.id, varName: 'instances' },
                 ]
-            }
+            };
 
             const render = new RenderPassBuilder(renderDef);
             this.shaders.push(render);
@@ -731,14 +745,16 @@ export class SimulationRunner {
         const builder = this.schema.getNode(id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
 
-        // Determine the load operation based on the flag
+        // 🌟 FIX: If instanceCount is explicitly passed as undefined or null, force it to fallback to builder's property or 1
+        const finalInstanceCount = instanceCount ?? builder.instanceCount ?? 1;
+
         const loadOperation = clearScreen ? 'clear' : 'load';
 
         const passDesc: GPURenderPassDescriptor = {
             colorAttachments: [{
                 view: this.getContext(canvasId).getCurrentTexture().createView(),
                 clearValue: { r: 0.0, g: 0.0, b: 0.01, a: 1.0 },
-                loadOp: loadOperation, // Dynamically set
+                loadOp: loadOperation,
                 storeOp: 'store'
             }]
         };
@@ -746,12 +762,15 @@ export class SimulationRunner {
             passDesc.depthStencilAttachment = {
                 view: this.getDepthView(canvasId),
                 depthClearValue: 1.0,
-                depthLoadOp: loadOperation, // Dynamically set
+                depthLoadOp: loadOperation,
                 depthStoreOp: 'store'
             };
         }
         const rPass = this.currentCommandEncoder.beginRenderPass(passDesc);
-        builder.draw(rPass, vertexCount, instanceCount);
+        
+        // 🌟 Use the sanitized finalInstanceCount here
+        builder.draw(rPass, vertexCount, finalInstanceCount);
+        
         rPass.end();
     }
 
