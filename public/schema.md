@@ -48,13 +48,43 @@ The elapsed time is in seconds, and the value of `time` is 0 on the first shader
 Compute shaders can perform initialization when the value of `time` is 0.
 
 * **Storage Buffers:**
-* Format: `{ type: 'storage', format: '[wgsl_type]', count: [Number] }`
-* *Optional:* If the buffer drives a mesh, include `meshRef: "[MeshKey]"`.
+* Format: `{ type: 'storage', format: '[wgsl_type]', count: [Number], meshRef?: '[MeshKey]', topology?: '[Topology]', shadingModel?: '[ShadingModel]' }`
 
+**Storage Buffer Rendering Modes:**
+Depending on how the storage buffer is visualized, it must adhere to one of the following architectural patterns:
+
+**1. Mesh Instancing **
+If the buffer drives a 3D mesh (like a sphere or tube), include `meshRef`.
+* `meshRef: "[MeshKey]"` (must match a key in the `resources` object).
+
+**2. Procedural Topologies**
+If the buffer generates procedural geometry without a mesh, specify a `topology`. The memory layout (stride) must strictly match the rules below to ensure the WebGPU vertex puller calculates offsets correctly. 
+
+* `topology: "point-list"`
+  * **Intent:** Draws 1-pixel points (e.g., massive particle swarms). 
+  * **Memory Stride:** 8 floats per point `[x, y, z, pad, r, g, b, a]`.
+  * **Count Calculation:** `NUM_POINTS * 8`
+
+* `topology: "line-list"`
+  * **Intent:** Draws 1-pixel line segments (e.g., vector fields, trails). 
+  * **Memory Stride:** 12 floats per line `[pivot.x, pivot.y, pivot.z, vector.x, vector.y, vector.z, radius, pad, r, g, b, a]`.
+  * **Count Calculation:** `NUM_LINES * 12`
+
+* `topology: "triangle-list"`
+  * **Intent:** Draws custom 3D surfaces (e.g., fluid grids, cloth, terrain).
+  * **Requirement:** Must include a `shadingModel` to instruct the framework on how to unpack the memory and calculate normals. Supported shading models:
+    * `"triangle-color"`: Processes per-triangle. Flat color per face.
+      * **Memory Stride:** 13 floats per TRIANGLE `[x1, y1, z1, x2, y2, z2, x3, y3, z3, r, g, b, a]`.
+      * **Count Calculation:** `NUM_TRIANGLES * 13`
+    * `"vertex-color"`: Processes per-vertex. Colors interpolate smoothly. Flat normals are calculated dynamically in the fragment shader via `dpdx/dpdy`.
+      * **Memory Stride:** 7 floats per VERTEX `[x, y, z, r, g, b, a]`.
+      * **Count Calculation:** `NUM_VERTICES * 7`
+    * `"vertex-color-normal"`: Processes per-vertex. Perfect smooth shading using explicit pre-calculated normals.
+      * **Memory Stride:** 10 floats per VERTEX `[x, y, z, r, g, b, a, nx, ny, nz]`.
+      * **Count Calculation:** `NUM_VERTICES * 10`
 
 * **Meshes:**
 * Format: `{ type: 'mesh', shape: '[tube|sphere|arrow]', division: [Number] }`
-
 
 
 *AI Generation Rule:* Use exact object keys as the resource IDs. Ensure no duplicate keys exist.

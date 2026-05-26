@@ -758,6 +758,7 @@ function readResource(resourceObj:ObjectExpression) {
             data[key] = value.getNumber();
             break;
         case "topology":
+        case "shadingModel":
             data[key] = value.getString();
             break;
         default:

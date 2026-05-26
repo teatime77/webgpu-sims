@@ -36,6 +36,7 @@ export function makeWgslSkeleton(schema: SimulationSchema) {
                         offset += 4;
                     }
                     code += `    ${fld.name}: ${fld.format},\n`;
+                    offset += fld.size;
                 }
                 code += `};\n\n`;
             }

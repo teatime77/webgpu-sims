@@ -95,6 +95,22 @@ export async function bootstrap(jsonText:string, wgslText : string) {
                 case "line-list":
                     fileName = "line_render.wgsl"; 
                     break;
+                case "triangle-list":
+                    assert(node.shadingModel != undefined);
+                    switch(node.shadingModel){
+                    case "triangle-color":
+                        fileName = "triangle/tri_triangle_color_render.wgsl";
+                        break;
+                    case "vertex-color":
+                        fileName = "triangle/tri_vertex_color_render.wgsl";
+                        break;
+                    case "vertex-color-normal":
+                        fileName = "triangle/tri_vertex_color_normal_render.wgsl";
+                        break;
+                    default:
+                        throw new MyError();
+                    }
+                    break;
                 default:
                     throw new MyError();
                 }

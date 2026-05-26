@@ -4,6 +4,7 @@ export class MyError extends Error {
 }
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
 export type MeshShape = "sphere" | "tube" | "arrow";
+export type ShadingModel = 'triangle-color' | 'vertex-color' | 'vertex-color-normal';
 
 const TUBE_STRIDE = 12;
 const ARROW_STRIDE = 12;
@@ -177,7 +178,6 @@ export abstract class ResourceDef {
     public buffers!: GPUBuffer[];
     public bufferCount!: number;
     public currentIndex: number = 0;
-    topology?: GPUPrimitiveTopology;
 
     constructor(id: string){
         this.id = id;
@@ -201,6 +201,8 @@ export class StorageDef extends ResourceDef {
     elementByteSize?: number;            // for storage (custom structs: e.g. 32 bytes)
     count?: number;                      // for storage
     meshRef? : string;
+    topology?: GPUPrimitiveTopology;
+    shadingModel? : ShadingModel;
 
     constructor(id: string, data : any){
         super(id);
@@ -213,6 +215,7 @@ interface FieldDef {
     name  : string;
     offset: number;
     format: WgslFormat;
+    size  : number
 }
 
 export class UniformDef extends ResourceDef {
@@ -245,7 +248,7 @@ export class UniformDef extends ResourceDef {
 
             // Round up offset to alignment boundary (insert padding)
             offset = Math.ceil(offset / alignment) * alignment;
-            this.fieldDefs.push({name, offset, format});
+            this.fieldDefs.push({name, offset, format, size});
 
             offset += size;
         }

@@ -1,5 +1,5 @@
 // src/SimulationRunner.ts
-import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div } from './utils';
+import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel } from './utils';
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive';
 import { theSchema } from './main';
 import { assert, getElementSize, MyError } from './utils';
@@ -179,7 +179,6 @@ export class ComputePassBuilder extends NodeDef{
 }
 
 export interface RenderPassOptions {
-    topology?: GPUPrimitiveTopology; // e.g., 'triangle-list', 'line-list', 'point-list'
     depthFormat?: GPUTextureFormat;  // Specify 'depth24plus' etc. if using depth testing
     blendMode?: 'opaque' | 'alpha' | 'add' | 'normal'; // Simple blend mode specification
     // * Since V2's basic strategy is Vertex Pulling, vertexLayouts are omitted (can be added if necessary)
@@ -193,6 +192,7 @@ export class RenderPassBuilder extends NodeDef {
     private currentBindingIndex: number = 0;
     hasDepth : boolean = true;
     topology?: GPUPrimitiveTopology;
+    shadingModel? : ShadingModel;
 
     constructor(data : any){
         super(data);
@@ -485,24 +485,55 @@ export class SimulationSchema {
 
         const topologyReses = Array.from(this.resources.values()).filter(x => x instanceof StorageDef && x.topology != undefined) as StorageDef[];
         for(const res of topologyReses){
+            if(res.count == undefined){
+                throw new MyError();
+            }
+
             let vertexCount = 1;
             let instanceCount = res.count || 1;
 
-            if (res.topology === 'point-list') {
+            switch(res.topology){
+            case 'point-list':
                 vertexCount = 1;               // 1 vertex per dot
                 instanceCount = res.count! / 8; // 8 floats per point stride (POINT_STRIDE)
-            } else if (res.topology === 'line-list') {
+                break;
+            case 'line-list':
                 vertexCount = 2;                // 2 vertices per line segment
                 instanceCount = res.count! / 12; // 12 floats per line stride (LINE_STRIDE)
-            } else {
-                vertexCount = res.count || 1;
-                instanceCount = 1;
+                break;
+            case 'triangle-list':{
+                let numTriangles : number;
+
+                switch(res.shadingModel){
+                case "triangle-color":
+                    numTriangles = res.count! / 13; // Count how many 13-float blocks exist
+                    vertexCount = numTriangles * 3;       // WebGPU needs to invoke the vertex shader 3 times per triangle
+                    instanceCount = 1;
+                    break;
+                case "vertex-color":
+                    vertexCount = res.count! / 7;  // 7 floats per vertex
+                    instanceCount = 1;             // Drawn as one large buffer
+                    break;
+                case "vertex-color-normal":
+                    vertexCount = res.count! / 10; // 10 floats per vertex
+                    instanceCount = 1;
+                    break;
+
+                default:
+                    throw new MyError();
+                }
+                break;
+            }
+
+            default:
+                throw new MyError();
             }
 
             const renderDef = {
                 id: `${res.id}_render`,
                 type: 'render',
                 topology: res.topology,
+                shadingModel : res.shadingModel,
                 vertexCount: vertexCount,
                 instanceCount: instanceCount, // 🌟 Now properly passed to passEncoder.draw()
                 bindings: [
