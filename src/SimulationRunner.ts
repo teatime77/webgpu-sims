@@ -595,6 +595,35 @@ export class SimulationRunner {
         theRunner = this;
     }
 
+    clearCanvases(){
+        for(const ctx of this.contexts.values()){
+            // 1. カレントテクスチャの取得
+            const textureView = ctx.getCurrentTexture().createView();
+        
+            // 2. コマンドエンコーダーの作成
+            const commandEncoder = this.device.createCommandEncoder();
+        
+            // 3. 描画パスの設定（ここで黒でクリアする指定を行う）
+            const renderPassDescriptor : GPURenderPassDescriptor = {
+            colorAttachments: [
+                {
+                view: textureView,
+                clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, // 黒（RGBA: 0, 0, 0, 1）
+                loadOp: 'clear',  // パス開始時に clearValue の色でクリアする
+                storeOp: 'store', // 描画結果をテクスチャに保存する
+                },
+            ],
+            };
+        
+            // 4. パスを開始してすぐに終了する（描画処理は何も書かない）
+            const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+            passEncoder.end();
+        
+            // 5. コマンドをキューに送信して実行
+            this.device.queue.submit([commandEncoder.finish()]);    
+        }
+    }
+
     /**
      * Initialize WebGPU. Call once when the application starts.
      */

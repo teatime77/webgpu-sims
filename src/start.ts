@@ -20,11 +20,13 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage } from "firebase/storage";
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
-import { bootstrap } from "./main";
-import { msg, range, assert, $, $btn, $div, $dlg, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt } from "./utils";
+import { bootstrap, theSchema } from "./main";
+import { msg, range, assert, $, $btn, $div, $dlg, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt, $canvas } from "./utils";
 import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { initTagInput, theTagInput } from "./TagInput";
 import { initSyntaxHighlightEditor } from "./editor";
+import { makeWgslSkeleton } from "./generate_skeleton";
+import { theRunner } from "./SimulationRunner";
 
 export let captureThumbnailFlag = false;
 export let thumbnailBlob : Blob;
@@ -247,13 +249,30 @@ function splitContentText(contentText : string){
     return [markdownText, jsonText, wgslText];
 }
 
+function clearSchema(){
+    if(theRunner != undefined){
+        theRunner.clearCanvases();
+    }
+
+    if(theSchema == undefined){
+        return;
+    }
+
+    Array.from(theSchema.resources.values()).forEach(x => x.destroyBuffers());
+    theSchema.resources.clear();
+    theSchema.shaders = [];
+    msg("clear Schema");
+}
+
 // --- 1. 画面の描画関数 ---
 // URL（パス）に応じてDOMを書き換える
 async function renderPage(path: string) {
     if (path === '/' || path === '/home') {
+        clearSchema();
         docId = undefined;
 
         $txt("schema-text").value = "";
+        $txt("skeleton-text").value = "";
         $txt("wgsl-text").value = "";
 
         $inp("title").value = "";
@@ -262,6 +281,7 @@ async function renderPage(path: string) {
         showView(mainView);
     } 
     else if(path == "/new"){
+        clearSchema();
         showView(editView);
 
         $inp("title").value = "";
@@ -271,9 +291,11 @@ async function renderPage(path: string) {
         $txt("markdown-text").value = "";
         
         initSyntaxHighlightEditor("schema-editor");
+        initSyntaxHighlightEditor("skeleton-editor");
         initSyntaxHighlightEditor("wgsl-editor");
     }
     else if (path.startsWith("/post/")) {
+        clearSchema();
         showView(editView);
         const texts = path.split("/");
         assert(texts.length == 3);
@@ -295,6 +317,7 @@ async function renderPage(path: string) {
 
         await bootstrap(jsonText, wgslText);
         initSyntaxHighlightEditor("schema-editor");
+        initSyntaxHighlightEditor("skeleton-editor");
         initSyntaxHighlightEditor("wgsl-editor");
     }
 }
@@ -338,7 +361,7 @@ $btn("headerLoginBtn").addEventListener("click", () => {
 });
 
 // 投稿ボタンのイベントリスナー
-$btn("headerPostBtn").addEventListener("click", async() => {
+$btn("post-btn").addEventListener("click", async() => {
     // 投稿画面への遷移処理など
     msg("投稿画面へ移動");
     navigateTo('/new');
@@ -353,6 +376,12 @@ $btn("instructions-btn").addEventListener("click", async()=>{
     } catch (error) {
         msg(`コピーに失敗しました:${error}`);
     }
+});
+
+$btn("skeleton-btn").addEventListener("click", async() => {
+    const codes = makeWgslSkeleton(theSchema);
+
+    $txt("skeleton-text").value = Array.from(codes.entries()).map(x => `//${"".repeat(50)} ${x[0]}\n${x[1]}` ).join("");
 });
 
 $btn("run-btn").addEventListener("click", async ()=>{

@@ -39,8 +39,6 @@ export async function bootstrap(jsonText:string, wgslText : string) {
         return;
     }
 
-    makeWgslSkeleton(sim);
-
     new CaptureTool(runner);
 
     theSchema = sim;
@@ -172,6 +170,10 @@ export async function bootstrap(jsonText:string, wgslText : string) {
     runner.initScript();
 
     function frame() {
+        if(theSchema == undefined || theSchema.shaders.length == 0){
+            return;
+        }
+
         const aspect = canvas.width / canvas.height;
         const matrices = camera.getMatrices(aspect);
         const nums = matrices.viewProjection.concat(matrices.view);

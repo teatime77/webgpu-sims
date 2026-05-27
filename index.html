@@ -25,19 +25,21 @@
         <img src="path/to/logo.png" alt="GPUSims" style="height: 3rem; vertical-align: middle;">
       </a>
 
-      <input 
-        type="search" 
-        id="headerSearch" 
-        name="search" 
-        placeholder="記事のタイトルやキーワードで検索..." 
-        size="30"
-        class="at-center"
-      >
+      <span class="at-center">
+        <input 
+          type="search" 
+          id="headerSearch" 
+          name="search" 
+          placeholder="記事のタイトルやキーワードで検索..." 
+          size="30"
+        >
+
+        <button id="post-btn" style="margin-bottom:0;">Post</button>
+      </span>
 
       <button id="headerLoginBtn" class="at-right" >サインイン</button>
       <span id="logged-in" class="at-right">
         <button id="headerLogoutBtn" >サインアウト</button>
-        <button id="headerPostBtn" style="margin-bottom:0;">投稿</button>
         <span id="headerUserId" style="font-weight: bold; font-size: 0.9rem;"></span>
       </span>
     </header>
@@ -70,6 +72,7 @@
 
       <span class="at-right">
           <button id="instructions-btn" >Instructions</button>
+          <button id="skeleton-btn">Skeleton</button>
           <button id="run-btn" >Run</button>
           <button id="download-btn" >Download</button>
       </span>
@@ -78,7 +81,7 @@
     <main>
       <div class="one-row">
           <div class="at-left">
-            <canvas id="main-canvas" width="512" height="512" ></canvas>
+            <canvas id="main-canvas" width="1280" height="720" ></canvas>
           </div>
           <div class="at-center" ></div>
           <div class="at-right" >
@@ -95,6 +98,12 @@
       <h3>schema</h3>
       <div id="schema-editor" class="editor-container">
           <textarea id="schema-text" class="hidden-textarea" spellcheck="false"></textarea>
+          <canvas class="render-canvas" width="800" height="400"></canvas>
+      </div>
+
+      <h3>skeleton</h3>
+      <div id="skeleton-editor" class="editor-container">
+          <textarea id="skeleton-text" class="hidden-textarea" spellcheck="false"></textarea>
           <canvas class="render-canvas" width="800" height="400"></canvas>
       </div>
 

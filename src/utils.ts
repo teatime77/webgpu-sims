@@ -194,6 +194,12 @@ export abstract class ResourceDef {
     swap(): void {
         this.currentIndex = (this.currentIndex + 1) % this.bufferCount;
     }
+
+    destroyBuffers(){
+        if(this.buffers != undefined){
+            this.buffers.forEach(x => x.destroy());
+        }
+    }
 }
 
 export class StorageDef extends ResourceDef {
