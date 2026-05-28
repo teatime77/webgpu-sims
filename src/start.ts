@@ -18,13 +18,13 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage } from "firebase/storage";
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
-import { bootstrap, theSchema } from "./main";
+import { bootstrap } from "./main";
 import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt } from "./utils";
 import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { initTagInput, theTagInput } from "./TagInput";
 import { initSyntaxHighlightEditor } from "./editor";
 import { makeWgslSkeleton } from "./generate_skeleton";
-import { theRunner } from "./SimulationRunner";
+import { theRunner, theSchema } from "./SimulationRunner";
 
 export let captureThumbnailFlag = false;
 export let thumbnailBlob : Blob;
@@ -72,11 +72,10 @@ function showMsg(text: string){
 let loginView!: HTMLDivElement;
 let mainView!: HTMLDivElement;
 let editView!: HTMLDivElement;
-let userView!: HTMLDivElement;
 let articleView!: HTMLDivElement;
 
 function hideAll(){
-    [loginView, mainView, editView, userView, articleView].forEach(x => x.style.display = "none");
+    [loginView, mainView, editView, articleView].forEach(x => x.style.display = "none");
 }
 
 function showView(view: HTMLDivElement){
@@ -224,7 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loginView = $div("login-view");
     mainView = $div("main-view");
     editView = $div("edit-view");
-    userView = $div("user-view");
     articleView = $div("article-view")
 
     showView(mainView);

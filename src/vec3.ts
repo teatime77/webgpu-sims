@@ -11,18 +11,6 @@ export class Vec3 {
     }
 }
 
-export function vecSub(a: Vec3, b: Vec3) {
-    return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z);
-}
-
-export function vecCross(a: Vec3, b: Vec3) {
-    return new Vec3(
-        a.y * b.z - a.z * b.y,
-        a.z * b.x - a.x * b.z,
-        a.x * b.y - a.y * b.x
-    );
-}
-
 export function vecNormalize(p: Vec3) {
     const len = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
     if (len > 0) {

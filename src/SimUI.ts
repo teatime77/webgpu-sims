@@ -38,11 +38,6 @@ export class SimUI {
         this.container.prepend(this.hud);
     }
 
-    // ★ Method to update HUD text
-    updateHUD(text: string) {
-        this.hud.textContent = text;
-    }
-
     /**
      * Method equivalent to ui.range in V1
      */

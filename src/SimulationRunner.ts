@@ -1,10 +1,10 @@
 // src/SimulationRunner.ts
 import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel } from './utils';
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive';
-import { theSchema } from './main';
 import { assert, getElementSize, MyError } from './utils';
 
 export let theRunner : SimulationRunner;
+export let theSchema : SimulationSchema;
 
 export class ResourceBinding {
     group?: number;
@@ -38,10 +38,6 @@ export abstract class NodeDef {
 
     getNodeResources() : ResourceDef[] {
         return this.bindings.map(b => theSchema.resources.get(b.resource)!);
-    }
-
-    getMeshDef() : MeshDef | undefined {
-        return this.getNodeResources().find(res => res instanceof MeshDef);
     }
 }
 
@@ -161,16 +157,6 @@ export class ComputePassBuilder extends NodeDef{
         passEncoder.dispatchWorkgroups(x, y, z);
 
         passEncoder.end();
-    }
-    
-    /**
-     * A method to clear and re-register entries
-     * for cases where buffers switch every frame (like double buffering).
-     */
-    clearBindings() {
-        this.bindGroupEntries.clear();
-        this.currentGroupIndex = 0;
-        this.currentBindingIndex = 0;
     }
 }
 
@@ -306,12 +292,6 @@ export class RenderPassBuilder extends NodeDef {
 
         passEncoder.draw(vertexCount, instanceCount, 0, 0);
     }
-
-    clearBindings() {
-        this.bindGroupEntries.clear();
-        this.currentGroupIndex = 0;
-        this.currentBindingIndex = 0;
-    }
 }
 
 export interface RangeDef {
@@ -364,6 +344,8 @@ export class SimulationSchema {
     script?: () => Generator<PassCommand, void, unknown>;
 
     constructor(device: GPUDevice, data: ISimulationSchema){
+        theSchema = this;
+
         this.name = data.name;
         this.resources = new Map<string, ResourceDef>();
         for(const [id, val] of Object.entries(data.resources)){
@@ -576,7 +558,6 @@ export class SimulationRunner {
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
     public generator? : Generator<PassCommand, void, unknown>;
-    schema!: SimulationSchema;
     startTime : number = 0;
 
     // public device!: GPUDevice;
@@ -737,27 +718,6 @@ export class SimulationRunner {
         this.device.queue.writeBuffer(this.getUniformBuffer(name), 0, arrayData);
     }
 
-    writeUniformObject(name:string, data: any){
-        const res = theSchema.resources.get(name) as UniformDef;
-        assert(res instanceof UniformDef);
-
-        res.update(data);
-    }
-
-    writeStorage(id: string, data: Float32Array | Uint32Array) {
-        const buf = this.getStorageBuffer(id, 0);
-        this.device.queue.writeBuffer(buf, 0, data);
-    }
-
-    swap(id: string) {
-        theSchema.resources.get(id)?.swap();
-    }
-
-    computeByShaderId(id: string) {
-        const shader = theSchema.nodeMap.get(id) as ComputePassBuilder;
-        shader.dispatch(this.currentCommandEncoder!);
-    }
-
     initCanvas(canvasId : string){
         if (this.initializedCanvases.has(canvasId)) {
             return;
@@ -798,7 +758,7 @@ export class SimulationRunner {
 
         this.initCanvas(canvasId);
 
-        const builder = this.schema.getNode(id) as RenderPassBuilder;
+        const builder = theSchema.getNode(id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
 
         // 🌟 FIX: If instanceCount is explicitly passed as undefined or null, force it to fallback to builder's property or 1
@@ -831,21 +791,21 @@ export class SimulationRunner {
     }
 
     getRenders() : RenderPassBuilder[] {
-        return Array.from(this.schema.shaders).filter(x => x instanceof RenderPassBuilder) as RenderPassBuilder[];
+        return Array.from(theSchema.shaders).filter(x => x instanceof RenderPassBuilder) as RenderPassBuilder[];
     }
 
     getComputeShaders() : ComputePassBuilder[] {
-        return Array.from(this.schema.shaders).filter(x => x instanceof ComputePassBuilder) as ComputePassBuilder[];
+        return Array.from(theSchema.shaders).filter(x => x instanceof ComputePassBuilder) as ComputePassBuilder[];
     }
 
     getUniforms() : UniformDef[] {
-        return Array.from(this.schema.resources.values()).filter(x => x instanceof UniformDef && x.obj != undefined) as UniformDef[];
+        return Array.from(theSchema.resources.values()).filter(x => x instanceof UniformDef && x.obj != undefined) as UniformDef[];
     }
 
     initScript(){
-        if(this.schema.script != undefined){
+        if(theSchema.script != undefined){
 
-            this.generator = this.schema.script();
+            this.generator = theSchema.script();
         }
         else{
 
@@ -863,7 +823,7 @@ export class SimulationRunner {
     }
 
     setTime(){
-        const uni = this.schema.getUniform("Params");
+        const uni = theSchema.getUniform("Params");
         if(uni != undefined && uni.obj != undefined && typeof uni.obj.time == "number" ){
             if(isNaN(this.startTime)){
                 this.startTime = Date.now();
@@ -876,34 +836,8 @@ export class SimulationRunner {
     }
 }
 
-export let simRunner : SimulationRunner;
-
-export function setRunner(runner : SimulationRunner){
-    simRunner = runner;
-}
-
-export function compute(id: string){
-    simRunner.computeByShaderId(id);
-}
-
-export function render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas'){
-    simRunner.render(id, vertexCount, instanceCount, hasDepth, clearScreen, canvasId)
-}
-
-export function writeUniformObject(name:string, data: any){
-    simRunner.writeUniformObject(name, data);
-}
-
 export function writeUniformArray(name:string, data: number[]){
-    simRunner.writeUniformArray(name, data);
-}
-
-export function swap(id: string){
-    simRunner.swap(id);
-}
-
-export function writeStorage(id: string, data: Float32Array | Uint32Array){
-    simRunner.writeStorage(id, data);
+    theRunner.writeUniformArray(name, data);
 }
 
 export function getMesh(node : NodeDef) : MeshDef | undefined {

@@ -1,14 +1,12 @@
 // src/main.ts
 import { OrbitCamera } from './camera';
 import { CaptureTool } from './CaptureTool';
-import { ComputePassBuilder, getMesh, RenderPassBuilder, simRunner, writeUniformArray } from './SimulationRunner';
-import { SimulationRunner, type ResourceBinding, setRunner, SimulationSchema } from './SimulationRunner';
+import { ComputePassBuilder, getMesh, RenderPassBuilder, theRunner, theSchema, writeUniformArray } from './SimulationRunner';
+import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner';
 import { makeUIs } from './SimUI';
 import { $txt, assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
 import { parseSchema } from './parser';
 import { captureThumbnail, captureThumbnailFlag } from './start';
-
-export let theSchema : SimulationSchema;
 
 export async function bootstrap(jsonText:string, wgslText : string) {
     const runner = new SimulationRunner();
@@ -39,11 +37,6 @@ export async function bootstrap(jsonText:string, wgslText : string) {
     }
 
     new CaptureTool(runner);
-
-    theSchema = sim;
-
-    runner.schema = sim; 
-    setRunner(runner);
 
     if(sim.uis){
         makeUIs(runner, sim);
@@ -195,7 +188,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
             if(render.vertexCount == undefined){
                 throw new MyError();
             }
-            simRunner.render(render.id, render.vertexCount, render.instanceCount, true, idx == 0, render.canvasId);
+            theRunner.render(render.id, render.vertexCount, render.instanceCount, true, idx == 0, render.canvasId);
         }
 
         runner.device.queue.submit([runner.currentCommandEncoder.finish()]);

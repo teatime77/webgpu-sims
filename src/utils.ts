@@ -48,16 +48,8 @@ export function $inp(id : string) : HTMLInputElement {
     return $(id) as HTMLInputElement;
 }
 
-export function $dlg(id : string) : HTMLDialogElement {
-    return $(id) as HTMLDialogElement;
-}
-
 export function $txt(id : string) : HTMLTextAreaElement {
     return $(id) as HTMLTextAreaElement;
-}
-
-export function $canvas(id : string) : HTMLCanvasElement {
-    return $(id) as HTMLCanvasElement;
 }
 
 export function showHtml(ele: HTMLElement){
@@ -263,10 +255,6 @@ export class UniformDef extends ResourceDef {
         this.totalSize = Math.ceil(offset / 16) * 16;
     }
 
-    getField(name : string) : FieldDef | undefined {
-        return this.fieldDefs.find(x => x.name == name);
-    }
-
     initUniform(device: GPUDevice){
         this.buffer = device.createBuffer({
             label: `Uniform_${this.id}`,
@@ -317,13 +305,4 @@ export class MeshDef extends ResourceDef {
         Object.assign(this, data)
         assert(this.type == 'mesh');
     }
-}
-
-export function isRenderMesh(node: NodeDef) : boolean {
-    if(node.type == "render"){
-        const mesh = node.bindings.map(b => b.resourceDef!).find(res => res instanceof MeshDef);
-        return mesh != undefined;
-    }
-
-    return false;
 }
