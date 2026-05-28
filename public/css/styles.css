@@ -63,6 +63,66 @@ header > .at-right {
   justify-self: end;    /* 右端へ配置 */
 }
 
+.main-canvas-grid {
+    display: grid;
+    grid-template-columns: 80% 20%;
+
+}
+
+#main-canvas, #thumbnail-img {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    height: auto;
+}
+
+
+
+/* >>>>>================================================== accordion */
+
+/* Style the main container */
+.accordion {
+  width: 100%;
+  font-family: sans-serif;
+}
+
+/* Style the clickable header */
+details summary {
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+  font-weight: bold;
+  list-style: none; /* Removes the default arrow in standard browsers */
+}
+
+/* Remove default arrow in WebKit (Safari/Chrome) */
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Add our custom +/- icon BEFORE the text */
+details summary::before {
+  content: "+";
+  display: inline-block;
+  font-size: 1.2rem;
+  width: 20px;
+  margin-right: 10px;
+  text-align: center;
+}
+
+/* Change icon to '-' when open */
+details[open] summary::before {
+  content: "-";
+}
+
+/* Style the content area */
+details .content {
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* <<<<<================================================== accordion */
+
+
 #article-view {
     display: grid;
     grid-template-rows: auto auto auto 1fr; 

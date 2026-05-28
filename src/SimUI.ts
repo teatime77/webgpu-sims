@@ -15,11 +15,8 @@ export class SimUI {
         // Floating container following V1 design
         this.container = document.createElement('div');
         this.container.id = 'sim-ui-container';
-        // this.container.style.position = 'absolute';
-        // this.container.style.top = '10px';
-        // this.container.style.right = '10px';
         this.container.style.background = 'rgba(20, 20, 25, 0.85)';
-        this.container.style.color = 'white';
+        // this.container.style.color = 'white';
         this.container.style.padding = '12px';
         this.container.style.borderRadius = '8px';
         this.container.style.fontFamily = 'sans-serif';
@@ -27,7 +24,7 @@ export class SimUI {
         this.container.style.zIndex = '1000';
 
 
-        $div("main1").appendChild(this.container);
+        $div("uis-div").appendChild(this.container);
 
         // ★ Create elements for HUD
         this.hud = document.createElement('div');

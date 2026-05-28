@@ -903,7 +903,7 @@ function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
     return schema as ISimulationSchema;
 }
 
-export async function parseSchema(text : string) : Promise<ISimulationSchema> {
+export function parseSchema(text : string) : ISimulationSchema {
     constValues.clear();
 
     const parser = new Parser(text);

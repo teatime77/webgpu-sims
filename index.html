@@ -79,39 +79,51 @@
 
     </header>
     <main>
-      <div class="one-row">
-          <div class="at-left">
-            <canvas id="main-canvas" width="1280" height="720" ></canvas>
-          </div>
-          <div class="at-center" ></div>
-          <div class="at-right" >
-            <div id="main1"   style="width: 256px;" ></div>
+      <div class="main-canvas-grid">
+          <canvas id="main-canvas" width="1280" height="720" ></canvas>
+          <div>
+            <div id="uis-div" ></div>
             <p></p>
             <button id="thumbnail-btn" class="at-right" >thumbnail</button><br/>
-            <img id="thumbnail-img" style="width: 256px; height: 256px;" /><br/>
+            <img id="thumbnail-img" /><br/>
             <button id="add-details">Add Details</button>
           </div>
       </div>
 
       <div id="sub-canvases" ></div>
 
-      <h3>schema</h3>
-      <div id="schema-editor" class="editor-container">
-          <textarea id="schema-text" class="hidden-textarea" spellcheck="false"></textarea>
-          <canvas class="render-canvas" width="800" height="400"></canvas>
-      </div>
+      <div class="accordion">
+        <details name="my-accordion" >
+          <summary>schema</summary>
+          <div class="content">
+            <div id="schema-editor" class="editor-container">
+                <textarea id="schema-text" class="hidden-textarea" spellcheck="false"></textarea>
+                <canvas class="render-canvas" width="800" height="400"></canvas>
+            </div>
 
-      <h3>skeleton</h3>
-      <div id="skeleton-editor" class="editor-container">
-          <textarea id="skeleton-text" class="hidden-textarea" spellcheck="false"></textarea>
-          <canvas class="render-canvas" width="800" height="400"></canvas>
-      </div>
 
-      <p></p>
-      <h4>WGSL</h4>
-      <div id="wgsl-editor" class="editor-container">
-          <textarea id="wgsl-text" class="hidden-textarea" spellcheck="false"></textarea>
-          <canvas class="render-canvas" width="800" height="400"></canvas>
+          </div>
+        </details>
+
+        <details name="my-accordion">
+          <summary>skeleton</summary>
+          <div class="content">
+              <div id="skeleton-editor" class="editor-container">
+                  <textarea id="skeleton-text" class="hidden-textarea" spellcheck="false"></textarea>
+                  <canvas class="render-canvas" width="800" height="400"></canvas>
+              </div>
+          </div>
+        </details>
+
+        <details name="my-accordion">
+          <summary>WGSL</summary>
+          <div class="content">
+              <div id="wgsl-editor" class="editor-container">
+                  <textarea id="wgsl-text" class="hidden-textarea" spellcheck="false"></textarea>
+                  <canvas class="render-canvas" width="800" height="400"></canvas>
+              </div>
+          </div>
+        </details>
       </div>
     </main>
   </div>

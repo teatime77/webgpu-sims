@@ -157,3 +157,353 @@ When implementing the TypeScript schema or WGSL logic, you MUST adhere to the fo
 ### C. Floating Point Underflow & Division by Zero
 **The Problem:** In Monte Carlo simulations or physics equations, probabilities and distances can get extremely small, underflowing to exactly `0.0`. If this value is used in a division (e.g., `p_proposal / p_current`), it results in `NaN`, freezing the particle in place or blacking out the screen.
 **The Rule:** Always guard divisions involving calculated densities or distances. Use `max(value, 1e-30)` to ensure denominators never hit absolute zero.
+
+---
+
+# Examples
+
+## 1. Pendulum
+
+### Schema
+```jsonet
+// UI State
+const state = {
+    dt: 0.016,
+    gravity: 9.81,
+    baseLength: 4.0,
+    bobRadius: 0.4,
+    stringThickness: 0.05,
+    time: 0.0,
+};
+
+const NUM_PENDULUMS = 10;
+const dispatchX = Math.ceil(NUM_PENDULUMS / 64);
+
+const TUBE_DIVISIONS = 16;
+const TUBE_STRIDE = 12;
+const SPHERE_STRIDE = 8;
+
+const schema: SimulationSchema = {
+    name: "Pendulum Wave (Material Architecture)",
+
+    resources: {
+        Params: { 
+            type: 'uniform', 
+            obj : state
+        },
+        PendulumState: { type: 'storage', format: 'vec4<f32>', count: NUM_PENDULUMS },
+        Tubes: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * TUBE_STRIDE, meshRef:"TubeMesh" },
+        Spheres: { type: 'storage', format: 'f32', count: NUM_PENDULUMS * SPHERE_STRIDE, meshRef:"SphereMesh" },
+        TubeMesh: { type: 'mesh', shape:"tube", division:TUBE_DIVISIONS },
+        SphereMesh: { type: 'mesh', shape: 'sphere' }
+    },
+
+    // ========================================================
+    // 2. Node definitions
+    // ========================================================
+    shaders: [
+        {
+            id: 'pendulum_comp',
+            type: 'compute',
+            workgroupSize: 64,
+            workgroupCount: dispatchX,
+            bindings: [
+                { resource: 'Params', varName: 'params' },
+                { resource: 'PendulumState', varName: 'stateBuffer', access: 'read_write' },
+                { resource: 'Tubes', access: 'read_write' },
+                { resource: 'Spheres', access: 'read_write' }
+            ]
+        }
+    ],
+
+    uis:[
+        { type: "range", obj: state, name: "gravity", label: "Gravity", min: 1.0, max: 20.0, step: 0.1 },
+        { type: "range", obj: state, name: "baseLength", label: "String Length", min: 1.0, max: 10.0, step: 0.1 },
+        { type: "range", obj: state, name: "bobRadius", label: "Bob Size", min: 0.1, max: 1.0, step: 0.05 },
+        { type: "range", obj: state, name: "stringThickness", label: "String Thickness", min: 0.01, max: 0.2, step: 0.01 }
+    ]
+};
+```
+
+### WGSL Compute shader
+```wgsl
+// ==========================================
+// AUTO-GENERATED SKELETON FOR NODE: physics_and_transform_compute
+// ==========================================
+
+struct ParamsStruct {
+    dt: f32,
+    gravity: f32,
+    baseLength: f32,
+    bobRadius: f32,
+    stringThickness: f32,
+    time: f32,
+};
+
+@group(0) @binding(0) var<uniform> params: ParamsStruct;
+@group(0) @binding(1) var<storage, read_write> stateBuffer: array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read_write> Tubes: array<f32>;
+@group(0) @binding(3) var<storage, read_write> Spheres: array<f32>;
+
+// ==========================================
+// IMPLEMENT YOUR LOGIC BELOW
+// ==========================================
+
+// Writes 12 floats: Base Pos (3), Vector (3), Radius (1), Padding (1), Color (4)
+fn write_tube_params(idx: u32, base_pos: vec3<f32>, vec_to_top: vec3<f32>, radius: f32, color: vec4<f32>) {
+    let offset = idx * 12u;
+    
+    // 1. Position of the center of the base (3 floats)
+    Tubes[offset + 0u] = base_pos.x; 
+    Tubes[offset + 1u] = base_pos.y; 
+    Tubes[offset + 2u] = base_pos.z;
+    
+    // 2. Vector from base to top (3 floats)
+    Tubes[offset + 3u] = vec_to_top.x; 
+    Tubes[offset + 4u] = vec_to_top.y; 
+    Tubes[offset + 5u] = vec_to_top.z;
+    
+    // 3. Radius (1 float)
+    Tubes[offset + 6u] = radius;
+    
+    // 4. Padding (1 float - keeps memory aligned to 4-float/16-byte boundaries)
+    Tubes[offset + 7u] = 0.0;
+    
+    // 5. Color (4 floats)
+    Tubes[offset + 8u]  = color.r; 
+    Tubes[offset + 9u]  = color.g; 
+    Tubes[offset + 10u] = color.b; 
+    Tubes[offset + 11u] = color.a;
+}
+
+// Writes 8 floats: Center Pos (3), Radius (1), Color (4)
+fn write_sphere_params(idx: u32, center: vec3<f32>, radius: f32, color: vec4<f32>) {
+    let offset = idx * 8u;
+    
+    // 1. Center Position (3 floats)
+    Spheres[offset + 0u] = center.x; 
+    Spheres[offset + 1u] = center.y; 
+    Spheres[offset + 2u] = center.z;
+    
+    // 2. Radius (1 float - acts as natural padding for the vec3!)
+    Spheres[offset + 3u] = radius;
+    
+    // 3. Color (4 floats)
+    Spheres[offset + 4u] = color.r; 
+    Spheres[offset + 5u] = color.g; 
+    Spheres[offset + 6u] = color.b; 
+    Spheres[offset + 7u] = color.a;
+}
+
+@compute @workgroup_size(64, 1, 1)
+fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+    let idx = id.x;
+    let num_pendulums = arrayLength(&stateBuffer);
+    if (idx >= num_pendulums) { return; }
+
+    // ==========================================
+    // 1. PHYSICS INTEGRATION
+    // ==========================================
+    if (params.time == 0.0) {
+        let z_offset = (f32(idx) - f32(num_pendulums) / 2.0) * 1.0;
+        let frequency_factor = 1.0 + f32(idx) * 0.05;
+        let L = params.baseLength / (frequency_factor * frequency_factor);
+        stateBuffer[idx] = vec4<f32>(0.5, 0.0, z_offset, L); // theta, omega, z, L
+        return;
+    }
+
+    var state = stateBuffer[idx];
+    let theta = state.x;
+    var omega = state.y;
+    let z_offset = state.z;
+    let L = state.w;
+
+    omega += -(params.gravity / L) * sin(theta) * params.dt;
+    let new_theta = theta + omega * params.dt;
+    stateBuffer[idx] = vec4<f32>(new_theta, omega, z_offset, L);
+
+    // ==========================================
+    // 2. PARAMETER PACKING (No Matrices!)
+    // ==========================================
+    
+    // Common variables
+    let pivot = vec3<f32>(0.0, 0.0, z_offset);
+    // The vector pointing from the pivot to the bob
+    let string_vec = vec3<f32>(L * sin(new_theta), -L * cos(new_theta), 0.0);
+    
+    // --- TUBE (STRING) DATA ---
+    let tube_color = vec4<f32>(0.7, 0.7, 0.7, 1.0);
+    write_tube_params(
+        idx, 
+        pivot,                  // Base is at the pivot
+        string_vec,             // Vector reaching down to the bob
+        params.stringThickness, // Radius
+        tube_color
+    );
+
+    // --- BOB (SPHERE) DATA ---
+    let bob_center = pivot + string_vec; // Center is exactly at the end of the string
+    let hue = f32(idx) / f32(num_pendulums);
+    let bob_color = vec4<f32>(0.2 + hue * 0.8, 0.6, 1.0 - hue * 0.5, 1.0);
+    
+    write_sphere_params(
+        idx,
+        bob_center,
+        params.bobRadius,
+        bob_color
+    );
+}
+```
+
+## Vector Field
+
+### Schema
+```jsonet
+// ==========================================
+// 1. Global State and Constants
+// ==========================================
+const GRID_SIZE = 20;
+const NUM_ARROWS = GRID_SIZE * GRID_SIZE; // 400 arrows total
+
+// 12 floats per arrow: Pivot(3) + Vector(3) + Radius(1) + Padding(1) + Color(4)
+const ARROW_STRIDE = 12; 
+const dispatchX = Math.ceil(NUM_ARROWS / 64);
+
+// The mutable parameters bound to uniform buffer and UI
+const state = {
+    time: 0.0,
+    spacing: 0.5,         // Distance between arrows on the grid
+    fieldStrength: 0.4,   // Scales the length of the vectors
+    thickness: 0.2,      // Arrow shaft radius
+};
+
+// ==========================================
+// 2. Schema Object
+// ==========================================
+const schema : SimulationSchema = {
+    name: "Interactive Vector Field",
+
+    resources: {
+        // Uniforms
+        Params: { 
+            type: 'uniform', 
+            obj: state 
+        },
+        
+        // Storage Buffer for Arrow Instances
+        Arrows: { 
+            type: 'storage', 
+            format: 'f32', 
+            count: NUM_ARROWS * ARROW_STRIDE, 
+            meshRef: "ArrowMesh" 
+        },
+        
+        // Mesh Definition
+        ArrowMesh: { 
+            type: 'mesh', 
+            shape: "arrow", 
+            division: 16 // Matches the default radialSegments in primitive.ts
+        }
+    },
+
+    shaders: [
+        {
+            id: 'vector_field_comp',
+            type: 'compute',
+            workgroupSize: 64,
+            workgroupCount: dispatchX,
+            bindings: [
+                { resource: 'Params', varName: 'params' },
+                { resource: 'Arrows', access: 'read_write' } // Binds to Arrows storage buffer
+            ]
+        }
+    ],
+
+    uis: [
+        { type: "range", obj: state, name: "spacing", label: "Grid Spacing", min: 0.1, max: 2.0, step: 0.1 },
+        { type: "range", obj: state, name: "fieldStrength", label: "Field Strength", min: 0.1, max: 2.0, step: 0.1 },
+        { type: "range", obj: state, name: "thickness", label: "Arrow Thickness", min: 0.1, max: 1.0, step: 0.1 }
+    ]
+};
+```
+
+### WGSL Compute shader
+```wgsl
+// ==========================================
+// IMPLEMENTATION FOR NODE: vector_field_comp
+// ==========================================
+
+struct ParamsStruct {
+    time: f32,
+    spacing: f32,
+    fieldStrength: f32,
+    thickness: f32,
+};
+
+@group(0) @binding(0) var<uniform> params: ParamsStruct;
+@group(0) @binding(1) var<storage, read_write> Arrows: array<f32>;
+
+// Helper to pack the 12 floats for the arrow render node
+fn write_arrow(idx: u32, pivot: vec3<f32>, vector: vec3<f32>, radius: f32, color: vec4<f32>) {
+    let offset = idx * 12u;
+    
+    // 1. Pivot Position (3 floats)
+    Arrows[offset + 0u] = pivot.x; 
+    Arrows[offset + 1u] = pivot.y; 
+    Arrows[offset + 2u] = pivot.z;
+    
+    // 2. Direction/Magnitude Vector (3 floats)
+    Arrows[offset + 3u] = vector.x; 
+    Arrows[offset + 4u] = vector.y; 
+    Arrows[offset + 5u] = vector.z;
+    
+    // 3. Radius (1 float)
+    Arrows[offset + 6u] = radius;
+    
+    // 4. Padding (1 float)
+    Arrows[offset + 7u] = 0.0;
+    
+    // 5. Color (4 floats)
+    Arrows[offset + 8u]  = color.r; 
+    Arrows[offset + 9u]  = color.g; 
+    Arrows[offset + 10u] = color.b; 
+    Arrows[offset + 11u] = color.a;
+}
+
+const GRID_SIZE: u32 = 20u;
+const NUM_ARROWS: u32 = 400u; // GRID_SIZE * GRID_SIZE
+
+@compute @workgroup_size(64, 1, 1)
+fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+    let idx = id.x;
+    if (idx >= NUM_ARROWS) { return; }
+
+    // 1. Calculate grid coordinates (X and Z)
+    let x_idx = idx % GRID_SIZE;
+    let z_idx = idx / GRID_SIZE;
+    
+    // Center the grid around (0,0,0)
+    let half_grid = f32(GRID_SIZE) / 2.0;
+    let x = (f32(x_idx) - half_grid) * params.spacing;
+    let z = (f32(z_idx) - half_grid) * params.spacing;
+    
+    let pivot = vec3<f32>(x, 0.0, z);
+
+    // 2. Vector Field Math
+    // Let's create a dynamic, swirling field using sin/cos and time
+    let vx = sin(z * 1.5 + params.time);
+    let vz = cos(x * 1.5 + params.time);
+    
+    let raw_vector = vec3<f32>(vx, 0.0, vz);
+    let arrow_vector = raw_vector * params.fieldStrength;
+
+    // 3. Color generation (Map direction to RGB)
+    // Normalize directions to 0.0 -> 1.0 range for colors
+    let r = (vx * 0.5) + 0.5;
+    let b = (vz * 0.5) + 0.5;
+    let color = vec4<f32>(r, 0.3, b, 1.0); 
+
+    // 4. Write to buffer
+    write_arrow(idx, pivot, arrow_vector, params.thickness, color);
+}
+```

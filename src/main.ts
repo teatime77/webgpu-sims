@@ -30,7 +30,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
         }
         $txt("schema-text").value = jsonText;
 
-        const schemaDef = await parseSchema(jsonText);
+        const schemaDef = parseSchema(jsonText);
         sim = new SimulationSchema(runner.device, schemaDef);
     } catch (e) {
         console.error(`Failed to load schema:`, e);

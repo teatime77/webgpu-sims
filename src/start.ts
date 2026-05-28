@@ -377,7 +377,7 @@ $btn("instructions-btn").addEventListener("click", async()=>{
 });
 
 $btn("skeleton-btn").addEventListener("click", async() => {
-    const codes = makeWgslSkeleton(theSchema);
+    const codes = makeWgslSkeleton();
 
     $txt("skeleton-text").value = Array.from(codes.entries()).map(x => `//${"".repeat(50)} ${x[0]}\n${x[1]}` ).join("");
 });

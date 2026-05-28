@@ -1,8 +1,10 @@
-import type { SimulationSchema } from './SimulationRunner';
-import { msg, StorageDef, UniformDef } from './utils';
+import { parseSchema } from './parser';
+import { SimulationSchema, theRunner } from './SimulationRunner';
+import { $txt, msg, StorageDef, UniformDef } from './utils';
 
-export function makeWgslSkeleton(schema: SimulationSchema) {
-    msg(`Generating skeleton for: ${schema.name}`);
+export function makeWgslSkeleton() {
+    const schemaDef = parseSchema($txt("schema-text").value);
+    const schema = new SimulationSchema(theRunner.device, schemaDef);
 
     const codes = new Map<string, string>();
 
