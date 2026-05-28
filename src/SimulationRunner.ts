@@ -43,10 +43,6 @@ export abstract class NodeDef {
     getMeshDef() : MeshDef | undefined {
         return this.getNodeResources().find(res => res instanceof MeshDef);
     }
-
-    getRenderResources() : ResourceDef[] {
-        return this.getNodeResources().filter(x => x.topology != undefined);
-    }
 }
 
 export class ComputePassBuilder extends NodeDef{

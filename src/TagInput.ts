@@ -14,7 +14,6 @@ export class TagInput {
 
     private tags: Set<string>;
     private availableOptions: string[];
-    private isDropdownOpen: boolean = false;
 
     constructor(config: TagInputConfig) {
         this.container = config.element;
@@ -190,12 +189,10 @@ export class TagInput {
         });
 
         this.dropdown.classList.add('active');
-        this.isDropdownOpen = true;
     }
 
     private closeDropdown(): void {
         this.dropdown.classList.remove('active');
-        this.isDropdownOpen = false;
     }
 
     /**

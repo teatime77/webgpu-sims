@@ -3,7 +3,7 @@ import { marked } from 'marked';
 import renderMathInElement from 'katex/contrib/auto-render';
 import mermaid from 'mermaid';
 import { initSyntaxHighlightEditor } from "./editor";
-import { createArticle, getPublicId, type CreateArticleParams } from "./start";
+import { getPublicId, type CreateArticleParams } from "./start";
 import { theTagInput } from "./TagInput";
 
 let textarea : HTMLTextAreaElement;

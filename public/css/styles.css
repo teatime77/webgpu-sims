@@ -1,6 +1,10 @@
 
 body {
   margin: 0;
+  background: #111;
+  padding: 10px;
+  color: white;
+  font-family: sans-serif;
 }
 
 /* 全体を囲む view クラスの設定 */

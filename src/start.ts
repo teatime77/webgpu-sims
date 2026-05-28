@@ -1,12 +1,10 @@
-import { initializeApp, type FirebaseApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import {
     getAuth,
     GoogleAuthProvider,
     EmailAuthProvider,
     onAuthStateChanged,
     type User,
-    signOut,
-    type Auth
 } from "firebase/auth";
 import {
     getFirestore,
@@ -14,14 +12,14 @@ import {
     getDoc,
     runTransaction,
     serverTimestamp,
-    collection, addDoc, query, where, orderBy, limit, getDocs,
+    collection, addDoc, query, orderBy, limit, getDocs,
     setDoc
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage } from "firebase/storage";
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
 import { bootstrap, theSchema } from "./main";
-import { msg, range, assert, $, $btn, $div, $dlg, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt, $canvas } from "./utils";
+import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt } from "./utils";
 import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { initTagInput, theTagInput } from "./TagInput";
 import { initSyntaxHighlightEditor } from "./editor";
@@ -604,7 +602,7 @@ async function getContents(){
         const box = document.createElement("div");
         box.className = "box";
 
-        box.addEventListener("click", (ev:PointerEvent)=>{
+        box.addEventListener("click", (_:PointerEvent)=>{
             navigateTo(`/post/${idx}`);
         });
 

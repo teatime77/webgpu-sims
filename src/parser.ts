@@ -2,7 +2,7 @@
 // AST Node Classes
 // ============================================================================
 
-import { msg, assert, fetchText, MyError } from "./utils";
+import { msg, assert, MyError } from "./utils";
 import type { ButtonDef, ISimulationSchema, RangeDef, SelectDef, UIDef } from "./SimulationRunner";
 
 type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string;

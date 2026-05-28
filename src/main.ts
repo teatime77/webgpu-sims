@@ -4,10 +4,9 @@ import { CaptureTool } from './CaptureTool';
 import { ComputePassBuilder, getMesh, RenderPassBuilder, simRunner, writeUniformArray } from './SimulationRunner';
 import { SimulationRunner, type ResourceBinding, setRunner, SimulationSchema } from './SimulationRunner';
 import { makeUIs } from './SimUI';
-import { $txt, assert, fetchText, isRenderMesh, MeshDef, MyError, UniformDef } from './utils';
+import { $txt, assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
 import { parseSchema } from './parser';
 import { captureThumbnail, captureThumbnailFlag } from './start';
-import { makeWgslSkeleton } from './generate_skeleton';
 
 export let theSchema : SimulationSchema;
 
@@ -117,7 +116,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
                 throw new MyError();
             }
 
-            const shaderUrl = `src/wgsl/${fileName}`;
+            const shaderUrl = `wgsl/${fileName}`;
             shader = await fetchText(shaderUrl);
         }
         else{
@@ -145,7 +144,6 @@ export async function bootstrap(jsonText:string, wgslText : string) {
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
             node.initRenderPass(runner.device, shader, format, { 
-                topology: node.topology,
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
             });

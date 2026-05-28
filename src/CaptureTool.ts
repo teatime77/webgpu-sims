@@ -1,7 +1,7 @@
 // src/CaptureTool.ts
 
 import type { SimulationRunner } from "./SimulationRunner";
-import { MyError } from "./utils";
+import { $, $btn, $inp } from "./utils";
 
 export class CaptureTool {
     private isCapturing = false;
@@ -31,45 +31,11 @@ export class CaptureTool {
     }
 
     private setupCapturePanel(engine: SimulationRunner): void {
-        if (document.getElementById("capture-panel")) return;
-
-        const panel = document.createElement("div");
-        panel.id = "capture-panel";
-        panel.style.position = "absolute";
-        panel.style.left = "10px";
-        panel.style.bottom = "10px";
-        panel.style.padding = "8px";
-        panel.style.borderRadius = "8px";
-        panel.style.background = "rgba(20, 20, 25, 0.85)";
-        panel.style.color = "white";
-        panel.style.fontFamily = "sans-serif";
-        panel.style.border = "1px solid #444";
-        panel.style.display = "flex";
-        panel.style.gap = "8px";
-        panel.style.alignItems = "center";
-        panel.style.zIndex = "1000";
-
-        const captureBtn = document.createElement("button");
-        captureBtn.textContent = "Capture";
-        captureBtn.style.fontSize = "14px";
-        captureBtn.style.cursor = "pointer";
-
-        const burstBtn = document.createElement("button");
-        burstBtn.textContent = "Burst xN";
-        burstBtn.style.fontSize = "14px";
-        burstBtn.style.cursor = "pointer";
-
-        const countInput = document.createElement("input");
-        countInput.type = "number";
-        countInput.min = "1"; countInput.max = "200"; countInput.step = "1";
-        countInput.value = "10";
-        countInput.style.width = "50px";
-
-        const intervalInput = document.createElement("input");
-        intervalInput.type = "number";
-        intervalInput.min = "10"; intervalInput.max = "5000"; intervalInput.step = "10";
-        intervalInput.value = "100";
-        intervalInput.style.width = "60px";
+        const panel = $("capture-panel");
+        const captureBtn = $btn("capture-btn");
+        const burstBtn = $btn("burst-btn");
+        const countInput = $inp("capture-count");
+        const intervalInput = $inp("capture-interval");
 
         const setBusy = (busy: boolean) => {
             this.isCapturing = busy;
@@ -128,8 +94,5 @@ export class CaptureTool {
                 setBusy(false);
             }
         });
-
-        panel.append(captureBtn, burstBtn, countInput, " N ", intervalInput, " ms");
-        document.body.appendChild(panel);
     }
 }

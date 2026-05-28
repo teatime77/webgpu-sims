@@ -1,6 +1,6 @@
 // 1. TYPES & INTERFACES
 
-import { msg, $, $div } from "./utils";
+import { $div } from "./utils";
 
 // Define exactly what types of tokens our lexer is allowed to produce
 type TokenType = 'default' | 'keyword' | 'type' | 'attribute' | 'number' | 'comment' | 'bracket';
