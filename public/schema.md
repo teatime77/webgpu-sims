@@ -6,14 +6,17 @@ The fundamental design philosophy is **the strict separation of the simulation's
 
 ---
 
-## The 4-Step Workflow
+### Human-AI Collaboration Workflow
 
-1.  **Generate the schema definition by TypeScript code:** You (the AI) will create a schema definition using TypeScript code, following the simulation execution instructions provided by the user. This defines the simulation's state, resources (buffers), compute/render nodes, UI definitions and script.
-2.  **Generate the WGSL Skeleton (User Action):** The user will run this app to create WGSL codes from the schema. 
-WGSL codes include struct definitions, resource bindings and skeleton functions.
-3.  **Implement the WGSL Logic:** You (the AI) will be provided with the generated WGSL skeleton codes. 
-You must implement ONLY the core logic inside the generated functions (`vs_main`, `fs_main`, or `main`).
-4.  **Simulation execution:** The app will run the simulation using the schema and WGSL files.
+This application relies on a strict ping-pong workflow between the Human User and the AI Assistant (you). To maintain synchronization, always await the user's explicit prompt for your specific step.
+
+Here is the exact sequence of operations:
+
+1. **Context Initialization (Human ➡️ AI):** The human user provides this architectural document to you. This establishes the baseline rules and constraints. *AI Action: Acknowledge understanding and wait.*
+2. **Schema Generation (Human ➡️ AI):** The human provides a conceptual overview of the desired physical simulation. *AI Action: Generate the strictly formatted `SimulationSchema` (TypeScript) based on the provided physics and constraints. Do not write WGSL code yet.*
+3. **Skeleton Generation (Human App):** The human copies your generated schema into the application. The application automatically parses the TypeScript and generates a foundational WGSL skeleton containing all necessary structs and resource bindings.
+4. **Logic Implementation (Human ➡️ AI):** The human provides you with the auto-generated WGSL skeleton. *AI Action: Implement the core mathematical and physical logic exclusively within the designated `main`, `vs_main`, or `fs_main` functions. Do not alter the skeleton's bindings, struct names, or layout.*
+5. **Execution (Human App):** The human copies your finalized WGSL code back into the application and runs the live physical simulation.
 
 ---
 

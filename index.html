@@ -1,157 +1,162 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebGPU STEM Labs</title>
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/TagInput.css">
-  <link rel="stylesheet" href="css/editor.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU STEM Labs</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/TagInput.css">
+    <link rel="stylesheet" href="css/editor.css">
 </head>
 <body>
 
 <!-- 【A】ログイン前画面（認証コンテナをそのまま配置） -->
-  <div id="login-view">
+<div id="login-view">
     <h1 style="text-align: center; margin-top: 50px;">アプリにログイン</h1>
     <div id="firebaseui-auth-container"></div>
-  </div>
+</div>
 
-  <!-- 【B】ログイン後のメイン画面 -->
-  <div id="main-view" class="view">
+<!-- 【B】ログイン後のメイン画面 -->
+<div id="main-view" class="view">
 
     <header>
-      <a href="/" class="at-left">
-        <img src="path/to/logo.png" alt="GPUSims" style="height: 3rem; vertical-align: middle;">
-      </a>
+        <a href="/" class="at-left">
+            <img src="path/to/logo.png" alt="GPUSims" style="height: 3rem; vertical-align: middle;">
+        </a>
 
-      <span class="at-center">
-        <input 
-          type="search" 
-          id="headerSearch" 
-          name="search" 
-          placeholder="記事のタイトルやキーワードで検索..." 
-          size="30"
-        >
+        <span class="at-center">
+            <input type="search" id="headerSearch" name="search" placeholder="記事のタイトルやキーワードで検索..." size="30">
 
-        <button id="post-btn" style="margin-bottom:0;">Post</button>
-      </span>
+            <button id="post-btn" style="margin-bottom:0;">Post</button>
+        </span>
 
-      <button id="headerLoginBtn" class="at-right" >サインイン</button>
-      <span id="logged-in" class="at-right">
-        <button id="headerLogoutBtn" >サインアウト</button>
-        <span id="headerUserId" style="font-weight: bold; font-size: 0.9rem;"></span>
-      </span>
+        <button id="headerLoginBtn" class="at-right">サインイン</button>
+        <span id="logged-in" class="at-right">
+            <button id="headerLogoutBtn">サインアウト</button>
+            <span id="headerUserId" style="font-weight: bold; font-size: 0.9rem;"></span>
+        </span>
     </header>
 
     <main>
         <div id="articles"></div>
     </main>
     <footer>
-      <div id="error-msg">Loading...</div>
+        <div id="error-msg">Loading...</div>
     </footer>
-  </div>
+</div>
 
-  <div id="edit-view">
-    <header  style="height: 50px;">
-      <span id="capture-panel" class="at-left">
-        <button id="capture-btn" >Capture</button>
-        <button id="burst-btn">Burst xN</button>
-        <label for="capture-count" >N:
-          <input id="capture-count"   type="number" min="1" max="200" step="1" value="10" />
-        </label>
+<div id="wizard-view">
 
-        <label >interval:
-          <input id="capture-interval"  type="number" min="10" max="5000" step="10" value="100" />
-        </label>
-      </span>
 
-      <span class="at-center">
-        <button>Save</button>
-      </span>
+</div>
 
-      <span class="at-right">
-          <button id="instructions-btn" >Instructions</button>
-          <button id="skeleton-btn">Skeleton</button>
-          <button id="run-btn" >Run</button>
-          <button id="download-btn" >Download</button>
-      </span>
+<div id="edit-view">
+    <header style="height: 50px;">
+        <span id="capture-panel" class="at-left">
+            <button id="capture-btn">Capture</button>
+            <button id="burst-btn">Burst xN</button>
+            <label for="capture-count">N:
+                <input id="capture-count" type="number" min="1" max="200" step="1" value="10" />
+            </label>
+
+            <label>interval:
+                <input id="capture-interval" type="number" min="10" max="5000" step="10" value="100" />
+            </label>
+        </span>
+
+        <span class="at-center">
+            <button>Save</button>
+        </span>
+
+        <span class="at-right">
+            <button id="instructions-btn">Instructions</button>
+            <button id="skeleton-btn">Skeleton</button>
+            <button id="run-btn">Run</button>
+            <button id="download-btn">Download</button>
+        </span>
 
     </header>
     <main>
-      <div class="main-canvas-grid">
-          <canvas id="main-canvas" width="1280" height="720" ></canvas>
-          <div>
-            <div id="uis-div" ></div>
-            <p></p>
-            <button id="thumbnail-btn" class="at-right" >thumbnail</button><br/>
-            <img id="thumbnail-img" /><br/>
-            <button id="add-details">Add Details</button>
-          </div>
-      </div>
-
-      <div id="sub-canvases" ></div>
-
-      <div class="accordion">
-        <details name="my-accordion" >
-          <summary>schema</summary>
-          <div class="content">
-            <div id="schema-editor" class="editor-container">
-                <textarea id="schema-text" class="hidden-textarea" spellcheck="false"></textarea>
-                <canvas class="render-canvas" width="800" height="400"></canvas>
+        <div class="main-canvas-grid">
+            <canvas id="main-canvas" width="1280" height="720"></canvas>
+            <div>
+                <div id="uis-div"></div>
+                <p></p>
+                <button id="thumbnail-btn" class="at-right">thumbnail</button><br />
+                <img id="thumbnail-img" /><br />
+                <button id="add-details">Add Details</button>
             </div>
+        </div>
+
+        <div id="sub-canvases"></div>
+
+        <div class="accordion">
+            <details name="my-accordion-1">
+                <summary>schema</summary>
+                <div class="content">
+                    <div id="schema-editor" class="editor-container">
+                        <textarea id="schema-text" class="hidden-textarea" spellcheck="false"></textarea>
+                        <canvas class="render-canvas" width="800" height="400"></canvas>
+                    </div>
 
 
-          </div>
-        </details>
+                </div>
+            </details>
+        </div>
 
-        <details name="my-accordion">
-          <summary>skeleton</summary>
-          <div class="content">
-              <div id="skeleton-editor" class="editor-container">
-                  <textarea id="skeleton-text" class="hidden-textarea" spellcheck="false"></textarea>
-                  <canvas class="render-canvas" width="800" height="400"></canvas>
-              </div>
-          </div>
-        </details>
+        <div class="accordion">
+            <details name="my-accordion-2">
+                <summary>skeleton</summary>
+                <div class="content">
+                    <div id="skeleton-editor" class="editor-container">
+                        <textarea id="skeleton-text" class="hidden-textarea" spellcheck="false"></textarea>
+                        <canvas class="render-canvas" width="800" height="400"></canvas>
+                    </div>
+                </div>
+            </details>
+        </div>
 
-        <details name="my-accordion">
-          <summary>WGSL</summary>
-          <div class="content">
-              <div id="wgsl-editor" class="editor-container">
-                  <textarea id="wgsl-text" class="hidden-textarea" spellcheck="false"></textarea>
-                  <canvas class="render-canvas" width="800" height="400"></canvas>
-              </div>
-          </div>
-        </details>
-      </div>
+        <div class="accordion">
+            <details name="my-accordion-3">
+                <summary>WGSL</summary>
+                <div class="content">
+                    <div id="wgsl-editor" class="editor-container">
+                        <textarea id="wgsl-text" class="hidden-textarea" spellcheck="false"></textarea>
+                        <canvas class="render-canvas" width="800" height="400"></canvas>
+                    </div>
+                </div>
+            </details>
+        </div>
     </main>
-  </div>
+</div>
 
-  <div id="user-view">
+<div id="user-view">
     <h2>ユーザーIDの初期設定</h2>
     <p>他のユーザーに公開される一意のID（publicId）を決めてください。</p>
     <input type="text" id="publicIdInput" placeholder="例: ko_hamada" />
     <button id="registerBtn">登録する</button>
-  </div>
+</div>
 
-  <div id="article-view" style="display: grid; grid-template-rows: auto auto auto 1fr;">
-      <header>
+<div id="article-view" style="display: grid; grid-template-rows: auto auto auto 1fr;">
+    <header>
         <span class="at-right">
-          <button id="publish-btn">Publish</button>
+            <button id="publish-btn">Publish</button>
         </span>
-      </header>
-      <input id="title" type="text" placeholder="Title"  />
-      <div id="my-tag-input"></div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; min-height: 0;">
+    </header>
+    <input id="title" type="text" placeholder="Title" />
+    <div id="my-tag-input"></div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; min-height: 0;">
         <div id="markdown-editor" class="editor-container">
             <textarea id="markdown-text" class="hidden-textarea" spellcheck="false"></textarea>
-            <canvas class="render-canvas" width="800" height="800" ></canvas>
+            <canvas class="render-canvas" width="800" height="800"></canvas>
         </div>
-        <div id="markdown-preview" ></div>
-      </div>
-  </div>
+        <div id="markdown-preview"></div>
+    </div>
+</div>
 
-  <script type="module" src="/src/start.ts"> </script>
+<script type="module" src="/src/start.ts"> </script>
+
 </body>
 </html>
