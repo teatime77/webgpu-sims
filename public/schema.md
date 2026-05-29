@@ -104,19 +104,66 @@ The `shaders` field is an **Array of Objects**. Order **strictly matters**. This
 * `varName`: The variable name to be injected into the WGSL code.
 * `access`: Set to `'read_write'` for mutable storage buffers.
 
-
+---
 
 ### C. `uis` (Array / The User Interface)
 
-The `uis` field is an **Array of Objects**. It instructs the frontend on how to build the control panel, directly binding HTML elements to the `state` object.
+The `uis` field is an **Array of Objects** that instructs the frontend on how to build the control panel. It directly binds interactive HTML elements to the mutable global `state` object.
 
-**UI Component Properties:**
+When generating UI components, the AI must strictly adhere to one of the following component definitions based on the `type` property.
 
-* `type`: Currently supports `"range"`, which maps to an HTML `<input type="range" />`.
+#### Common Properties (Required for all UI components)
+
+* `type`: The specific UI control to render (`"range"` or `"select"`).
 * `obj`: Must reference the global `state` object.
-* `name`: The exact key within the `state` object to mutate (e.g., `"gravity"`).
-* `label`: Human-readable display text for the UI.
-* `min` / `max` / `step`: Numeric constraints for the slider.
+* `name`: The exact string key within the `state` object that this UI element will mutate.
+* `label`: Human-readable display text for the interface.
+
+#### 1. Range Component (`type: "range"`)
+
+Renders an HTML `<input type="range" />` slider. Use this for continuous numeric adjustments.
+
+* **Specific Properties:**
+* `min` (Number): The minimum allowed value.
+* `max` (Number): The maximum allowed value.
+* `step` (Number): The increment step size.
+
+
+* **Example:**
+```javascript
+{ type: "range", obj: state, name: "gravity", label: "Gravity", min: 1.0, max: 20.0, step: 0.1 }
+
+```
+
+
+
+#### 2. Select Component (`type: "select"`)
+
+Renders an HTML `<select>` dropdown menu. Use this for switching between discrete states or mathematical modes.
+
+* **Specific Properties:**
+* `options` (Array): An array of objects defining the dropdown choices. Each object must strictly contain:
+* `value` (Number): The numeric value assigned to the state variable when this option is selected.
+* `text` (String): The human-readable label for the `<option>` tag.
+
+
+
+
+* **Example:**
+```javascript
+{ 
+    type: "select", 
+    obj: state, 
+    name: "orbitalMode", 
+    label: "Orbital",
+    options: [
+        { value: 0, text: "1s (spherical)" },
+        { value: 1, text: "2p_z (dumbbell)" },
+        { value: 2, text: "3d_z2 (donut+lobes)" }
+    ]
+}
+
+```
 
 ### D. `script` (optional)
 

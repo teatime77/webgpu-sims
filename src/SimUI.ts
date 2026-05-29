@@ -137,7 +137,7 @@ export class SimUI {
         async function onChange(val: number) : Promise<void> {
             data.obj[data.name] = val;
 
-            if(data.reset == true){
+            if(data.reset !== false){
                 runner.initScript();
             }
         }
@@ -155,11 +155,11 @@ export function makeUIs(runner:SimulationRunner, schema: SimulationSchema){
     for(const ui of uis){
         switch(ui.type){
         case "range":
-            simUI.makeRange(ui);
+            simUI.makeRange(ui as RangeDef);
             break;
 
         case "select":
-            simUI.makeSelect(runner, ui);
+            simUI.makeSelect(runner, ui as SelectDef);
             break;
 
         default:

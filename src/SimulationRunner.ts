@@ -3,8 +3,36 @@ import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive';
 import { assert, getElementSize, MyError } from './utils';
 
+export let theDevice: GPUDevice;
+export let theFormat: GPUTextureFormat;
+
 export let theRunner : SimulationRunner;
 export let theSchema : SimulationSchema;
+
+/**
+ * Initialize WebGPU. Call once when the application starts.
+ */
+export async function initDevice(): Promise<boolean> {
+    if (!navigator.gpu) {
+        console.error("WebGPU is not supported on this browser.");
+        alert("This browser does not support WebGPU. Please use a supported browser like Chrome.");
+        return false;
+    }
+
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+        console.error("No appropriate GPUAdapter found.");
+        return false;
+    }
+
+    // Request GPUDevice (this will be the parent of all resources)
+    theDevice = await adapter.requestDevice();
+    // Get the optimal format for screen output (usually 'bgra8unorm' etc.)
+    theFormat = navigator.gpu.getPreferredCanvasFormat();
+
+    console.log("WebGPU Engine Initialized Successfully.");
+    return true;
+}
 
 export class ResourceBinding {
     group?: number;
@@ -294,35 +322,28 @@ export class RenderPassBuilder extends NodeDef {
     }
 }
 
-export interface RangeDef {
-    type : "range",
+export interface UIDef {
+    type : "range" | "select" | "button",
     obj:any,
     name:string,
     label: string, 
+}
+
+export interface RangeDef extends UIDef {
     min: number, 
     max: number, 
     step: number, 
     initial?: number
 }
 
-export interface SelectDef {
-    type : "select",
-    obj:any,
-    name:string,
-    label: string, 
+export interface SelectDef extends UIDef {
     options: {value: number, text: string}[], 
     initial?: number,
     reset? : boolean
 }
 
-export interface ButtonDef {
-    type : "button",
-    obj:any,
-    name:string,
-    label: string, 
+export interface ButtonDef extends UIDef {
 }
-
-export type UIDef = RangeDef | SelectDef | ButtonDef;
 
 export type PassCommand = 'frame' | undefined;
 
@@ -554,14 +575,10 @@ export class SimulationSchema {
 }
 
 export class SimulationRunner {
-    public device!: GPUDevice;
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     private initializedCanvases = new Set<string>(['main-canvas']);
     public generator? : Generator<PassCommand, void, unknown>;
     startTime : number = 0;
-
-    // public device!: GPUDevice;
-    public format!: GPUTextureFormat;
     
     // Map to manage multiple canvas contexts
     private contexts: Map<string, GPUCanvasContext> = new Map();
@@ -578,7 +595,7 @@ export class SimulationRunner {
             const textureView = ctx.getCurrentTexture().createView();
         
             // 2. コマンドエンコーダーの作成
-            const commandEncoder = this.device.createCommandEncoder();
+            const commandEncoder = theDevice.createCommandEncoder();
         
             // 3. 描画パスの設定（ここで黒でクリアする指定を行う）
             const renderPassDescriptor : GPURenderPassDescriptor = {
@@ -597,33 +614,8 @@ export class SimulationRunner {
             passEncoder.end();
         
             // 5. コマンドをキューに送信して実行
-            this.device.queue.submit([commandEncoder.finish()]);    
+            theDevice.queue.submit([commandEncoder.finish()]);    
         }
-    }
-
-    /**
-     * Initialize WebGPU. Call once when the application starts.
-     */
-    async init(): Promise<boolean> {
-        if (!navigator.gpu) {
-            console.error("WebGPU is not supported on this browser.");
-            alert("This browser does not support WebGPU. Please use a supported browser like Chrome.");
-            return false;
-        }
-
-        const adapter = await navigator.gpu.requestAdapter();
-        if (!adapter) {
-            console.error("No appropriate GPUAdapter found.");
-            return false;
-        }
-
-        // Request GPUDevice (this will be the parent of all resources)
-        this.device = await adapter.requestDevice();
-        // Get the optimal format for screen output (usually 'bgra8unorm' etc.)
-        this.format = navigator.gpu.getPreferredCanvasFormat();
-
-        console.log("WebGPU Engine Initialized Successfully.");
-        return true;
     }
 
     /**
@@ -644,8 +636,8 @@ export class SimulationRunner {
         }
 
         context.configure({
-            device: this.device,
-            format: this.format,
+            device: theDevice,
+            format: theFormat,
             alphaMode: 'premultiplied',
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
         });
@@ -653,7 +645,7 @@ export class SimulationRunner {
         this.contexts.set(canvasId, context);
 
         // Create and save a depth texture of the same size as the canvas
-        const depthTexture = this.device.createTexture({
+        const depthTexture = theDevice.createTexture({
             size: [canvas.width, canvas.height],
             format: 'depth24plus',
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -715,7 +707,7 @@ export class SimulationRunner {
 
     writeUniformArray(name:string, data: number[]){
         let arrayData = new Float32Array(data);
-        this.device.queue.writeBuffer(this.getUniformBuffer(name), 0, arrayData);
+        theDevice.queue.writeBuffer(this.getUniformBuffer(name), 0, arrayData);
     }
 
     initCanvas(canvasId : string){
@@ -817,7 +809,7 @@ export class SimulationRunner {
             if(def instanceof MeshDef){
                 msg(`mesh:${key}`);
 
-                this.device.queue.writeBuffer(def.buffers[0], 0, def.data);
+                theDevice.queue.writeBuffer(def.buffers[0], 0, def.data);
             }
         }        
     }

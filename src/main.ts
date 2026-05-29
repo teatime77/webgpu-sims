@@ -1,7 +1,7 @@
 // src/main.ts
 import { OrbitCamera } from './camera';
 import { CaptureTool } from './CaptureTool';
-import { ComputePassBuilder, getMesh, RenderPassBuilder, theRunner, theSchema, writeUniformArray } from './SimulationRunner';
+import { ComputePassBuilder, getMesh, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner';
 import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner';
 import { makeUIs } from './SimUI';
 import { $txt, assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
@@ -10,7 +10,6 @@ import { captureThumbnail, captureThumbnailFlag } from './start';
 
 export async function bootstrap(jsonText:string, wgslText : string) {
     const runner = new SimulationRunner();
-    if (!await runner.init()) return;
 
     runner.addCanvas('main-canvas');
 
@@ -29,7 +28,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
         $txt("schema-text").value = jsonText;
 
         const schemaDef = parseSchema(jsonText);
-        sim = new SimulationSchema(runner.device, schemaDef);
+        sim = new SimulationSchema(theDevice, schemaDef);
     } catch (e) {
         console.error(`Failed to load schema:`, e);
         alert(`Schema not found.`);
@@ -117,7 +116,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
         }
         
         if (node instanceof ComputePassBuilder) {
-            node.initComputePass(runner.device, shader, 'main');
+            node.initComputePass(theDevice, shader, 'main');
             const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
             groups.forEach(g => {
                 node.setGroup(g);
@@ -136,7 +135,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
 
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
-            node.initRenderPass(runner.device, shader, format, { 
+            node.initRenderPass(theDevice, shader, format, { 
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
             });
@@ -170,7 +169,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
         const nums = matrices.viewProjection.concat(matrices.view);
         writeUniformArray('Camera', nums)
 
-        runner.currentCommandEncoder = runner.device.createCommandEncoder();
+        runner.currentCommandEncoder = theDevice.createCommandEncoder();
 
         while (true) {
 
@@ -191,7 +190,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
             theRunner.render(render.id, render.vertexCount, render.instanceCount, true, idx == 0, render.canvasId);
         }
 
-        runner.device.queue.submit([runner.currentCommandEncoder.finish()]);
+        theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
 
         if(captureThumbnailFlag){
             captureThumbnail();

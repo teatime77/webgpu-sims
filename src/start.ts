@@ -24,7 +24,7 @@ import { initArticle, makeArticleData, makeContentText, updatePreview } from "./
 import { initTagInput, theTagInput } from "./TagInput";
 import { initSyntaxHighlightEditor } from "./editor";
 import { makeWgslSkeleton } from "./generate_skeleton";
-import { theRunner, theSchema } from "./SimulationRunner";
+import { initDevice, theRunner, theSchema } from "./SimulationRunner";
 
 export let captureThumbnailFlag = false;
 export let thumbnailBlob : Blob;
@@ -624,6 +624,7 @@ async function getContents(){
     }
 }
 
+await initDevice();
 initArticle();
 initTagInput();
 await getContents();

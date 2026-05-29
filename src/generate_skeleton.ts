@@ -1,10 +1,10 @@
 import { parseSchema } from './parser';
-import { SimulationSchema, theRunner } from './SimulationRunner';
+import { SimulationSchema, theDevice } from './SimulationRunner';
 import { $txt, msg, StorageDef, UniformDef } from './utils';
 
 export function makeWgslSkeleton() {
     const schemaDef = parseSchema($txt("schema-text").value);
-    const schema = new SimulationSchema(theRunner.device, schemaDef);
+    const schema = new SimulationSchema(theDevice, schemaDef);
 
     const codes = new Map<string, string>();
 

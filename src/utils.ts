@@ -1,4 +1,4 @@
-import { theRunner, type NodeDef } from './SimulationRunner';
+import { theDevice } from './SimulationRunner';
 
 export class MyError extends Error {
 }
@@ -291,7 +291,7 @@ export class UniformDef extends ResourceDef {
             }
         }
 
-        theRunner.device.queue.writeBuffer(this.buffer, 0, arrayBuffer);
+        theDevice.queue.writeBuffer(this.buffer, 0, arrayBuffer);
     }
 }
 
