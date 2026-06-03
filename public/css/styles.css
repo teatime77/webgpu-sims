@@ -185,6 +185,102 @@ details .content {
     height: auto;
 }
 
+
+/* >>>>>================================================== Wizard */
+
+.vibe-coding-wizard {
+  margin: 0 auto; /* Centers the wizard on the screen */
+  padding: 20px;
+}
+
+.vibe-coding-wizard h1 {
+  text-align: center;
+  color: var(--text-main);
+  margin-bottom: 32px;
+}
+
+.wizard-steps {
+  list-style-position: inside;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Space between each step card */
+}
+
+/* Make each step a distinct card */
+.wizard-steps li {
+  background-color: var(--bg-element);
+  border: 1px solid var(--border-idle);
+  border-radius: 12px;
+  padding: 24px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* Align the text immediately following the number */
+.wizard-steps li p {
+  display: inline;
+  margin: 0 0 16px 0;
+}
+
+/* Ensure buttons drop to their own line with some spacing */
+.wizard-steps li button {
+  display: block;
+  margin-top: 16px;
+}
+
+/* Ensure textareas stay within the card bounds */
+.wizard-steps li textarea {
+  width: 100%;
+  box-sizing: border-box;
+  /* margin-top: 16px; */
+}
+
+/* Hint Box 
+  Overrides the light-mode inline styles to match the dark theme 
+*/
+.vibe-coding-wizard .hint-box {
+  background-color: rgba(55, 48, 163, 0.15) !important; /* Subtle tint based on your accent */
+  border-left: 4px solid var(--accent-focus) !important;
+  border-radius: 0 8px 8px 0;
+  padding: 16px !important;
+  margin: 20px 0 0 0;
+  color: var(--text-main);
+}
+
+.vibe-coding-wizard .hint-box p {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.vibe-coding-wizard .hint-box p:last-child {
+  margin-bottom: 0;
+}
+
+/* <<<<<================================================== Wizard */
+
+.toast {
+  visibility: hidden;
+  background-color: #333;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 24px; 
+  border-style: solid;
+  border-width: 1;
+  position: absolute; /* Crucial: Allows us to place it anywhere */
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s, visibility 0.3s;
+  white-space: nowrap; /* Prevents the text from wrapping awkwardly */
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+}
+
+
 /* ============================
    CSS VARIABLES (THEME)
    ============================ */

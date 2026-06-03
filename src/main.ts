@@ -4,11 +4,10 @@ import { CaptureTool } from './CaptureTool';
 import { ComputePassBuilder, getMesh, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner';
 import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner';
 import { makeUIs } from './SimUI';
-import { $txt, assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
-import { parseSchema } from './parser';
+import { assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
 import { captureThumbnail, captureThumbnailFlag } from './start';
 
-export async function bootstrap(jsonText:string, wgslText : string) {
+export async function bootstrap(sim: SimulationSchema) {
     const runner = new SimulationRunner();
 
     runner.addCanvas('main-canvas');
@@ -16,24 +15,7 @@ export async function bootstrap(jsonText:string, wgslText : string) {
     const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
 
     const camera = new OrbitCamera(canvas);
-    camera.distance = 5.0;
-
-    let sim: SimulationSchema;
-    try {
-
-        const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
-        if(k != -1){
-            jsonText = jsonText.substring(0, k);
-        }
-        $txt("schema-text").value = jsonText;
-
-        const schemaDef = parseSchema(jsonText);
-        sim = new SimulationSchema(theDevice, schemaDef);
-    } catch (e) {
-        console.error(`Failed to load schema:`, e);
-        alert(`Schema not found.`);
-        return;
-    }
+    camera.distance = 5.0;   
 
     new CaptureTool(runner);
 
@@ -51,9 +33,8 @@ export async function bootstrap(jsonText:string, wgslText : string) {
 
         if (node.type === 'compute'){
 
-            shader = wgslText;
-            // shader = await fetchText("tmp/json/pendulum/pendulum_comp.wgsl");
-            $txt("wgsl-text").value = shader;
+            shader = node.nodeShaderCode!;
+            assert(shader != undefined);
         }
         else if(node instanceof RenderPassBuilder){
             let fileName : string;

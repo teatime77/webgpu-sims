@@ -75,6 +75,45 @@ export async function fetchText(fileURL: string) {
     return text;
 }
 
+/**
+ * Copies a given string to the system clipboard.
+ * @param textToCopy - The string you want to place in the clipboard.
+ * @returns A promise that resolves when the text is successfully copied.
+ */
+export async function copyToClipboard(textToCopy: string): Promise<void> {
+  try {
+    // navigator.clipboard.writeText() takes a string and returns a Promise
+    await navigator.clipboard.writeText(textToCopy);
+    console.log(`Text successfully copied to clipboard!\n${textToCopy}`);
+    
+    // Optional: You could trigger a UI notification (toast) here
+  } catch (error) {
+    // This catch block runs if the browser denies permission
+    console.error('Failed to copy text: ', error);
+  }
+}
+
+export function showToast(btn : HTMLButtonElement, text :string){
+    const toastMessage = $div('toast-message');
+    toastMessage.textContent = text;
+
+    // Get the exact dimensions and position of the button
+    const rect = btn.getBoundingClientRect();
+
+    // Set position to the bottom-left of the button
+    // window.scrollY/X ensures it stays accurate even if the user has scrolled down the page
+    toastMessage.style.left = `${rect.left + window.scrollX}px`;
+
+    // rect.bottom is the bottom edge of the button. We add 10px for a small gap.
+    toastMessage.style.top = `${rect.bottom + window.scrollY + 10}px`; 
+
+    toastMessage.classList.add('show');
+
+    setTimeout(() => {
+        toastMessage.classList.remove('show');
+    }, 3000);
+}
+
 function generateTimestamp(): string {
   const now = new Date();
 

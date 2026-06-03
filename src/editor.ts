@@ -1,6 +1,7 @@
 // 1. TYPES & INTERFACES
 
-import { $div } from "./utils";
+import { theSchema } from "./SimulationRunner";
+import { assert, $, MyError } from "./utils";
 
 // Define exactly what types of tokens our lexer is allowed to produce
 type TokenType = 'default' | 'keyword' | 'type' | 'attribute' | 'number' | 'comment' | 'bracket';
@@ -27,6 +28,7 @@ const theme: Record<TokenType, string> = {
   bracket: '#ffd700'    
 };
 
+const wgslEditors = new Map<string, SyntaxHighlightEditor>();
 
 class SyntaxHighlightEditor {
     textarea : HTMLTextAreaElement;
@@ -34,9 +36,7 @@ class SyntaxHighlightEditor {
     ctx      : CanvasRenderingContext2D;
     charWidth: number;
 
-    constructor(editorId: string){
-        const div = $div(editorId);
-
+    constructor(div : HTMLDivElement){
         // 2. DOM ELEMENTS (with strict type assertions)
         this.textarea = Array.from(div.getElementsByTagName("textarea"))[0] as HTMLTextAreaElement;
         this.canvas = Array.from(div.getElementsByTagName("canvas"))[0] as HTMLCanvasElement;
@@ -174,6 +174,84 @@ class SyntaxHighlightEditor {
     }
 }
 
-export function initSyntaxHighlightEditor(editorId: string){
-    return new SyntaxHighlightEditor(editorId);
+export function initSyntaxHighlightEditor(div : HTMLDivElement){
+    return new SyntaxHighlightEditor(div);
+}
+
+function getNodeDivs(){
+    const li = $("wgsl-li") as HTMLLIElement;
+
+    return Array.from(li.children).filter(x => x instanceof HTMLDivElement 
+        && x.dataset != undefined && x.dataset.nodeId != undefined) as HTMLDivElement[];
+}
+
+export function clearShaderEditors(){
+    getNodeDivs().forEach(x => x.remove());
+}
+
+export function makeShaderEditors(){
+    wgslEditors.clear();
+
+    const li = $("wgsl-li") as HTMLLIElement;
+
+    const nodeDivs = getNodeDivs();
+
+    // Remove unused divs.
+    nodeDivs.filter(x => ! theSchema.nodeMap.has(x.dataset.nodeId!)).forEach(x => x.remove());
+
+    for(const [id, node] of theSchema.nodeMap.entries()){
+        if(node.type != "compute" || nodeDivs.some(x => x.dataset.nodeId == id)){
+            continue;
+        }
+
+        const nodeDiv = document.createElement("div");
+        nodeDiv.dataset.nodeId = node.id
+
+        const p = document.createElement("p");
+
+        p.textContent = `compute shader for ${id}`;
+        
+        const editorDiv = document.createElement("div");
+        const textarea = document.createElement("textarea");
+        const canvas = document.createElement("canvas");
+
+        assert(node.nodeShaderCode != undefined);
+        textarea.value = node.nodeShaderCode!;
+
+        editorDiv.className = "editor-container";
+        
+        textarea.className = "hidden-textarea";
+        textarea.spellcheck= false;
+        textarea.placeholder="Paste the final WGSL program codes here...";
+
+        canvas.className = "render-canvas";
+        canvas.width= 800;
+        canvas.height= 400;
+
+        editorDiv.append(textarea, canvas);
+
+        nodeDiv.append(p, editorDiv);
+
+        li.append(nodeDiv);
+
+        initSyntaxHighlightEditor(editorDiv);
+    }
+}
+
+export function setNodeShaderCode(){
+    const nodeDivs = getNodeDivs();
+
+    for(const node of theSchema.computeNodes()){
+        const nodeDiv = nodeDivs.find(x => x.dataset.nodeId == node.id)
+        if(nodeDiv == undefined){
+            throw new MyError();
+        }
+
+        const textareas = Array.from(nodeDiv.getElementsByTagName("textarea")) ;
+        if(textareas.length != 1){
+            throw new MyError();
+        }
+
+        node.nodeShaderCode = textareas[0].value;
+    }
 }

@@ -1,16 +1,18 @@
 import { parseSchema } from './parser';
 import { SimulationSchema, theDevice } from './SimulationRunner';
-import { $txt, msg, StorageDef, UniformDef } from './utils';
+import { msg, StorageDef, UniformDef } from './utils';
 
-export function makeWgslSkeleton() {
-    const schemaDef = parseSchema($txt("schema-text").value);
+export function makeWgslSkeleton(schemaText : string) : string {
+    const schemaDef = parseSchema(schemaText);
     const schema = new SimulationSchema(theDevice, schemaDef);
 
-    const codes = new Map<string, string>();
+    const codes : string[] = [];
 
     // Generate a .wgsl file for each node (pass) defined in the schema
     for (const node of schema.shaders.filter(x => x.type == "compute")) {
-        let code = `// ==========================================\n`;
+        let code = `WGSL SKELETON FOR NODE: ${node.id}\n`;
+        code += "```wgsl\n";
+        code += `// ==========================================\n`;
         code += `// AUTO-GENERATED SKELETON FOR NODE: ${node.id}\n`;
         code += `// DO NOT MODIFY STRUCTS AND BINDINGS\n`;
         code += `// ==========================================\n\n`;
@@ -106,12 +108,11 @@ export function makeWgslSkeleton() {
             code += `    return vec4<f32>(1.0, 0.0, 0.0, 1.0);\n`;
             code += `}\n`;
         }
+        code += "```\n\n"
 
-        codes.set(node.id, code);
-
-        msg(`${"=".repeat(50)}\nSkeleton: ${node.id}\n${code}\n${"=".repeat(50)}`);
+        codes.push(code);
     }
 
     msg("Skeleton generation complete!");
-    return codes;
+    return codes.join("\n");
 }

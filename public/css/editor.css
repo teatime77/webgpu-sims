@@ -2,7 +2,6 @@
 .editor-container {
     position: relative;
     width: 100%;
-    max-width: 800px;
     height: 400px;
     background: #1e1e1e;
     border: 1px solid #333;

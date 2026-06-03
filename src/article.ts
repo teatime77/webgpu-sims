@@ -2,9 +2,10 @@ import { $, $div, $inp, $txt } from "./utils";
 import { marked } from 'marked';
 import renderMathInElement from 'katex/contrib/auto-render';
 import mermaid from 'mermaid';
-import { initSyntaxHighlightEditor } from "./editor";
+import { initSyntaxHighlightEditor, setNodeShaderCode } from "./editor";
 import { getPublicId, type CreateArticleParams } from "./start";
 import { theTagInput } from "./TagInput";
+import { theSchema } from "./SimulationRunner";
 
 let textarea : HTMLTextAreaElement;
 let previewDiv : HTMLDivElement;
@@ -49,7 +50,7 @@ export async function updatePreview(): Promise<void> {
 }
 
 export function initArticle(){
-    initSyntaxHighlightEditor("markdown-editor");
+    initSyntaxHighlightEditor($div("markdown-editor"));
 
     textarea = $("markdown-text") as HTMLTextAreaElement;
     previewDiv = $div("markdown-preview");
@@ -66,13 +67,21 @@ export function initArticle(){
 export function makeContentText(){
     const markdownText = $txt("markdown-text").value.trim();
     const schemaText   = $txt("schema-text").value.trim();
-    const wgslText     = $txt("wgsl-text").value.trim();
+    setNodeShaderCode();
+
+    let codes = "";
+    for(const node of theSchema.computeNodes()){
+        codes += `\nSHADER:${node.id}`;
+        codes += "```wgsl\n";
+        codes += node.nodeShaderCode!.trimEnd();
+        codes += "\n```\n";
+    }
 
     const contentText = markdownText + "\n"
     + "<!-- START OF SCHEMA. DO NOT REMOVE THIS COMMENT!!! -->\n"
     + "```jsonet\n" + schemaText + "\n```\n"
     + "<!-- START OF WGSL. DO NOT REMOVE THIS COMMENT!!! -->\n"
-    + "```wgsl\n" + wgslText + "\n```\n";
+    + codes;
 
     return contentText;
 }

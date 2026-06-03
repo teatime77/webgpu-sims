@@ -59,6 +59,7 @@ export abstract class NodeDef {
     vertexCount?: number;
     instanceCount?: number;
     canvasId?: string;
+    nodeShaderCode? : string;
 
     constructor(data : any){
         data.bindings = data.bindings.map((x: any) => new ResourceBinding(x));
@@ -554,6 +555,10 @@ export class SimulationSchema {
 
         this.uis   = data.uis;
         this.script = data.script;        
+    }
+
+    computeNodes() : NodeDef[] {
+        return Array.from(this.nodeMap.values()).filter(x => x.type == "compute");
     }
 
     getNode(id:string) : NodeDef {

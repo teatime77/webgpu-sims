@@ -19,15 +19,18 @@ import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage } from "fire
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
 import { bootstrap } from "./main";
-import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt } from "./utils";
+import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, fetchText, $txt, copyToClipboard, showToast } from "./utils";
 import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { initTagInput, theTagInput } from "./TagInput";
-import { initSyntaxHighlightEditor } from "./editor";
 import { makeWgslSkeleton } from "./generate_skeleton";
-import { initDevice, theRunner, theSchema } from "./SimulationRunner";
+import { initDevice, SimulationSchema, theDevice, theRunner, theSchema } from "./SimulationRunner";
+import { clearShaderEditors, initSyntaxHighlightEditor, makeShaderEditors, setNodeShaderCode } from "./editor";
+import { parseSchema } from "./parser";
 
 export let captureThumbnailFlag = false;
 export let thumbnailBlob : Blob;
+
+let schemaText : string;
 
 // -------------------------------------------------------------
 // 1. Firebase 初期化
@@ -73,14 +76,21 @@ let loginView!: HTMLDivElement;
 let mainView!: HTMLDivElement;
 let editView!: HTMLDivElement;
 let articleView!: HTMLDivElement;
+let wizardView!: HTMLDivElement;
+let userView! : HTMLDivElement;
 
 function hideAll(){
-    [loginView, mainView, editView, articleView].forEach(x => x.style.display = "none");
+    [loginView, mainView, editView, articleView, wizardView, userView].forEach(x => x.style.display = "none");
 }
 
 function showView(view: HTMLDivElement){
     hideAll();
-    view.style.display = "grid";
+    if(view == wizardView){
+        view.style.display = "block";
+    }
+    else{
+        view.style.display = "grid";
+    }
 }
 
 // -------------------------------------------------------------
@@ -224,25 +234,84 @@ document.addEventListener('DOMContentLoaded', () => {
     mainView = $div("main-view");
     editView = $div("edit-view");
     articleView = $div("article-view")
+    wizardView = $div("wizard-view");
+    userView = $div("user-view");
 
     showView(mainView);
 });
 
-function splitContentText(contentText : string){
+function makeSimulationSchema(jsonText: string){
+    try {
+
+        const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
+        if(k != -1){
+            jsonText = jsonText.substring(0, k);
+        }
+
+        const schemaDef = parseSchema(jsonText);
+        const schema = new SimulationSchema(theDevice, schemaDef);
+
+        return schema;
+    } catch (e) {
+        throw new MyError();
+    }
+}
+
+function splitContentText(contentText : string) : [string, string, SimulationSchema]{
     const lines = contentText.replaceAll("\r", "").split("\n");
     const startJsonet = lines.findIndex(x => x.startsWith("<!-- START OF SCHEMA."));
     const endJsonet = lines.findIndex((x, i) => startJsonet < i && x == "```");
-
     const startWgsl   = lines.findIndex(x => x.startsWith("<!-- START OF WGSL."));
-    const endWgsl     = lines.findIndex((x, i) => startWgsl < i && x == "```");
 
-    assert(startJsonet != -1 && startJsonet < endJsonet && endJsonet < startWgsl && startWgsl < endWgsl);
+    assert(startJsonet != -1 && startJsonet < endJsonet && endJsonet < startWgsl);
     assert(lines[startJsonet + 1] == "```jsonet" && lines[startWgsl + 1] == "```wgsl")
+
     const jsonText = lines.slice(startJsonet + 2, endJsonet).join("\n");
-    const wgslText   = lines.slice(startWgsl   + 2, endWgsl).join("\n");
     const markdownText = lines.slice(0, startJsonet).join("\n");
 
-    return [markdownText, jsonText, wgslText];
+    const schema = makeSimulationSchema(jsonText);
+
+    let idx = startWgsl + 1;
+    while(idx < lines.length){
+        let line = lines[idx];
+        if(line.trim() == ""){
+            idx++;
+            continue;
+        }
+
+        let nodeId = "";
+        if(line.startsWith("SHADER:")){
+            nodeId = line.substring("SHADER:".length);            
+            idx++;
+        }
+        else{
+            const computeNodes = schema.computeNodes();
+            assert(computeNodes.length == 1);
+            nodeId = computeNodes[0].id;
+        }
+
+        assert(idx < lines.length && lines[idx] == "```wgsl");
+        idx++;
+
+        let codes = "";
+        for(; idx < lines.length; idx++){
+            let line = lines[idx];
+            if(line == "```"){
+
+                const node = schema.nodeMap.get(nodeId)!;
+                assert(node != undefined);
+                node.nodeShaderCode = codes;
+
+                idx++;
+                break;
+            }
+
+            codes += line + "\n";                     
+        }
+    }
+
+    msg(`content-Text:[\n${contentText}]`);
+    return [markdownText, jsonText, schema];
 }
 
 function clearSchema(){
@@ -268,28 +337,17 @@ async function renderPage(path: string) {
         docId = undefined;
 
         $txt("schema-text").value = "";
-        $txt("skeleton-text").value = "";
-        $txt("wgsl-text").value = "";
+        clearShaderEditors();
 
         $inp("title").value = "";
         $txt("markdown-text").value = "";
 
         showView(mainView);
     } 
-    else if(path == "/new"){
+    else if(path == "/wizard"){
         clearSchema();
-        showView(editView);
-
-        $inp("title").value = "";
-
-        theTagInput.clearTags();
-
-        $txt("markdown-text").value = "";
-        
-        initSyntaxHighlightEditor("schema-editor");
-        initSyntaxHighlightEditor("skeleton-editor");
-        initSyntaxHighlightEditor("wgsl-editor");
-    }
+        showView(wizardView);
+    } 
     else if (path.startsWith("/post/")) {
         clearSchema();
         showView(editView);
@@ -301,7 +359,10 @@ async function renderPage(path: string) {
         const article = theArticles[idx];
         docId = article.id;
         const contentText = await fetchText(article.contentFileUrl);
-        const [markdownText, jsonText, wgslText] = splitContentText(contentText);
+        const [markdownText, jsonText, schema] = splitContentText(contentText);
+
+        $txt("schema-text").value = jsonText;
+        makeShaderEditors();
 
         $inp("title").value = article.title;
 
@@ -311,10 +372,7 @@ async function renderPage(path: string) {
         $txt("markdown-text").value = markdownText;
         updatePreview();
 
-        await bootstrap(jsonText, wgslText);
-        initSyntaxHighlightEditor("schema-editor");
-        initSyntaxHighlightEditor("skeleton-editor");
-        initSyntaxHighlightEditor("wgsl-editor");
+        await bootstrap(schema);
     }
 }
 
@@ -356,35 +414,12 @@ $btn("headerLoginBtn").addEventListener("click", () => {
     showView(loginView);
 });
 
-// 投稿ボタンのイベントリスナー
-$btn("post-btn").addEventListener("click", async() => {
-    // 投稿画面への遷移処理など
-    msg("投稿画面へ移動");
-    navigateTo('/new');
+$btn("wizard-btn").addEventListener("click", async() => {
+    navigateTo('/wizard');
 });
 
-$btn("instructions-btn").addEventListener("click", async()=>{
-    const text = await fetchText("schema.md");
-
-    try {
-        await navigator.clipboard.writeText(text);
-        msg('コピーに成功しました！');
-    } catch (error) {
-        msg(`コピーに失敗しました:${error}`);
-    }
-});
-
-$btn("skeleton-btn").addEventListener("click", async() => {
-    const codes = makeWgslSkeleton();
-
-    $txt("skeleton-text").value = Array.from(codes.entries()).map(x => `//${"".repeat(50)} ${x[0]}\n${x[1]}` ).join("");
-});
-
-$btn("run-btn").addEventListener("click", async ()=>{
-    const jsonText = $txt("schema-text").value;
-    const wgslText = $txt("wgsl-text").value;
-
-    await bootstrap(jsonText, wgslText);
+$btn("wizard2-btn").addEventListener("click", async() => {
+    navigateTo('/wizard');
 });
 
 $btn("download-btn").addEventListener("click", ()=>{
@@ -396,10 +431,45 @@ $btn("download-btn").addEventListener("click", ()=>{
 $btn("publish-btn").addEventListener("click", async()=>{
     const params = makeArticleData();
     await createArticle(params);
+
+    showToast($btn("publish-btn"), "The simulation successfully uploaded!");
 });
 
 $btn("thumbnail-btn").addEventListener("click", ()=>{
     captureThumbnailFlag = true;
+});
+
+$btn("copy-rulebook-btn").addEventListener("click", async()=>{
+    const instruction = `Read WebGPU Simulation Architecture Overview.
+
+${schemaText}
+`;
+    await copyToClipboard(instruction);
+    showToast($btn("copy-rulebook-btn"), "Text successfully copied to clipboard!");
+});
+
+$btn("create-copy-skeleton-btn").addEventListener("click", async()=>{
+    const wgslSkeleton = makeWgslSkeleton($txt("schema-text").value);
+    const instruction = `Implement WGSL functions.
+
+${wgslSkeleton}
+`;
+
+    await copyToClipboard(instruction);
+    showToast($btn("create-copy-skeleton-btn"), "Text successfully copied to clipboard!");
+
+    makeShaderEditors();
+});
+
+$btn("run-sim-btn").addEventListener("click", async ()=>{
+    clearSchema();
+    showView(editView);
+
+    const jsonText = $txt("schema-text").value;
+
+    const schema = makeSimulationSchema(jsonText);
+    setNodeShaderCode();
+    await bootstrap(schema);
 });
 
 export function captureThumbnail(){
@@ -627,4 +697,10 @@ async function getContents(){
 await initDevice();
 initArticle();
 initTagInput();
+fetchText("schema.md").then((value:string)=>{
+    schemaText = value;
+    msg("schema loaded");
+    $btn("wizard-btn").disabled = false;
+});
+initSyntaxHighlightEditor($div("schema-editor"));
 await getContents();
