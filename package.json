@@ -11,6 +11,8 @@
   "devDependencies": {
     "@types/gl-matrix": "^2.4.5",
     "@types/katex": "^0.16.8",
+    "@types/marked": "^5.0.2",
+    "@types/mermaid": "^9.1.0",
     "@types/node": "^25.6.2",
     "@webgpu/types": "^0.1.69",
     "ts-node": "^10.9.2",
