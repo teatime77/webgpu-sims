@@ -2,10 +2,10 @@
 // AST Node Classes
 // ============================================================================
 
-import { msg, assert, MyError } from "./utils.js";
-import type { ButtonDef, ISimulationSchema, RangeDef, SelectDef, UIDef } from "./SimulationRunner.js";
+import { msg, assert, MyError, range } from "./utils.js";
+import { ComputePassBuilder, theRunner, theSchema, type ButtonDef, type ISimulationSchema, type NodeDef, type RangeDef, type SelectDef, type UIDef } from "./SimulationRunner.js";
 
-type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string;
+type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string | FunctionExpression;
 
 const constValues = new Map<string, ValueType>();
 
@@ -18,6 +18,10 @@ export abstract class BaseASTNode {
 
     // Generates code back from the AST
     abstract toSource(): string;
+
+    toString() : string{
+        return this.toSource();
+    }
 
     getString() : string {
         const value = this.getValue();
@@ -261,17 +265,114 @@ export class GroupExpression extends BaseASTNode {
     }
 }
 
-export class FunctionExpression extends BaseASTNode {
-    readonly type = 'FunctionExpression';
-    rawBody: string;
+abstract class Statement extends BaseASTNode {
+    abstract exec() : void;
+}
 
-    constructor(rawBody: string) {
+class BlockStatement extends Statement {
+    readonly type = 'BlockStatement';
+    statements : Statement[] = [];
+
+    constructor(statements : Statement[]){
         super();
-        this.rawBody = rawBody;
+        this.statements = statements.slice();
     }
 
     toSource(): string {
-        return this.rawBody;
+        const s = this.statements.map(x => `${x}`).join("");
+        return `{\n${s}}\n`;
+    }
+
+    exec() : void {
+        for(const stmt of this.statements){
+            stmt.exec();
+        }
+    }
+}
+
+class ForStatement extends Statement {
+    readonly type = 'ForStatement';
+    iterator : string;
+    collection  : CallExpression;
+    block : BlockStatement;
+
+    constructor(iterator : string, collection  : BaseASTNode, block : BlockStatement){
+        super();
+        this.iterator = iterator;
+        assert(collection instanceof CallExpression);
+        this.collection  = collection as CallExpression;
+        this.block = block;
+    }
+
+    toSource(): string {
+        return `for(const ${this.iterator} of ${this.collection}) ${this.block}`;
+    }
+
+    exec() : void {
+        const collection = this.collection.getValue();
+        if(Array.isArray(collection)){
+            for(const _ of collection){
+                this.block.exec();
+            }
+        }
+    }
+}
+
+class CallStatement extends Statement {
+    readonly type = 'CallStatement';
+    callExpr : CallExpression;
+    shader? : ComputePassBuilder;
+
+    constructor(callExpr : CallExpression){
+        super();
+        this.callExpr = callExpr;
+    }
+
+    toSource(): string {
+        return `${this.callExpr};\n`;
+    }
+
+    exec() : void {
+        if(this.shader == undefined){
+
+            if(this.callExpr.callee instanceof Identifier){
+                assert(this.callExpr.callee.name == "execute");
+                if(this.callExpr.arguments.length == 1){
+                    const shaderName = this.callExpr.arguments[0];
+                    if(shaderName instanceof Identifier){
+                        this.shader = theSchema.nodeMap.get(shaderName.name) as ComputePassBuilder;
+                    }
+                }
+            }
+
+            assert(this.shader instanceof ComputePassBuilder);
+        }
+
+        this.shader!.dispatch(theRunner.currentCommandEncoder!);        
+    }
+}
+
+
+
+export class FunctionExpression extends BaseASTNode {
+    readonly type = 'FunctionExpression';
+    body: BlockStatement;
+
+    constructor(body: BlockStatement) {
+        super();
+        this.body = body;
+    }
+
+    toSource(): string {
+        return `()=>${this.body}`;
+    }
+
+    getValue() : ValueType {
+        return this;
+    }
+
+    execFunction(){
+        this.body.exec();
     }
 }
 
@@ -321,6 +422,13 @@ export class CallExpression extends BaseASTNode {
                 }
             }
         }
+        else if(this.callee instanceof Identifier){
+            if(this.callee.name == "range"){
+                assert(this.arguments.length == 1);
+                const count = this.arguments[0].getInt();
+                return range(count);
+            }
+        }
 
         throw new MyError();
     }
@@ -340,10 +448,19 @@ export interface Token {
 
 export class Lexer {
     private pos: number = 0;
-    source: string;
+    private source: string;
+    private tokens : Token[] = [];
+    private tokenPos = 0;
 
     constructor(source: string) {
         this.source = source;
+        while(true){
+            const token = this.readToken();
+            this.tokens.push(token);
+            if(token.type == "EOF"){
+                break;
+            }
+        }
     }
 
     private skipWhitespaceAndComments() {
@@ -362,7 +479,7 @@ export class Lexer {
         }
     }
 
-    public nextToken(): Token {
+    private readToken(): Token {
         this.skipWhitespaceAndComments();
 
         if (this.pos >= this.source.length) {
@@ -372,11 +489,13 @@ export class Lexer {
         const start = this.pos;
         const char = this.source[this.pos];
         const nextChar = this.pos + 1 < this.source.length ? this.source[this.pos + 1] : `\0`;
+        const doubleChar = char + nextChar;
 
-        // Check for double-character punctuators first
-        if (char === '*' && this.source[this.pos + 1] === '*') {
+        switch(doubleChar){
+        case "**":
+        case "=>":
             this.pos += 2;
-            return { type: 'Punctuator', value: '**', start, end: this.pos };
+            return { type: 'Punctuator', value: doubleChar, start, end: this.pos };
         }
 
         // Numbers (Handles decimals)
@@ -429,6 +548,19 @@ export class Lexer {
 
         throw new Error(`Unexpected character '${char}' at index ${this.pos}`);
     }
+
+    public nextToken() : Token {
+        assert(this.tokenPos < this.tokens.length);
+        const token = this.tokens[this.tokenPos];
+        this.tokenPos++;
+
+        return token;
+    }
+
+    public peekTexts(n : number) : string {
+        const tokens = this.tokens.slice(this.tokenPos, this.tokenPos + n);
+        return tokens.map(x => x.value).join("");
+    }
 }
 
 // ============================================================================
@@ -458,6 +590,15 @@ export class Parser {
         const token = this.currentToken;
         if (expectedValue && token.value !== expectedValue) {
             throw new Error(`Expected '${expectedValue}' but found '${token.value}' at index ${token.start}`);
+        }
+        this.advance();
+        return token;
+    }
+
+    private consumeType(expectedType: TokenType): Token {
+        const token = this.currentToken;
+        if (token.type !== expectedType) {
+            throw new Error(`Expected '${expectedType}' but found '${token.value}' at index ${token.start}`);
         }
         this.advance();
         return token;
@@ -575,6 +716,10 @@ export class Parser {
 
         // Handle Parentheses for Math Groupings e.g. (1 + 2) * 3
         if (token.type === 'Punctuator' && token.value === '(') {
+            if(this.lexer.peekTexts(2) == ")=>"){
+                return this.parseFunction();
+            }
+
             this.consume('(');
             const expr = this.parseExpression();
             this.consume(')');
@@ -690,35 +835,63 @@ export class Parser {
         return new ArrayExpression(elements);
     }
 
-    private parseFunction(): FunctionExpression {
-        const startToken = this.consume('function');
-        
-        // Skip '*' if it's a generator function
-        if (this.peek().value === '*') this.consume('*');
-        
-        this.consume('(');
-        
-        // Skip arguments until closing parens
-        while (this.peek().value !== ')') {
-            this.advance();
-        }
-        this.consume(')');
+    private parseCallStatement() : CallStatement {
+        const callExpr = this.parsePrimary() as CallExpression;
+        assert(callExpr instanceof CallExpression);
+        this.consume(';');
 
-        // We capture the body as raw text by keeping track of brace depth
+        return new CallStatement(callExpr);
+    }
+
+    private parseBlock() : BlockStatement {
         this.consume('{');
-        let braceCount = 1;
-        
-        while (braceCount > 0 && this.peek().type !== 'EOF') {
-            const t = this.consume();
-            if (t.value === '{') braceCount++;
-            if (t.value === '}') braceCount--;
+
+        const statements : Statement[] = [];
+        while(this.peek().value != "}"){
+            const statement = this.parseStatement();
+            statements.push(statement);
         }
+        this.consume('}');
 
-        // We extract the raw source based on the initial start token up to the current position
-        const endPosition = this.currentToken.start; // The last '}' consumed
-        const rawBody = this.source.substring(startToken.start, endPosition);
+        return new BlockStatement(statements);
+    }
 
-        return new FunctionExpression(rawBody);
+    private parseFor() : ForStatement {
+        this.consume("for");
+        this.consume("(");
+        this.consume("const");
+        const iteratorToken = this.consumeType("Identifier");
+        this.consume("of");
+        const collection = this.parseExpression();
+        this.consume(")");
+
+        const block = this.parseBlock();
+
+        return new ForStatement(iteratorToken.value, collection, block);
+    }
+
+    private parseStatement() : Statement {
+        const token = this.peek();
+        if(token.value == "{"){
+            return this.parseBlock();
+        }
+        else if(token.value == "for"){
+            return this.parseFor();
+        }
+        else if(token.type == "Identifier"){
+            return this.parseCallStatement();
+        }
+        else{
+            throw new MyError();
+        }
+    }
+
+    private parseFunction(): FunctionExpression {
+        ["(", ")", "=>"].forEach(x => this.consume(x));
+
+        const block = this.parseBlock();
+
+        return new FunctionExpression(block);
     }
 }
 
@@ -894,6 +1067,9 @@ function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
             assert(value instanceof ArrayExpression);
             schema[key] = (value as ArrayExpression).elements.map(x => readUIs(x as ObjectExpression));
             break;
+        case "script":
+            schema[key] = value;
+            break;
         default:
             msg(`skip property:${key}`);
             break;
@@ -910,7 +1086,7 @@ export function parseSchema(text : string) : ISimulationSchema {
     const prg = parser.parse();
     // msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
 
-    const schemaVar = prg.variables().find(x => x.typeAnnotation == "SimulationSchema");
+    const schemaVar = prg.variables().find(x => x.name == "schema");
     if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
         const schema = makeSchema(schemaVar.init);
         // msg(`${"=".repeat(50)} \n ${JSON.stringify(schema, null, 4)} ${"=".repeat(50)}`);

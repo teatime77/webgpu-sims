@@ -180,11 +180,16 @@ If you want to change the number of times a specific shader is executed, you can
 
 For example, the following script executes shaderB three times.
 ```js
-execute(shaderA);
-for(const _ of range(3)){
-    execute(shaderB);
-}
-execute(shaderC);
+const schema = {
+    // The code up to this point is omitted.
+    script: ()=>{
+        execute(shaderA);
+        for(const _ of range(3)){
+            execute(shaderB);
+        }
+        execute(shaderC);
+    }
+};
 ```
 
 ## Example Output Validation

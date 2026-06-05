@@ -6,6 +6,8 @@ import { SimulationRunner, type ResourceBinding, SimulationSchema } from './Simu
 import { makeUIs } from './SimUI.js';
 import { $btn, $div, assert, copyToClipboard, fetchText, MeshDef, msg, MyError, parseURL, showToast, UniformDef } from './utils.js';
 import { initEventHandler, initWebGpuSimsNavigationManager, appManager, AppManager } from './start.js';
+import { parseSchema } from './parser.js';
+import { setNodeShaderCode } from './editor.js';
 
 export let schemaText : string;
 let afterFrame : (()=>void) | undefined;
@@ -208,4 +210,14 @@ export async function initWebGpuSims(){
 export async function initApp(){
     initWebGpuSimsNavigationManager();
     await initWebGpuSims();
+
+    // const text = await fetchText("test/test.js");
+    // const schemaDef = parseSchema(text);
+    // const schema = new SimulationSchema(theDevice, schemaDef);
+    // for(const node of schema.computeNodes()){
+    //     msg(`test node:[${node.id}]`);
+    //     node.nodeShaderCode = await fetchText(`test/${node.id}.wgsl`);
+    // }
+
+    // await bootstrap(schema);
 }

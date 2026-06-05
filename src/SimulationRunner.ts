@@ -2,6 +2,7 @@
 import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel } from './utils.js';
 import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
 import { assert, getElementSize, MyError } from './utils.js';
+import { FunctionExpression } from './parser.js';
 
 export let theDevice: GPUDevice;
 export let theFormat: GPUTextureFormat;
@@ -354,7 +355,7 @@ export interface ISimulationSchema {
     resources: Record<string, ResourceDef>;
     shaders: NodeDef[];
     uis? : UIDef[];
-    script?: () => Generator<PassCommand, void, unknown>;
+    script?: FunctionExpression;
 }
 
 export class SimulationSchema {
@@ -363,7 +364,7 @@ export class SimulationSchema {
     shaders: NodeDef[];
     nodeMap : Map<string, NodeDef>;
     uis? : UIDef[];
-    script?: () => Generator<PassCommand, void, unknown>;
+    script?: FunctionExpression;
 
     constructor(device: GPUDevice, data: ISimulationSchema){
         theSchema = this;
@@ -554,7 +555,10 @@ export class SimulationSchema {
         this.nodeMap = new Map<string, NodeDef>(this.shaders.map(x => [x.id, x]));
 
         this.uis   = data.uis;
-        this.script = data.script;        
+        this.script = data.script;
+        if(data.script != undefined){
+            assert(data.script instanceof FunctionExpression);
+        }
     }
 
     computeNodes() : NodeDef[] {
@@ -576,6 +580,10 @@ export class SimulationSchema {
         else{
             return undefined;
         }
+    }
+
+    getComputeShaders() : ComputePassBuilder[] {
+        return Array.from(this.shaders).filter(x => x instanceof ComputePassBuilder) as ComputePassBuilder[];
     }
 }
 
@@ -791,23 +799,12 @@ export class SimulationRunner {
         return Array.from(theSchema.shaders).filter(x => x instanceof RenderPassBuilder) as RenderPassBuilder[];
     }
 
-    getComputeShaders() : ComputePassBuilder[] {
-        return Array.from(theSchema.shaders).filter(x => x instanceof ComputePassBuilder) as ComputePassBuilder[];
-    }
-
     getUniforms() : UniformDef[] {
         return Array.from(theSchema.resources.values()).filter(x => x instanceof UniformDef && x.obj != undefined) as UniformDef[];
     }
 
     initScript(){
-        if(theSchema.script != undefined){
-
-            this.generator = theSchema.script();
-        }
-        else{
-
-            this.generator = runSchema(this);
-        }
+        this.generator = runSchema(this, theSchema.script);
         this.startTime = NaN;
 
         for(const [key, def] of theSchema.resources.entries()){
@@ -844,17 +841,23 @@ export function getMesh(node : NodeDef) : MeshDef | undefined {
     return mesh;
 }
 
-export function* runSchema(runner : SimulationRunner) : Generator<PassCommand, void, unknown> {
+export function* runSchema(runner : SimulationRunner, script?:FunctionExpression) : Generator<PassCommand, void, unknown> {
     const uniforms = runner.getUniforms();
-    const shaders = runner.getComputeShaders();
+    const shaders = theSchema.getComputeShaders();
 
     while(true){
         for(const uni of uniforms){
             uni.update(uni.obj);
         }
 
-        for(const shader of shaders){
-            shader.dispatch(runner.currentCommandEncoder!);
+        if(script != undefined){
+            script.execFunction();
+        }
+        else{
+
+            for(const shader of shaders){
+                shader.dispatch(runner.currentCommandEncoder!);
+            }
         }
 
         yield 'frame';
