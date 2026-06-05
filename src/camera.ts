@@ -1,10 +1,10 @@
-import { mat4, vec3 } from 'gl-matrix';
+import { vec3, mat4 } from "gl-matrix";
 
 export class OrbitCamera {
     private canvas: HTMLCanvasElement;
     
     // --- Polar coordinate parameters of the camera ---
-    public target = [0.0, 0.0, 0.0]; // Target point (moved by panning)
+    public target = vec3.clone([0.0, 0.0, 0.0]); // Target point (moved by panning)
     public distance: number = 40.0;        // Distance to the camera (changed by zooming)
     public theta: number = 0.0;            // Horizontal angle (changed by rotation)
     public phi: number = Math.PI / 3;      // Vertical angle (changed by rotation)

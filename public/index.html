@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/TagInput.css">
     <link rel="stylesheet" href="css/editor.css">
+            <!-- "imports": { "gl-matrix": "./gl-matrix.js" } -->
+
+    <script type="importmap">
+        {
+            "imports": { "gl-matrix": "./gl-matrix/index.js" }
+        }
+    </script>    
 </head>
 <body>
 
@@ -161,7 +168,9 @@
     </div>
 </div>
 
-<script type="module" src="/src/start.ts"> </script>
-
+<script type="module">
+    import { initApp } from './js/main.js';
+    initApp();
+</script>
 </body>
 </html>

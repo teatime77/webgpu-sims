@@ -1,5 +1,5 @@
-import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "./SimulationRunner";
-import { $div } from "./utils";
+import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "./SimulationRunner.js";
+import { $div } from "./utils.js";
 
 // src/SimUI.ts
 

@@ -1,7 +1,7 @@
 // src/CaptureTool.ts
 
-import type { SimulationRunner } from "./SimulationRunner";
-import { $, $btn, $inp } from "./utils";
+import type { SimulationRunner } from "./SimulationRunner.js";
+import { $, $btn, $inp } from "./utils.js";
 
 export class CaptureTool {
     private isCapturing = false;

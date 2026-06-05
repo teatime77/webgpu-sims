@@ -1,7 +1,7 @@
 // src/SimulationRunner.ts
-import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel } from './utils';
-import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive';
-import { assert, getElementSize, MyError } from './utils';
+import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel } from './utils.js';
+import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
+import { assert, getElementSize, MyError } from './utils.js';
 
 export let theDevice: GPUDevice;
 export let theFormat: GPUTextureFormat;

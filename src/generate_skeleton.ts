@@ -1,6 +1,6 @@
-import { parseSchema } from './parser';
-import { SimulationSchema, theDevice } from './SimulationRunner';
-import { msg, StorageDef, UniformDef } from './utils';
+import { parseSchema } from './parser.js';
+import { SimulationSchema, theDevice } from './SimulationRunner.js';
+import { msg, StorageDef, UniformDef } from './utils.js';
 
 export function makeWgslSkeleton(schemaText : string) : string {
     const schemaDef = parseSchema(schemaText);

@@ -1,4 +1,4 @@
-import { theDevice } from './SimulationRunner';
+import { theDevice } from './SimulationRunner.js';
 
 export class MyError extends Error {
 }
@@ -9,6 +9,9 @@ export type ShadingModel = 'triangle-color' | 'vertex-color' | 'vertex-color-nor
 const TUBE_STRIDE = 12;
 const ARROW_STRIDE = 12;
 const SPHERE_STRIDE = 8;
+
+export let urlBase : string;
+export let thumbnailBlob : Blob;
 
 export function assert(ok : boolean){
     if(!ok){
@@ -52,6 +55,10 @@ export function $txt(id : string) : HTMLTextAreaElement {
     return $(id) as HTMLTextAreaElement;
 }
 
+export function $img(id : string) : HTMLImageElement {
+    return $(id) as HTMLImageElement;
+}
+
 export function showHtml(ele: HTMLElement){
     ele.style.display = "inline-block";    
 }
@@ -60,11 +67,31 @@ export function hideHtml(ele: HTMLElement){
     ele.style.display = "none";
 }
 
+export function parseURL(): [string, string, Map<string, string>] {
+    const url = document.location.href;
+    const parser = new URL(url);
+    assert(parser.origin + parser.pathname + parser.search == url);
+
+    const k = parser.pathname.lastIndexOf("/");
+    assert(k != -1);
+    urlBase = parser.origin + parser.pathname.substring(0, k);
+    msg(`origin:${parser.origin} pathname:${parser.pathname} url-base: ${urlBase}`)
+
+    const queryString = parser.search.substring(1);
+    const queries = queryString.split("&");
+
+    const params = new Map<string, string>();
+    queries.forEach(query => {
+        const [key, value] = query.split("=");
+        params.set(decodeURIComponent(key), decodeURIComponent(value));
+    });
+        
+    return [ parser.origin, parser.pathname, params];
+}
+
 export async function fetchText(fileURL: string) {
     if(!fileURL.startsWith("http")){
-        const url = document.location.href;
-        const parser = new URL(url);
-        fileURL = `${parser.origin}/${fileURL}`;
+        fileURL = `${urlBase}/${fileURL}`;
         msg(`fetch Text:${fileURL}`);
     }
 
@@ -159,6 +186,43 @@ export function downloadMarkdownFile(content: string): string {
     URL.revokeObjectURL(url);
 
     return filename;
+}
+
+
+export function captureThumbnail(): void {
+    const canvas = $("main-canvas") as HTMLCanvasElement;
+
+    // 2. Create a temporary 2D canvas
+    // const tempCanvas = $("temp-canvas") as HTMLCanvasElement
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const ctx = tempCanvas.getContext('2d');
+    if(ctx == null){
+        throw new MyError();
+    }
+
+    // 3. Draw the WebGPU canvas onto the 2D canvas immediately
+    ctx.drawImage(canvas, 0, 0);
+
+    // 4. Capture the image from the 2D canvas
+    tempCanvas.toBlob((blob) => {
+        if(blob == null){
+            throw new MyError();
+        }
+        thumbnailBlob = blob;
+
+        const imageUrl = URL.createObjectURL(blob);
+        msg(`img-blob:[${imageUrl}]`);
+        const img = $("thumbnail-img") as HTMLImageElement;
+
+        // 1. Clean up the old blob URL if one exists
+        if (img.src.startsWith('blob:')) {
+            URL.revokeObjectURL(img.src);
+        }
+
+        img.src = imageUrl;
+    }, 'image/png');
 }
 
 export function getElementSizeAlignment(format : string) : [number, number] {

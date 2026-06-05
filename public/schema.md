@@ -212,6 +212,12 @@ When implementing the TypeScript schema or WGSL logic, you MUST adhere to the fo
 **The Problem:** In Monte Carlo simulations or physics equations, probabilities and distances can get extremely small, underflowing to exactly `0.0`. If this value is used in a division (e.g., `p_proposal / p_current`), it results in `NaN`, freezing the particle in place or blacking out the screen.
 **The Rule:** Always guard divisions involving calculated densities or distances. Use `max(value, 1e-30)` to ensure denominators never hit absolute zero.
 
+### D. The Storage Buffer Pointer Trap
+**The Problem:** While the WGSL specification theoretically allows passing pointers to storage arrays into helper functions (e.g., `buffer: ptr<storage, array<f32>, read_write>`), browser shader compilers (like Chrome's Tint) often struggle to parse the dereferencing syntax `(*buffer)[offset]`. The compiler misinterprets the syntax and throws a fatal parsing error, typically stating: `error: expected '=' for assignment`.
+**The Rule:** Do not pass storage buffers as pointers to helper functions. Instead, design your helper functions to directly access the globally scoped storage variables. 
+* **Incorrect:** `fn write_data(buffer: ptr<storage, array<f32>, read_write>, idx: u32) { (*buffer)[idx] = 1.0; }`
+* **Correct:** `fn write_data(idx: u32) { GlobalBuffer[idx] = 1.0; }` // Accesses the @binding directly
+
 ---
 
 # Examples

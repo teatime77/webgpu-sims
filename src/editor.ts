@@ -1,7 +1,7 @@
 // 1. TYPES & INTERFACES
 
-import { theSchema } from "./SimulationRunner";
-import { assert, $, MyError } from "./utils";
+import { theSchema } from "./SimulationRunner.js";
+import { assert, $, MyError } from "./utils.js";
 
 // Define exactly what types of tokens our lexer is allowed to produce
 type TokenType = 'default' | 'keyword' | 'type' | 'attribute' | 'number' | 'comment' | 'bracket';
@@ -215,8 +215,12 @@ export function makeShaderEditors(){
         const textarea = document.createElement("textarea");
         const canvas = document.createElement("canvas");
 
-        assert(node.nodeShaderCode != undefined);
-        textarea.value = node.nodeShaderCode!;
+        if(node.nodeShaderCode == undefined){
+            textarea.value = "";
+        }
+        else{
+            textarea.value = node.nodeShaderCode;
+        }
 
         editorDiv.className = "editor-container";
         

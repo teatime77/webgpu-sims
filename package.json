@@ -1,0 +1,7 @@
+{
+  "name": "webgpu-sims",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./public/js/index.js",
+  "types": "./public/js/index.d.ts"
+}

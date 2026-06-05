@@ -1,11 +1,18 @@
 // src/main.ts
-import { OrbitCamera } from './camera';
-import { CaptureTool } from './CaptureTool';
-import { ComputePassBuilder, getMesh, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner';
-import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner';
-import { makeUIs } from './SimUI';
-import { assert, fetchText, MeshDef, MyError, UniformDef } from './utils';
-import { captureThumbnail, captureThumbnailFlag } from './start';
+import { OrbitCamera } from './camera.js';
+import { CaptureTool } from './CaptureTool.js';
+import { ComputePassBuilder, getMesh, initDevice, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner.js';
+import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner.js';
+import { makeUIs } from './SimUI.js';
+import { $btn, $div, assert, copyToClipboard, fetchText, MeshDef, msg, MyError, parseURL, showToast, UniformDef } from './utils.js';
+import { initEventHandler, initWebGpuSimsNavigationManager, appManager, AppManager } from './start.js';
+
+export let schemaText : string;
+let afterFrame : (()=>void) | undefined;
+
+export function setAfterFrame(fnc : ()=>void){
+    afterFrame = fnc;
+}
 
 export async function bootstrap(sim: SimulationSchema) {
     const runner = new SimulationRunner();
@@ -173,8 +180,9 @@ export async function bootstrap(sim: SimulationSchema) {
 
         theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
 
-        if(captureThumbnailFlag){
-            captureThumbnail();
+        if(afterFrame != undefined){
+            afterFrame();
+            afterFrame = undefined;
         }
         
         runner.currentCommandEncoder = null;
@@ -182,4 +190,22 @@ export async function bootstrap(sim: SimulationSchema) {
     }
 
     frame();
+}
+
+export async function initWebGpuSims(){
+    parseURL();
+
+    await initDevice();
+    fetchText("schema.md").then((value:string)=>{
+        schemaText = value;
+        msg("schema loaded");
+        $btn("wizard-btn").disabled = false;
+    });
+
+    initEventHandler();
+}
+
+export async function initApp(){
+    initWebGpuSimsNavigationManager();
+    await initWebGpuSims();
 }

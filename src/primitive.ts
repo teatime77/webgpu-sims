@@ -1,6 +1,6 @@
 // src/primitive.ts
-import { range } from './utils';
-import { Vec3, vecNormalize } from './vec3';
+import { range } from './utils.js';
+import { Vec3, vecNormalize } from './vec3.js';
 
 function setPosNorm(v : Float32Array, base : number, x : number, y : number, z : number, nx : number, ny : number, nz : number){
     v[base    ] = x;
