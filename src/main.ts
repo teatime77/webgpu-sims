@@ -59,6 +59,10 @@ export async function bootstrap(sim: SimulationSchema) {
                     fileName = "tube_render.wgsl"; 
                     node.topology = 'triangle-strip';
                     break;
+                case "cylinder"  : 
+                    fileName = "cylinder_render.wgsl"; 
+                    node.topology = 'triangle-strip';
+                    break;
                 case "arrow" : 
                     fileName = "arrow_render.wgsl"; 
                     node.topology = 'triangle-list';

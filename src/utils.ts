@@ -3,12 +3,8 @@ import { theDevice } from './SimulationRunner.js';
 export class MyError extends Error {
 }
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
-export type MeshShape = "sphere" | "tube" | "arrow";
+export type MeshShape = "sphere" | "tube" | "cylinder" | "arrow";
 export type ShadingModel = 'triangle-color' | 'vertex-color' | 'vertex-color-normal';
-
-const TUBE_STRIDE = 12;
-const ARROW_STRIDE = 12;
-const SPHERE_STRIDE = 8;
 
 export let urlBase : string;
 export let thumbnailBlob : Blob;
@@ -259,9 +255,12 @@ export function getElementSize(format : string) : number {
 
 export function getShapeStride(shape: MeshShape) : number {
     switch(shape){
-    case "sphere": return SPHERE_STRIDE;
-    case "tube"  : return TUBE_STRIDE;
-    case "arrow" : return ARROW_STRIDE;
+    case "sphere": 
+        return 8;
+    case "tube"  :
+    case "cylinder":
+    case "arrow" :
+        return 12;
     default:       throw new MyError();
     }
 }

@@ -97,6 +97,64 @@ export function makeGeodesicPolyhedron(subdivisions: number = 2): Float32Array {
     return result;
 }
 
+/**
+ * Generates a vertex array (Pos3, Normal3) for a cylinder with top and bottom caps.
+ * The cylinder originates at (0,0,0) and extends to (0,1,0) with a base radius of 1.0.
+ */
+export function makeCylinderMesh(numDivision?: number): Float32Array {
+    const radialSegments = numDivision ?? 16;
+    
+    // 1. Side wall (radialSegments * 2 triangles) -> 6 vertices
+    // 2. Top cap (radialSegments triangles) -> 3 vertices
+    // 3. Bottom cap (radialSegments triangles) -> 3 vertices
+    // Total vertices per segment = 12
+    const vertexCount = radialSegments * 12;
+    const vertexArray = new Float32Array(vertexCount * 6);
+    
+    let idx = 0;
+    
+    function pushVertex(x: number, y: number, z: number, nx: number, ny: number, nz: number) {
+        vertexArray[idx++] = x;
+        vertexArray[idx++] = y;
+        vertexArray[idx++] = z;
+        vertexArray[idx++] = nx;
+        vertexArray[idx++] = ny;
+        vertexArray[idx++] = nz;
+    }
+    
+    for (let i = 0; i < radialSegments; i++) {
+        const theta1 = (i * 2 * Math.PI) / radialSegments;
+        const theta2 = ((i + 1) * 2 * Math.PI) / radialSegments;
+        
+        const cos1 = Math.cos(theta1);
+        const sin1 = Math.sin(theta1);
+        const cos2 = Math.cos(theta2);
+        const sin2 = Math.sin(theta2);
+        
+        // --- 1. Side Wall ---
+        pushVertex(cos1, 0.0, sin1, cos1, 0, sin1);
+        pushVertex(cos2, 0.0, sin2, cos2, 0, sin2);
+        pushVertex(cos1, 1.0, sin1, cos1, 0, sin1);
+        
+        pushVertex(cos1, 1.0, sin1, cos1, 0, sin1);
+        pushVertex(cos2, 0.0, sin2, cos2, 0, sin2);
+        pushVertex(cos2, 1.0, sin2, cos2, 0, sin2);
+        
+        // --- 2. Top Cap ---
+        // Normal points straight up (+Y)
+        pushVertex(0.0, 1.0, 0.0, 0, 1, 0);
+        pushVertex(cos1, 1.0, sin1, 0, 1, 0);
+        pushVertex(cos2, 1.0, sin2, 0, 1, 0);
+        
+        // --- 3. Bottom Cap ---
+        // Normal points straight down (-Y). Winding order is reversed (cos2 then cos1) to face outward.
+        pushVertex(0.0, 0.0, 0.0, 0, -1, 0);
+        pushVertex(cos2, 0.0, sin2, 0, -1, 0);
+        pushVertex(cos1, 0.0, sin1, 0, -1, 0);
+    }
+
+    return vertexArray;
+}
 
 export function makeArrowMesh(shape : { numDivision?: number, scale? : [number, number, number], position? : [number, number, number]}): Float32Array<ArrayBuffer> {
     const radialSegments = shape.numDivision ?? 16;

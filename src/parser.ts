@@ -338,10 +338,19 @@ class CallStatement extends Statement {
             if(this.callExpr.callee instanceof Identifier){
                 assert(this.callExpr.callee.name == "execute");
                 if(this.callExpr.arguments.length == 1){
-                    const shaderName = this.callExpr.arguments[0];
-                    if(shaderName instanceof Identifier){
-                        this.shader = theSchema.nodeMap.get(shaderName.name) as ComputePassBuilder;
+                    const shaderNameTerm = this.callExpr.arguments[0];
+                    let shaderName : string;
+                    if(shaderNameTerm instanceof Identifier){
+                        shaderName = shaderNameTerm.name;
                     }
+                    else if(shaderNameTerm instanceof Literal){
+                        shaderName = shaderNameTerm.getString();
+                    }
+                    else{
+                        throw new MyError();
+                    }
+
+                    this.shader = theSchema.nodeMap.get(shaderName) as ComputePassBuilder;
                 }
             }
 

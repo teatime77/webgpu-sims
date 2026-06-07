@@ -1,6 +1,6 @@
 // src/SimulationRunner.ts
 import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel } from './utils.js';
-import { makeArrowMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
+import { makeArrowMesh, makeCylinderMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
 import { assert, getElementSize, MyError } from './utils.js';
 import { FunctionExpression } from './parser.js';
 
@@ -382,6 +382,9 @@ export class SimulationSchema {
                     break;
                 case "tube":
                     def.data = makeTube(def.division);
+                    break;
+                case "cylinder":
+                    def.data = makeCylinderMesh(def.division);
                     break;
                 case "arrow":
                     def.data = makeArrowMesh({});

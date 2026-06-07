@@ -87,10 +87,11 @@ If the buffer generates procedural geometry without a mesh, specify a `topology`
       * **Count Calculation:** `NUM_VERTICES * 10`
 
 * **Meshes:**
-* Format: `{ type: 'mesh', shape: '[tube|arrow|sphere]', division: [Number] }`
+* Format: `{ type: 'mesh', shape: '[tube|cylinder|arrow|sphere]', division: [Number] }`
 
 The average division values ​​for each type are as follows:
 * tube : 16
+* cylinder : 16
 * arrow : 16
 * sphere : 2
 
