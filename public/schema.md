@@ -42,7 +42,7 @@ The `resources` field is a **Key-Value Dictionary (Object)**. Order does not mat
 **Resource Types:**
 
 * **Uniforms:**
-* Format: `{ type: 'uniform', obj: [Reference to state object] }`
+* Format: `{ type: "uniform", obj: [Reference to state object] }`
 
 If the name of the uniform variable is `Params` and the object pointed to by `obj` has `time` property , the app sets the elapsed time to `time`.
 
@@ -51,14 +51,25 @@ The elapsed time is in seconds, and the value of `time` is 0 on the first shader
 Compute shaders can perform initialization when the value of `time` is 0.
 
 * **Storage Buffers:**
-* Format: `{ type: 'storage', format: '[wgsl_type]', count: [Number], meshRef?: '[MeshKey]', topology?: '[Topology]', shadingModel?: '[ShadingModel]' }`
+* Format:
+```typescript
+{
+    type: "storage",
+    format: "f32" | "u32" | "i32" | "vec2<f32>" | "vec3<f32>" | "vec4<f32>" | "mat4x4<f32>", 
+    count: number, 
+    meshRef?: string, 
+    topology?: "point-list" | "line-list" | "triangle-list", 
+    shadingModel?: "triangle-color" | "vertex-color" | "vertex-color-normal",
+    canvasId? : string
+}
+```
 
 **Storage Buffer Rendering Modes:**
 Depending on how the storage buffer is visualized, it must adhere to one of the following architectural patterns:
 
-**1. Mesh Instancing **
+**1. Mesh Instancing**
 If the buffer drives a 3D mesh (like a sphere or tube), include `meshRef`.
-* `meshRef: "[MeshKey]"` (must match a key in the `resources` object).
+* `meshRef` (must match a key in the `resources` object).
 
 **2. Procedural Topologies**
 If the buffer generates procedural geometry without a mesh, specify a `topology`. The memory layout (stride) must strictly match the rules below to ensure the WebGPU vertex puller calculates offsets correctly. 
@@ -87,13 +98,17 @@ If the buffer generates procedural geometry without a mesh, specify a `topology`
       * **Count Calculation:** `NUM_VERTICES * 10`
 
 * **Meshes:**
-* Format: `{ type: 'mesh', shape: '[tube|cylinder|arrow|sphere]', division: [Number] }`
+* Format: `{ type: "mesh", shape: '[tube|cylinder|arrow|sphere]', division: [Number] }`
 
 The average division values ​​for each type are as follows:
 * tube : 16
 * cylinder : 16
 * arrow : 16
 * sphere : 2
+
+#### canvasId (optional)
+
+By default, the app draws on the main canvas, but you can also draw on the other canvas as specified in `Section D. Additional Canvases` (described later).
 
 *AI Generation Rule:* Use exact object keys as the resource IDs. Ensure no duplicate keys exist.
 
@@ -103,14 +118,14 @@ The `shaders` field is an **Array of Objects**. Order **strictly matters**. This
 
 **Shader Pass Properties:**
 
-* `id`: A unique string identifier for the shader pass (e.g., `'pendulum_comp'`).
-* `type`: The type of pass (e.g., `'compute'`).
+* `id`: A unique string identifier for the shader pass (e.g., `"pendulum_comp"`).
+* `type`: The type of pass (e.g., `"compute"`).
 * `workgroupSize`: Integer representing local invocation size (e.g., `64`).
 * `workgroupCount`: Total dispatches (usually calculated via constants).
 * `bindings`: An array mapping the previously defined `resources` to WGSL variables.
 * `resource`: Must exactly match a key defined in the `resources` object.
 * `varName`: The variable name to be injected into the WGSL code.
-* `access`: Set to `'read_write'` for mutable storage buffers.
+* `access`: Set to `"read_write"` for mutable storage buffers.
 
 ---
 
@@ -143,8 +158,6 @@ Renders an HTML `<input type="range" />` slider. Use this for continuous numeric
 
 ```
 
-
-
 #### 2. Select Component (`type: "select"`)
 
 Renders an HTML `<select>` dropdown menu. Use this for switching between discrete states or mathematical modes.
@@ -153,8 +166,6 @@ Renders an HTML `<select>` dropdown menu. Use this for switching between discret
 * `options` (Array): An array of objects defining the dropdown choices. Each object must strictly contain:
 * `value` (Number): The numeric value assigned to the state variable when this option is selected.
 * `text` (String): The human-readable label for the `<option>` tag.
-
-
 
 
 * **Example:**
@@ -173,7 +184,27 @@ Renders an HTML `<select>` dropdown menu. Use this for switching between discret
 
 ```
 
-### D. `script` (optional)
+### D. Additional `canvases` (optional)
+
+By default, the app draws on the main canvas, but you can also draw on multiple additional canvases.
+
+* **Canvas Properties:**
+* `id` (string): The minimum allowed value.
+* `width` (number): width of HTMLCanvasElement.
+* `height` (number): height of HTMLCanvasElement.
+
+#### Example:
+```js
+const schema = {
+    // ...
+    canvases: [
+        { id: "another-canvas", width: 800, height: 600 }
+    ]
+    // ...
+};
+```
+
+### E. `script` (optional)
 
 By default, the shaders in `shaders` are executed sequentially once each time a frame is rendered.
 
@@ -182,7 +213,7 @@ If you want to change the number of times a specific shader is executed, you can
 For example, the following script executes shaderB three times.
 ```js
 const schema = {
-    // The code up to this point is omitted.
+    // ...
     script: ()=>{
         execute(shaderA);
         for(const _ of range(3)){
@@ -198,7 +229,7 @@ const schema = {
 When generating this schema, ensure that:
 
 1. Every `resource` referenced in `shaders[].bindings` exists in the `resources` object.
-2. Every `meshRef` referenced in a storage buffer exists as a `type: 'mesh'` resource.
+2. Every `meshRef` referenced in a storage buffer exists as a `type: "mesh"` resource.
 3. Every `name` referenced in the `uis` array exists in the `state` object.
 
 ## 3. Common WebGPU Gotchas & Best Practices
@@ -219,10 +250,19 @@ When implementing the TypeScript schema or WGSL logic, you MUST adhere to the fo
 **The Rule:** Always guard divisions involving calculated densities or distances. Use `max(value, 1e-30)` to ensure denominators never hit absolute zero.
 
 ### D. The Storage Buffer Pointer Trap
-**The Problem:** While the WGSL specification theoretically allows passing pointers to storage arrays into helper functions (e.g., `buffer: ptr<storage, array<f32>, read_write>`), browser shader compilers (like Chrome's Tint) often struggle to parse the dereferencing syntax `(*buffer)[offset]`. The compiler misinterprets the syntax and throws a fatal parsing error, typically stating: `error: expected '=' for assignment`.
+**The Problem:** While the WGSL specification theoretically allows passing pointers to storage arrays into helper functions (e.g., `buffer: ptr<storage, array<f32>, read_write>`), browser shader compilers (like Chrome's Tint) often struggle to parse the dereferencing syntax `(*buffer)[offset]`. The compiler misinterprets the syntax and throws a fatal parsing error, typically stating: `error: expected "=" for assignment`.
 **The Rule:** Do not pass storage buffers as pointers to helper functions. Instead, design your helper functions to directly access the globally scoped storage variables. 
 * **Incorrect:** `fn write_data(buffer: ptr<storage, array<f32>, read_write>, idx: u32) { (*buffer)[idx] = 1.0; }`
 * **Correct:** `fn write_data(idx: u32) { GlobalBuffer[idx] = 1.0; }` // Accesses the @binding directly
+
+### E. The Underscore Identifier Trap (Discarding Return Values)
+
+**The Problem:** When calling a function solely for its side effects (like warming up a random number generator) and discarding the return value, developers coming from languages like Rust or Swift instinctively write `let _ = function_call();`. However, the WGSL compiler (especially Chrome's Tint) strictly forbids using the underscore `_` as a variable identifier in a `let` declaration. Doing so will immediately trigger a parsing error: `error: expected identifier for 'let' declaration`.
+**The Rule:** To discard a return value safely in WGSL, you must either use the "phony assignment" syntax by omitting the `let` keyword entirely, or assign the result to a named dummy variable.
+
+* **Incorrect:** `let _ = rand();`
+* **Correct (Phony Assignment):** `_ = rand();`
+* **Correct (Named Dummy):** `let dummy = rand();`
 
 ---
 

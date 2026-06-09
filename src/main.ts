@@ -4,7 +4,7 @@ import { CaptureTool } from './CaptureTool.js';
 import { ComputePassBuilder, getMesh, initDevice, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $btn, $div, assert, copyToClipboard, fetchText, MeshDef, msg, MyError, parseURL, showToast, UniformDef } from './utils.js';
+import { $btn, $canvas, $div, assert, copyToClipboard, fetchText, MeshDef, msg, MyError, parseURL, showToast, UniformDef } from './utils.js';
 import { initEventHandler, initWebGpuSimsNavigationManager, appManager, AppManager } from './start.js';
 import { parseSchema } from './parser.js';
 import { setNodeShaderCode } from './editor.js';
@@ -19,18 +19,16 @@ export function setAfterFrame(fnc : ()=>void){
 export async function bootstrap(sim: SimulationSchema) {
     const runner = new SimulationRunner();
 
-    runner.addCanvas('main-canvas');
-
-    const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-
-    const camera = new OrbitCamera(canvas);
-    camera.distance = 5.0;   
+    const mainCanvas = $canvas("main-canvas");
+    runner.addCanvas(mainCanvas.id, mainCanvas);
 
     new CaptureTool(runner);
 
     if(sim.uis){
         makeUIs(runner, sim);
     }
+
+    runner.makeCanvases(sim);
 
     const format = runner.getFormat();
 
@@ -153,22 +151,16 @@ export async function bootstrap(sim: SimulationSchema) {
 
     runner.initScript();
 
-    function frame() {
+        function frame() {
         if(theSchema == undefined || theSchema.shaders.length == 0){
             return;
         }
 
-        const aspect = canvas.width / canvas.height;
-        const matrices = camera.getMatrices(aspect);
-        const nums = matrices.viewProjection.concat(matrices.view);
-        writeUniformArray('Camera', nums)
-
+        // 1. Initialize command encoder and run Compute Shaders first
         runner.currentCommandEncoder = theDevice.createCommandEncoder();
 
         while (true) {
-
             runner.setTime();
-
             const result = runner.generator!.next();
             if (result.done) break;
             
@@ -176,15 +168,41 @@ export async function bootstrap(sim: SimulationSchema) {
             if (val === 'frame') break;
         }
 
-        const renders = runner.getRenders();
-        for(const [idx, render] of renders.entries()){
-            if(render.vertexCount == undefined){
-                throw new MyError();
-            }
-            theRunner.render(render.id, render.vertexCount, render.instanceCount, true, idx == 0, render.canvasId);
-        }
-
+        // Submit compute passes immediately
         theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
+
+        const renders = runner.getRenders();
+        const clearedCanvases = new Set<string>();
+        
+        // 2. Process each canvas with isolated, individual command encoders
+        for(const canvasDef of theSchema.canvases!){
+            
+            const aspect = canvasDef.canvas.width / canvasDef.canvas.height;
+            const matrices = canvasDef.camera.getMatrices(aspect);
+            const nums = matrices.viewProjection.concat(matrices.view);
+            
+            // Write the matrices for THIS specific canvas into the shared buffer
+            writeUniformArray('Camera', nums);
+
+            // Create a dedicated, clean command encoder for this canvas block
+            const canvasEncoder = theDevice.createCommandEncoder();
+            runner.currentCommandEncoder = canvasEncoder; // Re-route the runner to use this encoder
+
+            const rendersforCanvas = renders.filter(x => x.getCanvasId() == canvasDef.id);
+            for(const render of rendersforCanvas){
+                if(render.vertexCount == undefined){
+                    throw new MyError();
+                }
+
+                const shouldClear = !clearedCanvases.has(canvasDef.id);
+                clearedCanvases.add(canvasDef.id);
+
+                theRunner.render(render, true, shouldClear);
+            }
+
+            // 🌟 SUBMIT IMMEDIATELY: Locks in the draw calls with the current uniform state
+            theDevice.queue.submit([canvasEncoder.finish()]);
+        }
 
         if(afterFrame != undefined){
             afterFrame();

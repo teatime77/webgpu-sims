@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { msg, assert, MyError, range } from "./utils.js";
-import { ComputePassBuilder, theRunner, theSchema, type ButtonDef, type ISimulationSchema, type NodeDef, type RangeDef, type SelectDef, type UIDef } from "./SimulationRunner.js";
+import { CanvasDef, ComputePassBuilder, theRunner, theSchema, type ButtonDef, type ISimulationSchema, type NodeDef, type RangeDef, type SelectDef, type UIDef } from "./SimulationRunner.js";
 
 type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string | FunctionExpression;
 
@@ -262,6 +262,10 @@ export class GroupExpression extends BaseASTNode {
 
     toSource(): string {
         return `(${this.expression.toSource()})`;
+    }
+
+    getValue() : ValueType {
+        return this.expression.getValue();
     }
 }
 
@@ -670,6 +674,7 @@ export class Parser {
 
         const value = init.getValue();
         constValues.set(va.name, value);
+        msg(`const-Values:${va.name} = ${value}`);
 
         return va;
     }
@@ -941,6 +946,7 @@ function readResource(resourceObj:ObjectExpression) {
             break;
         case "topology":
         case "shadingModel":
+        case "canvasId":
             data[key] = value.getString();
             break;
         default:
@@ -1058,6 +1064,28 @@ function readUIs(obj : ObjectExpression) : UIDef {
     }
 }
 
+function readCanvases(obj : ObjectExpression) : CanvasDef {
+    assert(obj instanceof ObjectExpression);
+    const data : CanvasDef = {} as CanvasDef;
+
+    for(const {key, value} of obj.properties){
+        switch(key){
+        case "id":
+            data[key] = value.getString();
+            break;
+        case "width":
+        case "height":
+            data[key] = value.getNumber();
+            break;
+        default:
+            throw new MyError();
+        }
+    }
+
+    assert([data.id, data.width, data.height].every(x => x != undefined));
+    return data;
+}
+
 function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
     const schema : any = {};
 
@@ -1076,12 +1104,16 @@ function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
             assert(value instanceof ArrayExpression);
             schema[key] = (value as ArrayExpression).elements.map(x => readUIs(x as ObjectExpression));
             break;
+        case "canvases":
+            assert(value instanceof ArrayExpression);
+            schema[key] = (value as ArrayExpression).elements.map(x => readCanvases(x as ObjectExpression));
+            break;
         case "script":
             schema[key] = value;
             break;
+            
         default:
-            msg(`skip property:${key}`);
-            break;
+            throw new MyError(`skip property:${key}`);
         }
     }
 

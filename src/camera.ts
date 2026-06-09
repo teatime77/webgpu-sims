@@ -1,11 +1,12 @@
 import { vec3, mat4 } from "gl-matrix";
+import { msg } from "./utils.js";
 
 export class OrbitCamera {
     private canvas: HTMLCanvasElement;
     
     // --- Polar coordinate parameters of the camera ---
     public target = vec3.clone([0.0, 0.0, 0.0]); // Target point (moved by panning)
-    public distance: number = 40.0;        // Distance to the camera (changed by zooming)
+    public distance: number = 5.0;        // Distance to the camera (changed by zooming)
     public theta: number = 0.0;            // Horizontal angle (changed by rotation)
     public phi: number = Math.PI / 3;      // Vertical angle (changed by rotation)
 
@@ -96,6 +97,7 @@ export class OrbitCamera {
         // When the wheel is turned
         this.canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
+            // msg(`wheel:${(e.target as HTMLCanvasElement).id}`)
             // [Wheel: Zoom]
             this.distance += e.deltaY * this.distance * 0.001;
             this.distance = Math.max(1.0, this.distance); // Prevent getting too close

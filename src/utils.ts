@@ -55,6 +55,10 @@ export function $img(id : string) : HTMLImageElement {
     return $(id) as HTMLImageElement;
 }
 
+export function $canvas(id : string) : HTMLCanvasElement {
+    return $(id) as HTMLCanvasElement;
+}
+
 export function showHtml(ele: HTMLElement){
     ele.style.display = "inline-block";    
 }
@@ -303,6 +307,7 @@ export class StorageDef extends ResourceDef {
     meshRef? : string;
     topology?: GPUPrimitiveTopology;
     shadingModel? : ShadingModel;
+    canvasId?: string;
 
     constructor(id: string, data : any){
         super(id);

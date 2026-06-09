@@ -1,8 +1,9 @@
 // src/SimulationRunner.ts
-import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel } from './utils.js';
+import { msg, ResourceDef, MeshDef, UniformDef, StorageDef, getShapeStride, $div, type ShadingModel, $canvas } from './utils.js';
 import { makeArrowMesh, makeCylinderMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
 import { assert, getElementSize, MyError } from './utils.js';
 import { FunctionExpression } from './parser.js';
+import { OrbitCamera } from './camera.js';
 
 export let theDevice: GPUDevice;
 export let theFormat: GPUTextureFormat;
@@ -59,7 +60,6 @@ export abstract class NodeDef {
     bindings!: ResourceBinding[];
     vertexCount?: number;
     instanceCount?: number;
-    canvasId?: string;
     nodeShaderCode? : string;
 
     constructor(data : any){
@@ -205,10 +205,15 @@ export class RenderPassBuilder extends NodeDef {
     hasDepth : boolean = true;
     topology?: GPUPrimitiveTopology;
     shadingModel? : ShadingModel;
+    canvasId?: string;
 
     constructor(data : any){
         super(data);
         Object.assign(this, data);
+    }
+
+    getCanvasId() : string {
+        return this.canvasId ?? "main-canvas";
     }
 
     initRenderPass(
@@ -349,12 +354,21 @@ export interface ButtonDef extends UIDef {
 
 export type PassCommand = 'frame' | undefined;
 
+export interface CanvasDef {
+    id : string;
+    width : number;
+    height : number;
+    canvas :HTMLCanvasElement;
+    context : GPUCanvasContext;
+    camera : OrbitCamera;
+}
 
 export interface ISimulationSchema {
     name?: string;
     resources: Record<string, ResourceDef>;
     shaders: NodeDef[];
     uis? : UIDef[];
+    canvases?: CanvasDef[];
     script?: FunctionExpression;
 }
 
@@ -364,6 +378,7 @@ export class SimulationSchema {
     shaders: NodeDef[];
     nodeMap : Map<string, NodeDef>;
     uis? : UIDef[];
+    canvases?: CanvasDef[];
     script?: FunctionExpression;
 
     constructor(device: GPUDevice, data: ISimulationSchema){
@@ -476,6 +491,7 @@ export class SimulationSchema {
                 type: 'render',
                 vertexCount: mesh.data.length / (3 + 3),    // position + norm
                 instanceCount: res.count! / stride,
+                canvasId : res.canvasId,
                 bindings: [
                     { resource: 'Camera' },
                     { resource: res.id, varName: 'instances' },
@@ -540,6 +556,7 @@ export class SimulationSchema {
                 shadingModel : res.shadingModel,
                 vertexCount: vertexCount,
                 instanceCount: instanceCount, // 🌟 Now properly passed to passEncoder.draw()
+                canvasId : res.canvasId,
                 bindings: [
                     { resource: 'Camera' },
                     { resource: res.id, varName: 'instances' },
@@ -558,6 +575,7 @@ export class SimulationSchema {
         this.nodeMap = new Map<string, NodeDef>(this.shaders.map(x => [x.id, x]));
 
         this.uis   = data.uis;
+        this.canvases = data.canvases;
         this.script = data.script;
         if(data.script != undefined){
             assert(data.script instanceof FunctionExpression);
@@ -592,7 +610,6 @@ export class SimulationSchema {
 
 export class SimulationRunner {
     public currentCommandEncoder: GPUCommandEncoder | null = null;
-    private initializedCanvases = new Set<string>(['main-canvas']);
     public generator? : Generator<PassCommand, void, unknown>;
     startTime : number = 0;
     
@@ -638,13 +655,7 @@ export class SimulationRunner {
      * Register the canvas with the engine and set it up for drawing with WebGPU.
      * @param canvasId The ID of the canvas element in HTML
      */
-    addCanvas(canvasId: string): GPUCanvasContext | null {
-        const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-        if (!canvas) {
-            console.error(`Canvas ID '${canvasId}' not found.`);
-            return null;
-        }
-
+    addCanvas(canvasId : string, canvas: HTMLCanvasElement): GPUCanvasContext | null {
         const context = canvas.getContext('webgpu') as unknown as GPUCanvasContext;
         if (!context) {
             console.error("Failed to get WebGPU context.");
@@ -726,47 +737,68 @@ export class SimulationRunner {
         theDevice.queue.writeBuffer(this.getUniformBuffer(name), 0, arrayData);
     }
 
-    initCanvas(canvasId : string){
-        if (this.initializedCanvases.has(canvasId)) {
-            return;
-        }
+    makeCanvases(sim: SimulationSchema){
+        const mainCanvas = $canvas("main-canvas");
+        this.addCanvas(mainCanvas.id, mainCanvas);
 
-        // Automatically create a canvas if it does not exist in the DOM
-        if (!document.getElementById(canvasId)) {
-            const container = $div('sub-canvases');
-            container.style.display = "block";
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = 'sub-canvas-wrapper';
-            
-            const label = document.createElement('div');
-            label.innerText = canvasId;
-            label.className = 'sub-canvas-label';
-            
-            const newCanvas = document.createElement('canvas');
-            newCanvas.id = canvasId;
-            newCanvas.width = 256;
-            newCanvas.height = 256;
-            if (canvasId != 'main-canvas') {
+        const mainCanvasDef = {
+            id : mainCanvas.id,
+            width : mainCanvas.width,
+            height : mainCanvas.height
+        } as CanvasDef;
+
+        const container = $div('sub-canvases');
+        container.innerHTML = "";
+
+        if(sim.canvases == undefined){
+            sim.canvases = [ mainCanvasDef ]
+        }
+        else{
+            for(const canvasDef of sim.canvases){
+                container.style.display = "block";
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'sub-canvas-wrapper';
+                
+                const label = document.createElement('div');
+                label.innerText = canvasDef.id;
+                label.className = 'sub-canvas-label';
+                
+                const newCanvas = document.createElement('canvas');
+                newCanvas.id = canvasDef.id;
+                newCanvas.width = canvasDef.width;
+                newCanvas.height = canvasDef.height;
                 newCanvas.className = 'debug-canvas';
+                newCanvas.style.borderStyle = "ridge";
+                newCanvas.style.borderWidth = "5px";
+                
+                wrapper.appendChild(label);
+                wrapper.appendChild(newCanvas);
+                container.appendChild(wrapper);
+
+                this.addCanvas(canvasDef.id, newCanvas);
             }
-            
-            wrapper.appendChild(label);
-            wrapper.appendChild(newCanvas);
-            container.appendChild(wrapper);
+
+            sim.canvases.unshift(mainCanvasDef);
         }
 
-        this.addCanvas(canvasId);
-        this.initializedCanvases.add(canvasId);
+
+        for(const canvasDef of sim.canvases){
+            canvasDef.canvas = $canvas(canvasDef.id);
+            canvasDef.context = this.contexts.get(canvasDef.id)!;
+            assert(canvasDef.canvas != undefined && canvasDef.context != undefined);
+            canvasDef.camera = new OrbitCamera(canvasDef.canvas);
+        }
     }
 
     // Added clearScreen parameter with a default of true
-    render(id: string, vertexCount: number, instanceCount = 1, hasDepth?: boolean, clearScreen: boolean = true, canvasId = 'main-canvas') {
+    render(render : RenderPassBuilder, hasDepth?: boolean, clearScreen: boolean = true) {
+        const instanceCount = render.instanceCount ?? 1;
+        const canvasId = render.canvasId ?? 'main-canvas';
+
         if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
 
-        this.initCanvas(canvasId);
-
-        const builder = theSchema.getNode(id) as RenderPassBuilder;
+        const builder = theSchema.getNode(render.id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
 
         // 🌟 FIX: If instanceCount is explicitly passed as undefined or null, force it to fallback to builder's property or 1
@@ -793,7 +825,7 @@ export class SimulationRunner {
         const rPass = this.currentCommandEncoder.beginRenderPass(passDesc);
         
         // 🌟 Use the sanitized finalInstanceCount here
-        builder.draw(rPass, vertexCount, finalInstanceCount);
+        builder.draw(rPass, render.vertexCount!, finalInstanceCount);
         
         rPass.end();
     }
