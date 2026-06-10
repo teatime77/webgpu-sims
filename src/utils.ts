@@ -92,7 +92,7 @@ export function parseURL(): [string, string, Map<string, string>] {
 export async function fetchText(fileURL: string) {
     if(!fileURL.startsWith("http")){
         fileURL = `${urlBase}/${fileURL}`;
-        msg(`fetch Text:${fileURL}`);
+        // msg(`fetch Text:${fileURL}`);
     }
 
 
@@ -111,7 +111,7 @@ export async function copyToClipboard(textToCopy: string): Promise<void> {
   try {
     // navigator.clipboard.writeText() takes a string and returns a Promise
     await navigator.clipboard.writeText(textToCopy);
-    console.log(`Text successfully copied to clipboard!\n${textToCopy}`);
+    msg(`Text successfully copied to clipboard!\n`);
     
     // Optional: You could trigger a UI notification (toast) here
   } catch (error) {

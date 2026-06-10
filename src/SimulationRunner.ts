@@ -464,7 +464,7 @@ export class SimulationSchema {
             const def = new UniformDef("Camera", Camera);
             def.initUniform(device);
             this.resources.set("Camera", def);
-            msg("make camera");
+            // msg("make camera");
         }
 
         this.shaders = data.shaders.map(x => {
@@ -844,7 +844,7 @@ export class SimulationRunner {
 
         for(const [key, def] of theSchema.resources.entries()){
             if(def instanceof MeshDef){
-                msg(`mesh:${key}`);
+                // msg(`mesh:${key}`);
 
                 theDevice.queue.writeBuffer(def.buffers[0], 0, def.data);
             }

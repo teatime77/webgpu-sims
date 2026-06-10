@@ -1,13 +1,28 @@
 // src/CaptureTool.ts
 
-import type { SimulationRunner } from "./SimulationRunner.js";
-import { $, $btn, $inp } from "./utils.js";
+import { theRunner, type SimulationRunner } from "./SimulationRunner.js";
+import { $, $btn, $inp, msg } from "./utils.js";
 
 export class CaptureTool {
+    private captureBtn : HTMLButtonElement;
+    private burstBtn : HTMLButtonElement;
     private isCapturing = false;
 
-    constructor(engine: SimulationRunner) {
-        this.setupCapturePanel(engine);
+    constructor() {
+        this.captureBtn = $btn("capture-btn");
+        this.burstBtn = $btn("burst-btn");
+
+        this.captureBtn.addEventListener("click", this.onCaptureBtn.bind(this));
+        this.burstBtn.addEventListener("click", this.onBurstBtn.bind(this));
+    }
+
+    setBusy(busy: boolean){
+        const panel = $("capture-panel");
+
+        this.isCapturing = busy;
+        this.captureBtn.disabled = busy;
+        this.burstBtn.disabled = busy;
+        panel.style.opacity = busy ? "0.5" : "1.0";
     }
 
     private async captureCanvasPng(canvas: HTMLCanvasElement, filename: string): Promise<void> {
@@ -30,69 +45,56 @@ export class CaptureTool {
         });
     }
 
-    private setupCapturePanel(engine: SimulationRunner): void {
-        const panel = $("capture-panel");
-        const captureBtn = $btn("capture-btn");
-        const burstBtn = $btn("burst-btn");
+    async onCaptureBtn(){
+        if (this.isCapturing) return;
+        this.setBusy(true);
+        try {
+            await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+            const stamp = Date.now();
+            const canvases = theRunner.getCanvases();
+            
+            for (const { id, canvas } of canvases) {
+                const filename = canvases.length > 1 
+                    ? `capture_${id}_${stamp}.png` 
+                    : `capture_${stamp}.png`;
+                await this.captureCanvasPng(canvas, filename);
+                msg(`capture:${filename}`)
+            }
+        } finally {
+            this.setBusy(false);
+        }
+    }
+
+    async onBurstBtn(){
+        if (this.isCapturing) return;
+        
         const countInput = $inp("capture-count");
         const intervalInput = $inp("capture-interval");
+        const count = Math.max(1, Math.min(200, Number(countInput.value) || 1));
+        const intervalMs = Math.max(10, Math.min(5000, Number(intervalInput.value) || 100));
+        this.setBusy(true);
+        
+        try {
+            const base = Date.now();
+            const canvases = theRunner.getCanvases();
 
-        const setBusy = (busy: boolean) => {
-            this.isCapturing = busy;
-            captureBtn.disabled = busy;
-            burstBtn.disabled = busy;
-            panel.style.opacity = busy ? "0.5" : "1.0";
-        };
-
-        // Single capture
-        captureBtn.addEventListener("click", async () => {
-            if (this.isCapturing) return;
-            setBusy(true);
-            try {
+            for (let i = 0; i < count; i++) {
                 await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-                const stamp = Date.now();
-                const canvases = engine.getCanvases();
+                const frameStr = String(i).padStart(3, "0");
                 
                 for (const { id, canvas } of canvases) {
                     const filename = canvases.length > 1 
-                        ? `capture_${id}_${stamp}.png` 
-                        : `capture_${stamp}.png`;
+                        ? `capture_${id}_${base}_${frameStr}.png` 
+                        : `capture_${base}_${frameStr}.png`;
                     await this.captureCanvasPng(canvas, filename);
                 }
-            } finally {
-                setBusy(false);
-            }
-        });
-
-        // Burst capture (continuous shooting)
-        burstBtn.addEventListener("click", async () => {
-            if (this.isCapturing) return;
-            const count = Math.max(1, Math.min(200, Number(countInput.value) || 1));
-            const intervalMs = Math.max(10, Math.min(5000, Number(intervalInput.value) || 100));
-            setBusy(true);
-            
-            try {
-                const base = Date.now();
-                const canvases = engine.getCanvases();
-
-                for (let i = 0; i < count; i++) {
-                    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-                    const frameStr = String(i).padStart(3, "0");
-                    
-                    for (const { id, canvas } of canvases) {
-                        const filename = canvases.length > 1 
-                            ? `capture_${id}_${base}_${frameStr}.png` 
-                            : `capture_${base}_${frameStr}.png`;
-                        await this.captureCanvasPng(canvas, filename);
-                    }
-                    
-                    if (i < count - 1) {
-                        await new Promise(res => setTimeout(res, intervalMs));
-                    }
+                
+                if (i < count - 1) {
+                    await new Promise(res => setTimeout(res, intervalMs));
                 }
-            } finally {
-                setBusy(false);
             }
-        });
+        } finally {
+            this.setBusy(false);
+        }
     }
 }

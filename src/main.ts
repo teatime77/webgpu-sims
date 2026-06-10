@@ -1,15 +1,13 @@
-// src/main.ts
-import { OrbitCamera } from './camera.js';
 import { CaptureTool } from './CaptureTool.js';
 import { ComputePassBuilder, getMesh, initDevice, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $btn, $canvas, $div, assert, copyToClipboard, fetchText, MeshDef, msg, MyError, parseURL, showToast, UniformDef } from './utils.js';
-import { initEventHandler, initWebGpuSimsNavigationManager, appManager, AppManager } from './start.js';
-import { parseSchema } from './parser.js';
-import { setNodeShaderCode } from './editor.js';
+import { $btn, $canvas, assert, fetchText, MeshDef, MyError, parseURL, UniformDef } from './utils.js';
+import { initEventHandler, initWebGpuSimsNavigationManager } from './start.js';
 
 export let schemaText : string;
+let captureTool : CaptureTool;
+
 let afterFrame : (()=>void) | undefined;
 
 export function setAfterFrame(fnc : ()=>void){
@@ -22,7 +20,9 @@ export async function bootstrap(sim: SimulationSchema) {
     const mainCanvas = $canvas("main-canvas");
     runner.addCanvas(mainCanvas.id, mainCanvas);
 
-    new CaptureTool(runner);
+    if(captureTool == undefined){
+        captureTool = new CaptureTool();
+    }
 
     if(sim.uis){
         makeUIs(runner, sim);
@@ -222,7 +222,7 @@ export async function initWebGpuSims(){
     await initDevice();
     fetchText("schema.md").then((value:string)=>{
         schemaText = value;
-        msg("schema loaded");
+        // msg("schema loaded");
         $btn("wizard-btn").disabled = false;
     });
 

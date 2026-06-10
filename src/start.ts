@@ -162,7 +162,7 @@ export function splitContentText(contentText : string) : [string, string, Simula
         }
     }
 
-    msg(`content-Text:[\n${contentText}]`);
+    // msg(`content-Text:[\n${contentText}]`);
     return [markdownText, jsonText, schema];
 }
 

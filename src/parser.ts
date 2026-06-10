@@ -431,6 +431,10 @@ export class CallExpression extends BaseASTNode {
                         const n = this.arguments[0].getNumber();
                         return Math.ceil(n);
                     }                    
+                    case "max":{
+                        const ns = this.arguments.map(x => x.getNumber());
+                        return Math.max(...ns);
+                    }                    
                     }
                 }
             }
