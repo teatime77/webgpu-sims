@@ -70,6 +70,8 @@ export class AppManager {
         if (path === '/' || path === '/home') {
             clearSchema();
             $txt("schema-text").value = "";
+            $img("thumbnail-img").src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
             clearShaderEditors();
 
             this.showView("main-view");
