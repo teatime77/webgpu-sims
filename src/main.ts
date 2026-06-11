@@ -3,9 +3,9 @@ import { ComputePassBuilder, getMesh, initDevice, RenderPassBuilder, theDevice, 
 import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
 import { $btn, $canvas, $div, assert, fetchText, MeshDef, msg, MyError, parseURL, UniformDef } from './utils.js';
-import { appManager, initEventHandler, initWebGpuSimsNavigationManager } from './start.js';
-import { parseSchema } from './parser.js';
+import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
+import { appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
 
 export let schemaText : string;
 export let theArticles : Article[];

@@ -7,6 +7,7 @@ export { BaseASTNode, Program, VariableDeclaration, ObjectExpression, ArrayExpre
 export { makeTube, makeGeodesicPolyhedron, makeArrowMesh } from "./primitive.js";
 export { SimUI, makeUIs } from "./SimUI.js";
 export { theDevice, theFormat, theRunner, theSchema, initDevice, ResourceBinding, NodeDef, ComputePassBuilder, RenderPassOptions, RenderPassBuilder, UIDef, RangeDef, SelectDef, ButtonDef, PassCommand, ISimulationSchema, SimulationSchema, SimulationRunner, writeUniformArray, getMesh } from "./SimulationRunner.js";
-export { appManager, initEventHandler, clearSchema, AppManager, ViewName, setAppManager, makeSimulationSchema } from "./start.js";
+export { initEventHandler, clearSchema, makeSimulationSchema } from "./start.js";
 export { MyError, WgslFormat, MeshShape, ShadingModel, assert, msg, range, $, $div, $btn, $inp, $txt, $img, showHtml, hideHtml, fetchText, copyToClipboard, showToast, downloadMarkdownFile, getElementSizeAlignment, getElementSize, getShapeStride, ResourceDef, StorageDef, UniformDef, MeshDef, thumbnailBlob, generateTimestamp } from "./utils.js";
 export { Vec3, vecNormalize } from "./vec3.js";
+export { appManager, AppManager, ViewName, setAppManager } from "./AppManager.js";
