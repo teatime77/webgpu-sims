@@ -678,7 +678,7 @@ export class Parser {
 
         const value = init.getValue();
         constValues.set(va.name, value);
-        msg(`const-Values:${va.name} = ${value}`);
+        // msg(`const-Values:${va.name} = ${value}`);
 
         return va;
     }

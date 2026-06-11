@@ -29,6 +29,7 @@ export function $(id : string) : HTMLElement {
     let ele = $dic.get(id);
     if(ele == undefined){
         ele = document.getElementById(id)!;
+        assert(ele != null);
         $dic.set(id, ele);
     }
 
@@ -141,7 +142,7 @@ export function showToast(btn : HTMLButtonElement, text :string){
     }, 3000);
 }
 
-function generateTimestamp(): string {
+export function generateTimestamp(): string {
   const now = new Date();
 
   // 1. Extract local date components

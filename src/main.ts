@@ -2,10 +2,14 @@ import { CaptureTool } from './CaptureTool.js';
 import { ComputePassBuilder, getMesh, initDevice, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $btn, $canvas, assert, fetchText, MeshDef, MyError, parseURL, UniformDef } from './utils.js';
-import { initEventHandler, initWebGpuSimsNavigationManager } from './start.js';
+import { $btn, $canvas, $div, assert, fetchText, MeshDef, msg, MyError, parseURL, UniformDef } from './utils.js';
+import { appManager, initEventHandler, initWebGpuSimsNavigationManager } from './start.js';
+import { parseSchema } from './parser.js';
+import { initSyntaxHighlightEditor } from './editor.js';
 
 export let schemaText : string;
+export let theArticles : Article[];
+
 let captureTool : CaptureTool;
 
 let afterFrame : (()=>void) | undefined;
@@ -227,19 +231,77 @@ export async function initWebGpuSims(){
     });
 
     initEventHandler();
+    initSyntaxHighlightEditor($div("schema-editor"));
 }
+
+export interface AbstractArticle {
+    authorId : string;
+    title    : string;
+    thumbnailUrl : string;
+}
+
+export interface Article extends AbstractArticle {
+    schemaUrl : string;
+}
+
+async function getContents(articles : Article[]) {
+
+    const div = $div("articles");
+    for (const [idx, doc] of articles.entries()) {
+        // msg(`doc: ${doc.authorId} ${doc.title} ${doc.thumbnailUrl}`);
+
+        const box = document.createElement("div");
+        box.className = "box";
+
+        box.addEventListener("click", (_: PointerEvent) => {
+            appManager.navigateTo(`/post/${idx}`);
+        });
+
+        const img = document.createElement("img");
+        img.className = "box-thumbnail";
+        img.src = doc.thumbnailUrl!;
+
+        box.appendChild(img);
+
+        const title = document.createElement("span");
+        title.textContent = doc.title;
+
+        box.appendChild(title);
+
+        const user = document.createElement("span");
+        user.textContent = doc.authorId;
+
+        box.appendChild(user);
+
+        div.appendChild(box);
+    }
+}
+
 
 export async function initApp(){
     initWebGpuSimsNavigationManager();
     await initWebGpuSims();
 
-    // const text = await fetchText("test/test.js");
-    // const schemaDef = parseSchema(text);
-    // const schema = new SimulationSchema(theDevice, schemaDef);
-    // for(const node of schema.computeNodes()){
-    //     msg(`test node:[${node.id}]`);
-    //     node.nodeShaderCode = await fetchText(`test/${node.id}.wgsl`);
-    // }
+    theArticles = [];
 
-    // await bootstrap(schema);
+    const schemaPaths = await fetchText("docs/index.txt");
+    for(const line of schemaPaths.split("\n")){
+        if(line.trim() == ""){
+            break;
+        }
+
+        const names = line.split("/");
+        const authorId = names.at(-3)!;
+        const title = names.at(-2)!;
+        // msg(`name:[${authorId}][${title}]`)
+        const schemaUrl = `docs/${line}`;
+
+        const thumbnailUrl = `docs/${authorId}/${title}/thumbnail.png`;   
+        msg(`thumbnail-Url:${thumbnailUrl}`);
+
+        theArticles.push({ authorId, title, thumbnailUrl, schemaUrl });
+    }
+
+    appManager.showView("main-view");
+    await getContents(theArticles);
 }

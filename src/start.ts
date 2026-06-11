@@ -1,5 +1,5 @@
-import { bootstrap, schemaText, setAfterFrame } from "./main.js";
-import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, $txt, copyToClipboard, showToast, captureThumbnail } from "./utils.js";
+import { Article, bootstrap, schemaText, setAfterFrame, theArticles } from "./main.js";
+import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, $txt, copyToClipboard, showToast, captureThumbnail, $img, fetchText, urlBase } from "./utils.js";
 // import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
 import { SimulationSchema, theDevice, theRunner, theSchema } from "./SimulationRunner.js";
@@ -9,6 +9,7 @@ import { parseSchema } from "./parser.js";
 export type ViewName = "login-view" | "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view";
 
 export let appManager : AppManager;
+let initialPath : string;
 
 export function setAppManager(app: AppManager){
     appManager = app;
@@ -18,25 +19,31 @@ export class AppManager {
     loginView: HTMLDivElement;
     mainView: HTMLDivElement;
     editView: HTMLDivElement;
-    articleView: HTMLDivElement;
     wizardView: HTMLDivElement;
-    userView : HTMLDivElement;
     views : HTMLDivElement[];
 
     constructor(){
-        const initialPath = window.location.pathname;
-
-        // 初期表示のURLもHistory APIのstateに登録しておく（最初に戻ってきた時用）
-        window.history.replaceState({ path: initialPath }, '', initialPath);
-
         this.loginView = $div("login-view");
         this.mainView = $div("main-view");
         this.editView = $div("edit-view");
-        this.articleView = $div("article-view")
         this.wizardView = $div("wizard-view");
-        this.userView = $div("user-view");
 
-        this.views = [this.loginView, this.mainView, this.editView, this.articleView, this.wizardView, this.userView];
+        this.views = [this.loginView, this.mainView, this.editView, this.wizardView];
+
+        const buttons = document.getElementsByClassName("app-title-button");
+        for(const button of buttons){
+            (button as HTMLButtonElement).addEventListener("click", ()=>{
+                this.navigateTo("/");
+            });
+        }
+    }
+
+    initRender(){
+        initialPath = window.location.pathname;
+
+        // 初期表示のURLもHistory APIのstateに登録しておく（最初に戻ってきた時用）
+        window.history.replaceState({ path: initialPath }, '', initialPath);
+        // msg(`init-history:${initialPath}`);
 
         this.renderPage(initialPath);
     }
@@ -59,16 +66,41 @@ export class AppManager {
     // --- 1. 画面の描画関数 ---
     // URL（パス）に応じてDOMを書き換える
     async renderPage(path: string) {
+        // msg(`render-Page:${path}`);
         if (path === '/' || path === '/home') {
             clearSchema();
             $txt("schema-text").value = "";
             clearShaderEditors();
 
-            $inp("title").value = "";
-            $txt("markdown-text").value = "";
-
             this.showView("main-view");
         } 
+        else if (path.startsWith("/post/")) {
+            clearSchema();
+            this.showView("edit-view");
+            const texts = path.split("/");
+            assert(texts.length == 3);
+            const idx = parseInt(texts[2]);
+            assert(!(isNaN(idx)) && 0 <= idx && idx < theArticles.length)
+            // msg(`post:${texts}`);
+            const article = theArticles[idx];
+
+            const schemaText = await fetchText(article.schemaUrl);
+            const schema = makeSimulationSchema(schemaText);
+            for(const node of schema.shaders){
+                if(node.type == "compute"){
+                    const path = article.schemaUrl.replace("schema.js", `${node.id}.wgsl`);
+                    node.nodeShaderCode = await fetchText(path);
+                }
+            }
+
+            $img("thumbnail-img").src = `${urlBase}/${article.thumbnailUrl}`;
+            msg(`thumbnail-img-src:${$img("thumbnail-img").src}`);
+
+            $txt("schema-text").value = schemaText;
+            makeShaderEditors();
+
+            await bootstrap(schema);
+        }
         else if(path == "/wizard"){
             clearSchema();
             this.showView("wizard-view");
@@ -81,6 +113,7 @@ export class AppManager {
         // 第2引数: タイトル(現在はほとんどのブラウザで無視されるため空文字でOK)
         // 第3引数: 新しいURLパス
         window.history.pushState({ path }, '', path);
+        // msg(`push-State:${path}`);
 
         // URLが変わったので画面を再描画する
         this.renderPage(path);
@@ -90,9 +123,10 @@ export class AppManager {
 
 export function initWebGpuSimsNavigationManager(){
     appManager = new AppManager();
+    appManager.initRender();
 }
 
-function makeSimulationSchema(jsonText: string){
+export function makeSimulationSchema(jsonText: string){
     try {
 
         const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
@@ -107,63 +141,6 @@ function makeSimulationSchema(jsonText: string){
     } catch (e) {
         throw new MyError();
     }
-}
-
-export function splitContentText(contentText : string) : [string, string, SimulationSchema]{
-    const lines = contentText.replaceAll("\r", "").split("\n");
-    const startJsonet = lines.findIndex(x => x.startsWith("<!-- START OF SCHEMA."));
-    const endJsonet = lines.findIndex((x, i) => startJsonet < i && x == "```");
-    const startWgsl   = lines.findIndex(x => x.startsWith("<!-- START OF WGSL."));
-
-    assert(startJsonet != -1 && startJsonet < endJsonet && endJsonet < startWgsl);
-    assert(lines[startJsonet + 1] == "```jsonet")
-
-    const jsonText = lines.slice(startJsonet + 2, endJsonet).join("\n");
-    const markdownText = lines.slice(0, startJsonet).join("\n");
-
-    const schema = makeSimulationSchema(jsonText);
-
-    let idx = startWgsl + 1;
-    while(idx < lines.length){
-        let line = lines[idx];
-        if(line.trim() == ""){
-            idx++;
-            continue;
-        }
-
-        let nodeId = "";
-        if(line.startsWith("SHADER:")){
-            nodeId = line.substring("SHADER:".length);            
-            idx++;
-        }
-        else{
-            const computeNodes = schema.computeNodes();
-            assert(computeNodes.length == 1);
-            nodeId = computeNodes[0].id;
-        }
-
-        assert(idx < lines.length && lines[idx] == "```wgsl");
-        idx++;
-
-        let codes = "";
-        for(; idx < lines.length; idx++){
-            let line = lines[idx];
-            if(line == "```"){
-
-                const node = schema.nodeMap.get(nodeId)!;
-                assert(node != undefined);
-                node.nodeShaderCode = codes;
-
-                idx++;
-                break;
-            }
-
-            codes += line + "\n";                     
-        }
-    }
-
-    // msg(`content-Text:[\n${contentText}]`);
-    return [markdownText, jsonText, schema];
 }
 
 export function clearSchema(){
@@ -182,13 +159,21 @@ export function clearSchema(){
 }
 
 export function initEventHandler(){
+    // msg(`init-Event-Handler`);
+
     // --- 3. 「戻る」「進む」ボタンの検知 ---
     window.addEventListener('popstate', (event: PopStateEvent) => {
-        // pushStateで保存した state オブジェクトを取得
-        const state = event.state;
+
+        let currentPath = event.state.path;
+        assert(typeof currentPath == "string");
+        // msg(`pop-state:${currentPath}`);
+
+        if(currentPath == initialPath){
+            currentPath = "/";
+        }
 
         // stateが存在すればそのパスを、なければ現在のURLのパスを再描画する
-        const currentPath = state?.path || window.location.pathname;
+        // const currentPath = state?.path || window.location.pathname;
         appManager.renderPage(currentPath);
     });
 
@@ -229,11 +214,6 @@ export function initEventHandler(){
         setNodeShaderCode();
         await bootstrap(schema);
     });
-
-    $btn("add-details").addEventListener("click", ()=>{
-        appManager.showView("article-view");
-    });
-
 
     $btn("thumbnail-btn").addEventListener("click", ()=>{
         setAfterFrame(captureThumbnail);

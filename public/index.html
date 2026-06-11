@@ -29,33 +29,34 @@
 <div id="main-view" class="view">
 
     <header>
-        <a href="/" class="at-left">
-            <img src="path/to/logo.png" alt="GPUSims" style="height: 3rem; vertical-align: middle;">
-        </a>
+        <div class="at-left">
+            <button class="app-title-button">
+                <span class="brand-accent">GPU</span>Sims
+            </button>
+        </div>
 
         <span class="at-center">
             <input type="search" id="headerSearch" name="search" placeholder="記事のタイトルやキーワードで検索..." size="30">
 
             <button id="wizard-btn" disabled>Wizard</button>
         </span>
-
-        <button id="headerLoginBtn" class="at-right">サインイン</button>
-        <span id="logged-in" class="at-right">
-            <button id="headerLogoutBtn">サインアウト</button>
-            <span id="headerUserId" style="font-weight: bold; font-size: 0.9rem;"></span>
-        </span>
     </header>
 
     <main>
         <div id="articles"></div>
     </main>
-    <footer>
-        <div id="error-msg">Loading...</div>
-    </footer>
 </div>
 
 <div id="wizard-view" class="vibe-coding-wizard">
-    <h1>Vibe Coding Workflow</h1>
+    <header>
+        <div class="at-left">
+            <button class="app-title-button">
+                <span class="brand-accent">GPU</span>Sims
+            </button>
+        </div>
+
+        <span class="at-center" style="font-size: 24px;">Vibe Coding Workflow</span>
+    </header>
 
     <ol class="wizard-steps">
         <li>
@@ -111,6 +112,10 @@
 <div id="edit-view">
     <header style="height: 50px;">
         <span id="capture-panel" class="at-left">
+            <button class="app-title-button">
+                <span class="brand-accent">GPU</span>Sims
+            </button>
+
             <button id="capture-btn">Capture</button>
             <button id="burst-btn">Burst xN</button>
             <label for="capture-count">N:
@@ -135,37 +140,12 @@
                 <div id="uis-div"></div>
                 <p></p>
                 <button id="thumbnail-btn" class="at-right">thumbnail</button><br />
-                <img id="thumbnail-img" /><br />
-                <button id="add-details">Add Details</button>
+                <img id="thumbnail-img" />
             </div>
         </div>
 
         <div id="sub-canvases"></div>
     </main>
-</div>
-
-<div id="user-view">
-    <h2>ユーザーIDの初期設定</h2>
-    <p>他のユーザーに公開される一意のID（publicId）を決めてください。</p>
-    <input type="text" id="publicIdInput" placeholder="例: ko_hamada" />
-    <button id="registerBtn">登録する</button>
-</div>
-
-<div id="article-view" style="display: grid; grid-template-rows: auto auto auto 1fr;">
-    <header>
-        <span class="at-right">
-            <button id="publish-btn">Publish</button>
-        </span>
-    </header>
-    <input id="title" type="text" placeholder="Title" />
-    <div id="my-tag-input"></div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; min-height: 0;">
-        <div id="markdown-editor" class="editor-container">
-            <textarea id="markdown-text" class="hidden-textarea" spellcheck="false"></textarea>
-            <canvas class="render-canvas" width="800" height="800"></canvas>
-        </div>
-        <div id="markdown-preview"></div>
-    </div>
 </div>
 
 <script type="module">

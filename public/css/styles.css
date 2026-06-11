@@ -7,6 +7,49 @@ body {
   font-family: sans-serif;
 }
 
+/* ============================
+   APP TITLE BUTTON (GPUSims)
+   ============================ */
+.app-title-button {
+  /* Resets & Typography */
+  background-color: transparent;
+  color: var(--text-main);
+  font-size: 24px;
+  font-weight: 800;
+  font-family: inherit;
+  letter-spacing: 1px;
+  
+  /* Layout & Borders */
+  padding: 8px 16px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  cursor: pointer;
+  
+  /* Smooth transitions for interactions */
+  transition: all 0.2s ease-in-out;
+}
+
+/* Make the "GPU" part stand out using your accent color */
+.app-title-button .brand-accent {
+  color: var(--accent-focus);
+}
+
+/* Hover State: Subtle background, border, and a soft glow */
+.app-title-button:hover {
+  background-color: var(--bg-element);
+  border-color: var(--accent-focus);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(67, 56, 202, 0.4); /* Uses --accent-focus hex with opacity */
+}
+
+/* Active/Click State: Slight shrink effect */
+.app-title-button:active {
+  background-color: var(--bg-element-hover);
+  border-color: var(--accent-active);
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
 /* 全体を囲む view クラスの設定 */
 .view {
   min-height: 100vh;  /* 最低でも画面の高さ（100%）を確保する */
