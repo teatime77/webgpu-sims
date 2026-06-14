@@ -250,28 +250,37 @@ async function getContents(articles : Article[]) {
     for (const [idx, doc] of articles.entries()) {
         // msg(`doc: ${doc.authorId} ${doc.title} ${doc.thumbnailUrl}`);
 
-        const box = document.createElement("div");
+        const box = document.createElement("article");
         box.className = "box";
 
         box.addEventListener("click", (_: PointerEvent) => {
             appManager.navigateTo(`/post/${idx}`);
         });
 
+        const imgDiv = document.createElement("div");
+        imgDiv.className = "box-thumbnail";
+
         const img = document.createElement("img");
-        img.className = "box-thumbnail";
         img.src = doc.thumbnailUrl!;
 
-        box.appendChild(img);
+        imgDiv.append(img);
+        box.appendChild(imgDiv);
 
-        const title = document.createElement("span");
+        const boxContent = document.createElement("div");
+        boxContent.className = "box-content";
+
+        const title = document.createElement("h2");
+        title.className = "box-title";
         title.textContent = doc.title;
 
-        box.appendChild(title);
+        boxContent.appendChild(title);
 
-        const user = document.createElement("span");
+        const user = document.createElement("div");
+        user.className = "box-user-id";
         user.textContent = doc.authorId;
 
-        box.appendChild(user);
+        boxContent.appendChild(user);
+        box.append(boxContent);
 
         div.appendChild(box);
     }

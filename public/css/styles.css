@@ -5,6 +5,11 @@ body {
   padding: 10px;
   color: white;
   font-family: sans-serif;
+
+  /* Lock the main browser window from scrolling */
+  overflow: hidden; 
+  /* Recommended: Ensures padding is included in height calculations */
+  box-sizing: border-box;
 }
 
 /* ============================
@@ -52,18 +57,16 @@ body {
 
 /* 全体を囲む view クラスの設定 */
 .view {
-  min-height: 100vh;  /* 最低でも画面の高さ（100%）を確保する */
-  display: grid;      /* グリッドレイアウトを有効化 */
-  
-  /* 上・中央・下の高さを割り当てる */
-  /* auto にすると、headerとfooterは「中身の高さ」に自動で合わせます */
-  /* 1fr が「残りの空きスペースすべて」を意味し、mainを限界まで広げます */
+  /* min-height: 100vh; の代わりに以下を使用 */
+  height: calc(100vh - 20px); /* 100vh から body の padding (上下10pxずつ) を引く */
+  display: grid;      
   grid-template-rows: auto 1fr auto; 
 }
 
 /* メインエリアのスクロール設定（推奨） */
 main {
-  overflow-y: auto;   /* 中身がはみ出した場合は、mainの中だけでスクロールさせる */
+  overflow-y: auto;   /* このまま残します */
+  padding-right: 5px; /* スクロールバーがコンテンツに被らないように少し余白を入れると綺麗です */
 }
 
 /* headerタグ自体をGridコンテナにする */
@@ -71,6 +74,7 @@ header {
   display: grid;
   align-items: center; /* 縦方向の中央揃え */
   padding: 0 16px;     /* 左右が画面端にピッタリくっつかないように少し余白を設ける（お好みで） */
+  margin-bottom: 10px;
 }
 
 /* headerの直下にある3つのクラスを、すべて同じ「1行目・1列目」に重ねて配置する */
@@ -197,37 +201,102 @@ details .content {
     margin-left: 20px;
 }
 
-#articles {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: flex-start;
-    align-content: flex-start;
-}
-
 #sub-canvases {
     display: none;
 }
 
-.box {
-    width: 200px;
-    height: 200px;
-    border: ridge;
+/* ========================================================
+   ARTICLES & BOX LAYOUT (Responsive Grid)
+   Horizontal layout: Image Left, Text Right
+   ======================================================== */
 
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
+#articles {
+  display: grid;
+  /* minmax(400px, 1fr) ensures 1 column on portrait mobile, 
+     but automatically flows into multiple columns on wider screens. */
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.box {
+  width: 100%;
+  height: 100%; 
+  margin: 0;
+  display: flex;
+  
+  /* Change to row so the image and text sit side-by-side */
+  flex-direction: row; 
+  
+  background-color: var(--bg-element);
+  border: 1px solid var(--border-idle);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .box:hover {
-  background-color: var(--accent-hover);
+  background-color: var(--bg-element-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
 }
 
 .box-thumbnail {
-    width : 128px;
-    height: auto;
+  /* Restrict thumbnail width so the text has room on the right */
+  width: 40%; 
+  min-width: 120px; /* Allows it to shrink nicely on narrow mobile screens */
+  max-width: 200px; /* <--- THE FIX: Caps the width, which limits the max height to ~112px */  
+  aspect-ratio: 16 / 9; 
+  background-color: #000;
+  flex-shrink: 0;
 }
 
+.box-thumbnail img, 
+.box-thumbnail canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.box-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Expands to fill the remaining horizontal space */
+  justify-content: center; /* Vertically centers the text content */
+}
+
+.box-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-main);
+  margin: 0 0 8px 0;
+  overflow-wrap: break-word;
+  
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.box-user-id {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: auto; 
+}
+
+.box-meta {
+  font-size: 0.85rem;
+  color: #888;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
 
 /* >>>>>================================================== Wizard */
 

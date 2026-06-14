@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPUSims - 6-Step Workflow Manual</title>
+    <style>
+        /* ============================
+           CSS VARIABLES (Theme)
+           ============================ */
+        :root {
+            color-scheme: dark;
+            --bg-page: #111111;
+            --bg-element: #27272a;
+            --bg-element-hover: #3f3f46;
+            --text-main: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --border-idle: #3f3f46;
+            --accent-base: #3730a3;
+            --accent-focus: #4338ca;
+            --chat-user: #3f3f46;
+            --chat-ai: rgba(67, 56, 202, 0.15);
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 60px;
+        }
+
+        /* ============================
+           LAYOUT CORE (CSS Grid)
+           ============================ */
+        .manual-wrapper {
+            position: relative;
+            /* Anchors the absolute SVG overlay */
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-bottom: 100px;
+        }
+
+        /* Header Grid (Kept separate to isolate margins) */
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .manual-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* CRITICAL FIX: Huge row-gap (100px) allows for translateY offsets without overlapping */
+            gap: 20px 40px;
+            /* CRITICAL FIX: Centers items vertically so they don't stretch */
+            align-items: start;
+            position: relative;
+            z-index: 2;
+            /* Keeps UI clickable above the SVG */
+
+            width: 100%;
+            background-image: url("img/manual.png");
+            background-size: 100% 100%; 
+            background-position: center;
+        }
+
+        /* ============================
+           THE SVG OVERLAY
+           ============================ */
+        #arrow-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            /* Lets clicks pass through to buttons */
+            z-index: 10;
+            overflow: visible;
+        }
+
+        .arrow-path {
+            fill: none;
+            stroke: var(--accent-focus);
+            stroke-width: 3;
+            stroke-dasharray: 6 4;
+        }
+
+        /* ============================
+           UI CARDS & COMPONENTS
+           ============================ */
+        .ui-box {
+            background-color: var(--bg-element);
+            border: 1px solid var(--border-idle);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.3s ease;
+            /* Smooth visual loading */
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        .btn-mock {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--accent-base);
+            color: white;
+            border-radius: 24px;
+            font-weight: bold;
+            text-align: center;
+            width: fit-content;
+        }
+
+        .btn-mock.full-width {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 15px;
+        }
+
+        .textarea-mock {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 0.9rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Chat Specific Styles */
+        .chat-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .chat-user {
+            background-color: var(--chat-user);
+            border-bottom-right-radius: 0;
+            margin-left: 20px;
+        }
+
+        .chat-ai {
+            background-color: var(--chat-ai);
+            border-bottom-left-radius: 0;
+            margin-right: 20px;
+            border: 1px solid var(--accent-base);
+        }
+
+        .col-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border-idle);
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>GPUSims Workflow</h1>
+    <p class="subtitle">Follow the 6 steps below to build and run your physical simulation.</p>
+
+    <div class="manual-wrapper">
+
+        <svg id="arrow-overlay">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#4338ca" />
+                </marker>
+            </defs>
+        </svg>
+
+        <div class="header-grid">
+            <div class="col-header">GPUSims App</div>
+            <div class="col-header">AI Assistant</div>
+        </div>
+
+        <div class="manual-grid">
+            <div class="ui-box" style="margin-top: 20%;">
+                <div style="margin-bottom: 10px; color: var(--text-muted);">Settings Panel</div>
+                <div class="btn-mock">Copy AI System Prompt</div>
+            </div>
+            <div></div>
+
+            <div></div>
+            <div class="ui-box">
+                <div class="chat-bubble chat-user">Paste System Prompt...</div>
+            </div>
+
+
+            <div></div>
+
+            <div class="ui-box">
+                <div class="chat-bubble chat-user">Create a schema for an N-body simulation.</div>
+            </div>
+
+            <div></div>
+
+            <div class="ui-box">
+                <div class="chat-bubble chat-ai">
+                    Here is your schema:<br>
+                    <div class="textarea-mock" style="height: 50px; margin-top: 8px;">const schema = { ... }</div>
+                </div>
+            </div>
+
+            <div class="ui-box">
+                <div style="margin-bottom: 10px;">Schema Editor</div>
+                <div class="textarea-mock" style="height: 80px;">Paste generated Schema here...</div>
+            </div>
+
+            <div></div>
+
+            <div class="ui-box">
+                <div class="btn-mock">Copy WGSL Skeleton</div>
+            </div>
+
+            <div></div>
+            <div></div>
+
+            <div class="ui-box">
+                <div class="chat-bubble chat-user">Here is the skeleton, please add gravity logic.</div>
+            </div>
+            <div></div>
+
+
+            <div class="ui-box">
+                <div class="chat-bubble chat-ai">
+                    Here is the finalized code:<br>
+                    <div class="textarea-mock" style="height: 80px; margin-top: 8px;">@compute fn main() { ... }</div>
+                </div>
+            </div>
+
+
+            <div class="ui-box">
+                <div style="margin-bottom: 10px;">WGSL Logic Editor</div>
+                <div class="textarea-mock" style="height: 80px;">Paste complete WGSL Code here...</div>
+            </div>
+            <div></div>
+
+            <div class="ui-box" style="margin-bottom: 20px;">
+                <div class="btn-mock full-width">Run Simulation</div>
+            </div>
+
+            <div></div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPUSims - Build the Universe in Your Browser</title>
+    <style>
+        /* ============================
+           CSS VARIABLES (From App Theme)
+           ============================ */
+        :root {
+            color-scheme: dark;
+            --bg-page: #111111;
+            --bg-element: #27272a;
+            --bg-element-hover: #3f3f46;
+            --text-main: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --border-idle: #3f3f46;
+            --border-hover: #52525b;
+            --accent-base: #3730a3;
+            --accent-hover: #312e81;
+            --accent-active: #1e1b4b;
+            --accent-focus: #4338ca;
+        }
+
+        /* ============================
+           GLOBAL STYLES
+           ============================ */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* ============================
+           TYPOGRAPHY & BRAND
+           ============================ */
+        h1, h2, h3 {
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .brand-accent {
+            color: var(--accent-focus);
+        }
+
+        .app-title {
+            background-color: transparent;
+            color: var(--text-main);
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 8px 16px;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: inline-block;
+        }
+
+        .app-title:hover {
+            background-color: var(--bg-element);
+            border-color: var(--accent-focus);
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(67, 56, 202, 0.4);
+        }
+
+        /* ============================
+           BUTTONS
+           ============================ */
+        .btn {
+            display: inline-block;
+            padding: 14px 28px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 24px;
+            background-color: var(--accent-base);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn:active {
+            background-color: var(--accent-active);
+            transform: scale(0.98);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--border-idle);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-element);
+            border-color: var(--border-hover);
+        }
+
+        /* ============================
+           LAYOUT & SECTIONS
+           ============================ */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            padding: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        section {
+            padding: 80px 0;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 100px 20px;
+            background: radial-gradient(circle at 50% 30%, rgba(67, 56, 202, 0.15) 0%, transparent 60%);
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        /* Value Prop Section */
+        .value-prop {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--bg-element);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid var(--border-idle);
+        }
+
+        .value-prop h2 {
+            margin-top: 0;
+        }
+
+        /* Features Section */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background-color: var(--bg-element);
+            border: 1px solid var(--border-idle);
+            border-radius: 12px;
+            padding: 32px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-focus);
+        }
+
+        .feature-card h3 {
+            margin-top: 0;
+            color: var(--accent-focus);
+        }
+
+        /* Workflow Section */
+        .workflow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 800px;
+            margin: 40px auto 0 auto;
+        }
+
+        .step-card {
+            background-color: var(--bg-element);
+            border-left: 4px solid var(--accent-focus);
+            border-radius: 0 12px 12px 0;
+            padding: 24px 32px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .step-number {
+            background-color: var(--accent-focus);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            margin: 0 0 8px 0;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        /* CTA Footer */
+        .cta-footer {
+            text-align: center;
+            padding: 100px 20px;
+            background-color: var(--bg-element);
+            border-top: 1px solid var(--border-idle);
+        }
+
+        .cta-footer h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-idle);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <a href="index.html" class="app-title">
+                <span class="brand-accent">GPU</span>Sims
+            </a>
+            <a href="index.html" class="btn btn-outline" style="padding: 8px 20px; font-size: 15px;">Launch App</a>
+        </header>
+    </div>
+
+    <section class="hero container">
+        <h1>Build the Universe in Your Browser.</h1>
+        <p>The AI-first WebGPU framework for high-performance physical simulations, complex mathematics, and real-time graphics rendering.</p>
+        <div class="hero-buttons">
+            <a href="index.html" class="btn">Launch Workspace</a>
+            <a href="#workflow" class="btn btn-outline">See How It Works</a>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="value-prop">
+            <h2>Raw GPU Power Meets Declarative Simplicity</h2>
+            <p>GPUSims fundamentally rethinks how browser-based simulations are built. By enforcing a strict separation between your simulation's "blueprint" (a declarative TypeScript schema) and its "orchestration" (procedural WGSL execution), we give you maximum transparency, maintainability, and control over complex compute pipelines.</p>
+        </div>
+    </section>
+
+    <section class="container">
+        <h2 style="text-align: center; font-size: 2.5rem;">Core Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Native AI Collaboration</h3>
+                <p>Built from the ground up for a "ping-pong" workflow. Seamlessly collaborate with AI to generate schemas, scaffold memory pools, and write compute shader logic without ever losing your architectural context.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Blazing Fast WebGPU Compute</h3>
+                <p>Push the limits of in-browser performance. Handle massive particle swarms, N-body physics, and advanced mathematical visualizations using highly optimized storage buffers and compute passes.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Declarative Memory Management</h3>
+                <p>Define your global state, uniforms, and storage buffers in a centralized, type-safe TypeScript registry. Let the framework handle the heavy lifting of WebGPU bindings.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Interactive by Default</h3>
+                <p>Instantly generate interactive UI control panels—from continuous range sliders to discrete state selectors—that bind directly to your mutable physics parameters.</p>
+            </div>
+            <div class="feature-card" style="grid-column: 1 / -1; text-align: center;">
+                <h3>STEM-Ready Visualization</h3>
+                <p style="max-width: 800px; margin: 0 auto;">Whether you are building advanced mathematical proof assistants, demonstrating fluid dynamics, or exploring theoretical physics, GPUSims provides the rendering topologies (point-lists, vector fields, and custom 3D meshes) to bring the abstract to life.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="workflow" class="container">
+        <h2 style="text-align: center; font-size: 2.5rem;">The Ping-Pong Workflow</h2>
+        <p style="text-align: center; color: var(--text-muted); max-width: 600px; margin: 0 auto;">Experience a revolutionary approach to writing shader code where your environment and your AI assistant work in perfect sync.</p>
+        
+        <div class="workflow-steps">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Architect the Schema</h3>
+                    <p>Describe your physics model to the AI. It generates a strict, type-safe TypeScript schema defining your memory pool and execution pipeline.</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Auto-Generate the Skeleton</h3>
+                    <p>Paste the schema into GPUSims. The platform instantly parses the data and hands you a perfectly bound WGSL skeleton.</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Implement the Logic</h3>
+                    <p>Pass the skeleton back to the AI to implement the core mathematical logic inside the main functions, free from boilerplate distractions.</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Execute</h3>
+                    <p>Paste the finalized WGSL code into the GPUSims environment and run your live physical simulation instantly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-footer">
+        <h2>Ready to write your first compute shader?</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Jump into the workspace and start exploring the limits of WebGPU.</p>
+        <a href="index.html" class="btn" style="font-size: 20px; padding: 16px 40px;">Start Simulating Now</a>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 GPUSims. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
