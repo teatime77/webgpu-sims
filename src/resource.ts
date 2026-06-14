@@ -1,0 +1,178 @@
+import { ShadingModel } from "./pipeline.js";
+import { theDevice } from "./SimulationRunner.js";
+import { assert, MyError } from "./utils.js";
+
+type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
+export type MeshShape = "sphere" | "tube" | "cylinder" | "arrow";
+
+export function getElementSizeAlignment(format : string) : [number, number] {
+    let alignment;
+    let size;
+
+    switch(format){
+    case 'f32':
+    case 'u32':
+    case 'i32':
+        size = 4; alignment = 4; 
+        break;
+    case 'vec2<f32>': 
+        size = 8; alignment = 8; 
+        break;
+    case 'vec3<f32>': 
+    case 'vec4<f32>': 
+        size = 16; alignment = 16; 
+        break;
+    case 'mat4x4<f32>': 
+        size = 64; alignment = 16; 
+        break;
+    default:
+        throw new MyError();
+    }
+
+    return [size, alignment];
+}
+
+export abstract class ResourceDef {
+    type!: 'uniform' | 'storage' | 'mesh';
+
+    public id: string;
+    public buffers!: GPUBuffer[];
+    public bufferCount!: number;
+    public currentIndex: number = 0;
+
+    constructor(id: string){
+        this.id = id;
+    }
+
+    /** historyLevel: 0 is the current write surface, 1 is the data from 1 step ago */
+    getBuffer(historyLevel: number = 0): GPUBuffer {
+        const n = this.bufferCount;
+        const idx = (this.currentIndex + n - historyLevel) % n;
+        return this.buffers[idx];
+    }
+
+    /** Rotate the ring at the end of the frame/step */
+    swap(): void {
+        this.currentIndex = (this.currentIndex + 1) % this.bufferCount;
+    }
+
+    destroyBuffers(){
+        if(this.buffers != undefined){
+            this.buffers.forEach(x => x.destroy());
+        }
+    }
+}
+
+export class StorageDef extends ResourceDef {
+    format?: WgslFormat;                 // for storage (e.g. vec4<f32>)
+    elementByteSize?: number;            // for storage (custom structs: e.g. 32 bytes)
+    count?: number;                      // for storage
+    meshRef? : string;
+    topology?: GPUPrimitiveTopology;
+    shadingModel? : ShadingModel;
+    canvasId?: string;
+
+    constructor(id: string, data : any){
+        super(id);
+        Object.assign(this, data)
+    }
+}
+
+
+interface FieldDef {
+    name  : string;
+    offset: number;
+    format: WgslFormat;
+    size  : number
+}
+
+export class UniformDef extends ResourceDef {
+    fields?: Record<string, WgslFormat>; // for uniform
+    fieldDefs: FieldDef[] = [];
+    totalSize: number;
+    buffer!: GPUBuffer;
+    obj? : any;
+
+    constructor(id: string, data : any){
+        super(id);
+        Object.assign(this, data);
+
+        if(this.fields == undefined){
+            if(this.obj == undefined){
+                throw new MyError();
+            }
+
+            this.fields = {};
+            for (const [name, val] of Object.entries(this.obj)){
+                assert(typeof val == "number");
+
+                this.fields[name] = 'f32';
+            }
+        }
+
+        let offset = 0;
+        for (const [name, format] of Object.entries(this.fields)) {
+            const [size, alignment] = getElementSizeAlignment(format);
+
+            // Round up offset to alignment boundary (insert padding)
+            offset = Math.ceil(offset / alignment) * alignment;
+            this.fieldDefs.push({name, offset, format, size});
+
+            offset += size;
+        }
+
+        // Round up total size to 16 byte boundary as well
+        this.totalSize = Math.ceil(offset / 16) * 16;
+    }
+
+    initUniform(device: GPUDevice){
+        this.buffer = device.createBuffer({
+            label: `Uniform_${this.id}`,
+            size: this.totalSize,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+    }
+
+    /** Equivalent to updateVariables in V1: construct binary from JS object and transfer at once */
+    update(obj : any) {
+        const arrayBuffer = new ArrayBuffer(this.totalSize);
+        const view = new DataView(arrayBuffer);
+
+        for(const [name, val] of Object.entries(obj)) {
+            const info = this.fieldDefs.find(x => x.name == name)!;
+            assert(info != undefined);
+
+            if(['f32', 'u32', 'i32'].includes(info.format)){
+                assert(typeof val == "number");
+            }
+            
+            if (info.format === 'f32') {
+                view.setFloat32(info.offset, val as number, true); // true = little endian
+            } else if (info.format === 'u32') {
+                view.setUint32(info.offset, val as number, true);
+            } else if (info.format === 'i32') {
+                view.setInt32(info.offset, val as number, true);
+            } else if (Array.isArray(val) || val instanceof Float32Array) {
+                assert(Array.isArray(val) && val.every(x => typeof x == "number"));
+                // Array writing for vec2, vec3, vec4, mat4x4 etc.
+                for (let i = 0; i < val.length; i++) {
+                    view.setFloat32(info.offset + i * 4, val[i], true);
+                }
+            }
+        }
+
+        theDevice.queue.writeBuffer(this.buffer, 0, arrayBuffer);
+    }
+}
+
+export class MeshDef extends ResourceDef {
+    shape!: MeshShape;
+    division?: number;
+    data!: Float32Array;
+
+    constructor(id: string, data : any){
+        super(id);
+        Object.assign(this, data)
+        assert(this.type == 'mesh');
+    }
+}

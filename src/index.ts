@@ -1,13 +1,6 @@
-export { OrbitCamera } from "./camera.js";
-export { CaptureTool } from "./CaptureTool.js";
 export { initSyntaxHighlightEditor, clearShaderEditors, makeShaderEditors, setNodeShaderCode } from "./editor.js";
-export { makeWgslSkeleton } from "./generate_skeleton.js";
-export { bootstrap, initWebGpuSims, setAfterFrame, AbstractArticle } from "./main.js";
-export { BaseASTNode, Program, VariableDeclaration, ObjectExpression, ArrayExpression, Literal, Identifier, UnaryExpression, BinaryExpression, GroupExpression, FunctionExpression, MemberExpression, CallExpression, Token, Lexer, Parser, parseSchema } from "./parser.js";
-export { makeTube, makeGeodesicPolyhedron, makeArrowMesh } from "./primitive.js";
-export { SimUI, makeUIs } from "./SimUI.js";
-export { theDevice, theFormat, theRunner, theSchema, initDevice, ResourceBinding, NodeDef, ComputePassBuilder, RenderPassOptions, RenderPassBuilder, UIDef, RangeDef, SelectDef, ButtonDef, PassCommand, ISimulationSchema, SimulationSchema, SimulationRunner, writeUniformArray, getMesh } from "./SimulationRunner.js";
-export { initEventHandler, clearSchema, makeSimulationSchema } from "./start.js";
-export { MyError, WgslFormat, MeshShape, ShadingModel, assert, msg, range, $, $div, $btn, $inp, $txt, $img, showHtml, hideHtml, fetchText, copyToClipboard, showToast, downloadMarkdownFile, getElementSizeAlignment, getElementSize, getShapeStride, ResourceDef, StorageDef, UniformDef, MeshDef, thumbnailBlob, generateTimestamp } from "./utils.js";
-export { Vec3, vecNormalize } from "./vec3.js";
+export { MyError, assert, msg, range, $, $div, $btn, $inp, $txt, $img, showHtml, hideHtml, fetchText, copyToClipboard, showToast, downloadMarkdownFile, thumbnailBlob, generateTimestamp } from "./utils.js";
 export { appManager, AppManager, ViewName, setAppManager } from "./AppManager.js";
+export { theSchema, SimulationSchema } from "./schema.js";
+export { clearSchema, makeSimulationSchema } from "./start.js";
+export { bootstrap, AbstractArticle, initWebGpuSims } from "./main.js";

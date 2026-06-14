@@ -1,5 +1,4 @@
 import { vec3, mat4 } from "gl-matrix";
-import { msg } from "./utils.js";
 
 export class OrbitCamera {
     private canvas: HTMLCanvasElement;

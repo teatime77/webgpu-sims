@@ -1,7 +1,29 @@
-import type { RangeDef, SelectDef, SimulationRunner, SimulationSchema, UIDef } from "./SimulationRunner.js";
+import { SimulationSchema } from "./schema.js";
+import type { SimulationRunner } from "./SimulationRunner.js";
 import { $div } from "./utils.js";
 
-// src/SimUI.ts
+export interface UIDef {
+    type : "range" | "select" | "button",
+    obj:any,
+    name:string,
+    label: string, 
+}
+
+export interface RangeDef extends UIDef {
+    min: number, 
+    max: number, 
+    step: number, 
+    initial?: number
+}
+
+export interface SelectDef extends UIDef {
+    options: {value: number, text: string}[], 
+    initial?: number,
+    reset? : boolean
+}
+
+export interface ButtonDef extends UIDef {
+}
 
 export class SimUI {
     private container: HTMLElement;

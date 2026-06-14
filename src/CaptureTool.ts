@@ -1,6 +1,4 @@
-// src/CaptureTool.ts
-
-import { theRunner, type SimulationRunner } from "./SimulationRunner.js";
+import { theRunner } from "./SimulationRunner.js";
 import { $, $btn, $inp, msg } from "./utils.js";
 
 export class CaptureTool {

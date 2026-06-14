@@ -1,7 +1,5 @@
-// 1. TYPES & INTERFACES
-
-import { theSchema } from "./SimulationRunner.js";
-import { assert, $, MyError } from "./utils.js";
+import { theSchema } from "./schema.js";
+import { $, MyError } from "./utils.js";
 
 // Define exactly what types of tokens our lexer is allowed to produce
 type TokenType = 'default' | 'keyword' | 'type' | 'attribute' | 'number' | 'comment' | 'bracket';

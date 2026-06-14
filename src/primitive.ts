@@ -1,4 +1,3 @@
-// src/primitive.ts
 import { range } from './utils.js';
 import { Vec3, vecNormalize } from './vec3.js';
 

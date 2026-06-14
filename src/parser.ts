@@ -3,7 +3,10 @@
 // ============================================================================
 
 import { msg, assert, MyError, range } from "./utils.js";
-import { CanvasDef, ComputePassBuilder, theRunner, theSchema, type ButtonDef, type ISimulationSchema, type NodeDef, type RangeDef, type SelectDef, type UIDef } from "./SimulationRunner.js";
+import { CanvasDef, theRunner } from "./SimulationRunner.js";
+import { ComputePassBuilder } from "./pipeline.js";
+import { ButtonDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
+import { ISimulationSchema, theSchema } from "./schema.js";
 
 type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string | FunctionExpression;
 

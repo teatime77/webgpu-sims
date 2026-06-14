@@ -2,8 +2,9 @@ import { Article, bootstrap, schemaText, setAfterFrame, theArticles } from "./ma
 import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, $txt, copyToClipboard, showToast, captureThumbnail, $img, fetchText, urlBase } from "./utils.js";
 // import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
-import { SimulationSchema, theDevice, theRunner, theSchema } from "./SimulationRunner.js";
-import {  clearShaderEditors, makeShaderEditors, setNodeShaderCode } from "./editor.js";
+import { SimulationSchema, theSchema } from "./schema.js";
+import { theDevice, theRunner } from "./SimulationRunner.js";
+import {  makeShaderEditors, setNodeShaderCode } from "./editor.js";
 import { parseSchema } from "./parser.js";
 import {  } from "./index.js";
 import { appManager, initialPath } from "./AppManager.js";

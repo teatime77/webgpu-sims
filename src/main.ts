@@ -1,11 +1,14 @@
 import { CaptureTool } from './CaptureTool.js';
-import { ComputePassBuilder, getMesh, initDevice, RenderPassBuilder, theDevice, theRunner, theSchema, writeUniformArray } from './SimulationRunner.js';
-import { SimulationRunner, type ResourceBinding, SimulationSchema } from './SimulationRunner.js';
+import { getMesh, initDevice, theDevice, theRunner, writeUniformArray } from './SimulationRunner.js';
+import { SimulationRunner } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $btn, $canvas, $div, assert, fetchText, MeshDef, msg, MyError, parseURL, UniformDef } from './utils.js';
+import { $btn, $canvas, $div, assert, fetchText, msg, MyError, parseURL } from './utils.js';
 import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
 import { appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
+import { SimulationSchema, theSchema } from './schema.js';
+import { ComputePassBuilder, RenderPassBuilder, ResourceBinding } from './pipeline.js';
+import { MeshDef, UniformDef } from './resource.js';
 
 export let schemaText : string;
 export let theArticles : Article[];
