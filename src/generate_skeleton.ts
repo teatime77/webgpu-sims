@@ -2,11 +2,11 @@ import { parseSchema } from './parser.js';
 import { StorageDef, UniformDef } from './resource.js';
 import { SimulationSchema } from './schema.js';
 import { theDevice } from './SimulationRunner.js';
+import { makeSimulationSchema } from './start.js';
 import { msg } from './utils.js';
 
 export function makeWgslSkeleton(schemaText : string) : string {
-    const schemaDef = parseSchema(schemaText);
-    const schema = new SimulationSchema(theDevice, schemaDef);
+    const schema = makeSimulationSchema(schemaText);
 
     const codes : string[] = [];
 

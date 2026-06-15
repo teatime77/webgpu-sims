@@ -42,6 +42,7 @@ export class SimulationSchema {
     uis? : UIDef[];
     canvases?: CanvasDef[];
     script?: FunctionExpression;
+    isReady : boolean = false;
 
     constructor(device: GPUDevice, data: ISimulationSchema){
         theSchema = this;

@@ -301,8 +301,13 @@ details .content {
 /* >>>>>================================================== Wizard */
 
 .vibe-coding-wizard {
-  margin: 0 auto; /* Centers the wizard on the screen */
+  margin: 0 auto; 
   padding: 20px;
+  
+  /* Add these 3 lines to enable scrolling */
+  height: calc(100vh - 20px); /* Matches the available screen height */
+  overflow-y: auto;           /* Tells the browser to add a scrollbar when content overflows */
+  box-sizing: border-box;     /* Ensures the 20px padding doesn't push the height past 100vh */
 }
 
 .vibe-coding-wizard h1 {

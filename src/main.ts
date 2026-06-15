@@ -158,8 +158,14 @@ export async function bootstrap(sim: SimulationSchema) {
 
     runner.initScript();
 
-        function frame() {
-        if(theSchema == undefined || theSchema.shaders.length == 0){
+    function frame() {
+        if(runner != theRunner){
+            msg("runner changed");
+            return;
+        }
+
+        if(theSchema == undefined || ! theSchema.isReady){
+            requestAnimationFrame(frame);
             return;
         }
 
@@ -221,6 +227,8 @@ export async function bootstrap(sim: SimulationSchema) {
     }
 
     frame();
+
+    sim.isReady = true;
 }
 
 export async function initWebGpuSims(){
@@ -293,6 +301,10 @@ async function getContents(articles : Article[]) {
 export async function initApp(){
     initWebGpuSimsNavigationManager();
     await initWebGpuSims();
+
+    $btn("all-btn").addEventListener("click", async() => {
+        await appManager.showAll();
+    });
 
     theArticles = [];
 

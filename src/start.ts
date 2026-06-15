@@ -1,5 +1,5 @@
 import { Article, bootstrap, schemaText, setAfterFrame, theArticles } from "./main.js";
-import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, $txt, copyToClipboard, showToast, captureThumbnail, $img, fetchText, urlBase } from "./utils.js";
+import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, $txt, copyToClipboard, showToast, captureThumbnail, $img, fetchText, urlBase, sleep } from "./utils.js";
 // import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
 import { SimulationSchema, theSchema } from "./schema.js";
@@ -35,6 +35,7 @@ export function clearSchema(){
     if(theSchema == undefined){
         return;
     }
+    theSchema.isReady = false;
 
     Array.from(theSchema.resources.values()).forEach(x => x.destroyBuffers());
     theSchema.resources.clear();

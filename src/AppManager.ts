@@ -1,7 +1,7 @@
 import { clearShaderEditors, makeShaderEditors } from "./editor.js";
-import { bootstrap, theArticles } from "./main.js";
+import { Article, bootstrap, theArticles } from "./main.js";
 import { clearSchema, makeSimulationSchema } from "./start.js";
-import { $, $div, $img, $txt, assert, fetchText, msg, urlBase } from "./utils.js";
+import { $, $div, $img, $txt, assert, fetchText, msg, sleep, urlBase } from "./utils.js";
 
 export type ViewName = "login-view" | "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view";
 
@@ -60,6 +60,25 @@ export class AppManager {
         }
     }
 
+    async showArticle(article : Article){
+        const schemaText = await fetchText(article.schemaUrl);
+        const schema = makeSimulationSchema(schemaText);
+        for(const node of schema.shaders){
+            if(node.type == "compute"){
+                const path = article.schemaUrl.replace("schema.js", `${node.id}.wgsl`);
+                node.nodeShaderCode = await fetchText(path);
+            }
+        }
+
+        $img("thumbnail-img").src = `${urlBase}/${article.thumbnailUrl}`;
+        msg(`thumbnail-img-src:${$img("thumbnail-img").src}`);
+
+        $txt("schema-text").value = schemaText;
+        makeShaderEditors();
+
+        await bootstrap(schema);
+    }
+
     // --- 1. 画面の描画関数 ---
     // URL（パス）に応じてDOMを書き換える
     async renderPage(path: string) {
@@ -82,23 +101,7 @@ export class AppManager {
             assert(!(isNaN(idx)) && 0 <= idx && idx < theArticles.length)
             // msg(`post:${texts}`);
             const article = theArticles[idx];
-
-            const schemaText = await fetchText(article.schemaUrl);
-            const schema = makeSimulationSchema(schemaText);
-            for(const node of schema.shaders){
-                if(node.type == "compute"){
-                    const path = article.schemaUrl.replace("schema.js", `${node.id}.wgsl`);
-                    node.nodeShaderCode = await fetchText(path);
-                }
-            }
-
-            $img("thumbnail-img").src = `${urlBase}/${article.thumbnailUrl}`;
-            msg(`thumbnail-img-src:${$img("thumbnail-img").src}`);
-
-            $txt("schema-text").value = schemaText;
-            makeShaderEditors();
-
-            await bootstrap(schema);
+            await this.showArticle(article);
         }
         else if(path == "/wizard"){
             clearSchema();
@@ -116,6 +119,15 @@ export class AppManager {
 
         // URLが変わったので画面を再描画する
         this.renderPage(path);
+    }
+
+    async showAll(){
+        for(const article of theArticles){
+            this.showView("edit-view");
+            await this.showArticle(article);
+            await sleep(3000);
+            this.navigateTo('/');
+        }
     }
 }
 

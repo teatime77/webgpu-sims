@@ -7,6 +7,7 @@ import { CanvasDef, theRunner } from "./SimulationRunner.js";
 import { ComputePassBuilder } from "./pipeline.js";
 import { ButtonDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
 import { ISimulationSchema, theSchema } from "./schema.js";
+import { ResourceDef, StorageDef } from "./resource.js";
 
 type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string | FunctionExpression;
 
@@ -329,6 +330,8 @@ class CallStatement extends Statement {
     readonly type = 'CallStatement';
     callExpr : CallExpression;
     shader? : ComputePassBuilder;
+    srcBuffer? : GPUBuffer;
+    dstBuffer? : GPUBuffer;
 
     constructor(callExpr : CallExpression){
         super();
@@ -339,32 +342,50 @@ class CallStatement extends Statement {
         return `${this.callExpr};\n`;
     }
 
+    getName(term : BaseASTNode) : string{
+        if(term instanceof Identifier){
+            return term.name;
+        }
+        else if(term instanceof Literal){
+            return term.getString();
+        }
+        else{
+            throw new MyError();
+        }
+    }
+
     exec() : void {
-        if(this.shader == undefined){
+        if(this.callExpr.callee instanceof Identifier){
+            if(this.callExpr.callee.name == "execute"){
 
-            if(this.callExpr.callee instanceof Identifier){
-                assert(this.callExpr.callee.name == "execute");
-                if(this.callExpr.arguments.length == 1){
-                    const shaderNameTerm = this.callExpr.arguments[0];
-                    let shaderName : string;
-                    if(shaderNameTerm instanceof Identifier){
-                        shaderName = shaderNameTerm.name;
-                    }
-                    else if(shaderNameTerm instanceof Literal){
-                        shaderName = shaderNameTerm.getString();
-                    }
-                    else{
-                        throw new MyError();
-                    }
+                if(this.shader == undefined){
+                    if(this.callExpr.arguments.length == 1){
+                        const shaderNameTerm = this.callExpr.arguments[0];
+                        const shaderName = this.getName(shaderNameTerm);
 
-                    this.shader = theSchema.nodeMap.get(shaderName) as ComputePassBuilder;
+                        this.shader = theSchema.nodeMap.get(shaderName) as ComputePassBuilder;
+                    }
                 }
-            }
 
-            assert(this.shader instanceof ComputePassBuilder);
+                assert(this.shader instanceof ComputePassBuilder);
+                this.shader!.dispatch(theRunner.currentCommandEncoder!);
+                return;
+            }
+            else if(this.callExpr.callee.name == "readback"){
+                if(this.srcBuffer == undefined){
+                    if(this.callExpr.arguments.length == 2){
+                        const names = this.callExpr.arguments.map(x => this.getName(x));
+                        const resources = names.map(x => theSchema.resources.get(x)) as StorageDef[];
+                        assert(resources.every(x => x instanceof StorageDef));
+                    }
+
+                }
+
+                assert([this.srcBuffer, this.dstBuffer].every(x => x instanceof GPUBuffer));
+            }
         }
 
-        this.shader!.dispatch(theRunner.currentCommandEncoder!);        
+        throw new MyError();
     }
 }
 

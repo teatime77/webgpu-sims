@@ -98,6 +98,16 @@ export async function fetchText(fileURL: string) {
     return text;
 }
 
+
+export async function sleep(milliseconds : number) : Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(()=>{
+            resolve();
+        }, milliseconds);
+    });
+}
+
+
 /**
  * Copies a given string to the system clipboard.
  * @param textToCopy - The string you want to place in the clipboard.
