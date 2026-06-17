@@ -1,6 +1,6 @@
 import { msg, $div, $canvas } from './utils.js';
 import { assert } from './utils.js';
-import { CallStatement, FunctionExpression } from './parser.js';
+import { CallStatement, FunctionExpression } from './syntax.js';
 import { OrbitCamera } from './camera.js';
 import { SimulationSchema, theSchema } from './schema.js';
 import { MeshDef, UniformDef } from './resource.js';

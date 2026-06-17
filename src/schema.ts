@@ -1,6 +1,6 @@
 import { makeArrowMesh, makeCylinderMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
 import { assert, MyError } from './utils.js';
-import { FunctionExpression, StructDeclaration } from './parser.js';
+import { FunctionExpression, StructDeclaration } from './syntax.js';
 import { MeshDef, MeshShape, ReadBackDef, ResourceDef, StorageDef, UniformDef } from './resource.js';
 import { ComputePassBuilder, NodeDef, RenderPassBuilder } from './pipeline.js';
 import { UIDef } from './SimUI.js';

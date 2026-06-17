@@ -1,8 +1,8 @@
-import { mapAsyncBuffer, StructDeclaration } from "./parser.js";
 import { ShadingModel } from "./pipeline.js";
 import { theSchema } from "./schema.js";
 import { LabelDef } from "./SimUI.js";
 import { theDevice } from "./SimulationRunner.js";
+import { mapAsyncBuffer, StructDeclaration } from "./syntax.js";
 import { assert, MyError } from "./utils.js";
 
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
