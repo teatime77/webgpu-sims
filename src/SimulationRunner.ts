@@ -1,6 +1,6 @@
 import { msg, $div, $canvas } from './utils.js';
 import { assert } from './utils.js';
-import { FunctionExpression } from './parser.js';
+import { CallStatement, FunctionExpression } from './parser.js';
 import { OrbitCamera } from './camera.js';
 import { SimulationSchema, theSchema } from './schema.js';
 import { MeshDef, UniformDef } from './resource.js';
@@ -51,6 +51,8 @@ export class SimulationRunner {
     public currentCommandEncoder: GPUCommandEncoder | null = null;
     public generator? : Generator<PassCommand, void, unknown>;
     startTime : number = 0;
+
+    copyStorages : CallStatement[] = [];
     
     // Map to manage multiple canvas contexts
     private contexts: Map<string, GPUCanvasContext> = new Map();

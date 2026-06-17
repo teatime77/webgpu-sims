@@ -1,11 +1,14 @@
+import { mapAsyncBuffer, StructDeclaration } from "./parser.js";
 import { ShadingModel } from "./pipeline.js";
+import { theSchema } from "./schema.js";
+import { LabelDef } from "./SimUI.js";
 import { theDevice } from "./SimulationRunner.js";
 import { assert, MyError } from "./utils.js";
 
-type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
+export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
 export type MeshShape = "sphere" | "tube" | "cylinder" | "arrow";
 
-export function getElementSizeAlignment(format : string) : [number, number] {
+function getElementSizeAlignment(format : string) : [number, number] {
     let alignment;
     let size;
 
@@ -25,15 +28,31 @@ export function getElementSizeAlignment(format : string) : [number, number] {
     case 'mat4x4<f32>': 
         size = 64; alignment = 16; 
         break;
-    default:
+    default:{
+        if(theSchema.structs != undefined){
+            const st = theSchema.structs.find(x => x.name == format);
+            if(st != undefined){
+                size = st.size;
+                alignment = 16; 
+                break;
+            }
+        }
+
         throw new MyError();
+    }
+
     }
 
     return [size, alignment];
 }
 
+function getElementSize(format : string) : number {
+    const [size, _] = getElementSizeAlignment(format);
+    return size;
+}
+
 export abstract class ResourceDef {
-    type!: 'uniform' | 'storage' | 'mesh';
+    type!: 'uniform' | 'storage' | 'mesh' | 'readback';
 
     public id: string;
     public buffers!: GPUBuffer[];
@@ -43,6 +62,8 @@ export abstract class ResourceDef {
     constructor(id: string){
         this.id = id;
     }
+
+    abstract makebufferss(device: GPUDevice, id: string) : void;
 
     /** historyLevel: 0 is the current write surface, 1 is the data from 1 step ago */
     getBuffer(historyLevel: number = 0): GPUBuffer {
@@ -58,7 +79,7 @@ export abstract class ResourceDef {
 
     destroyBuffers(){
         if(this.buffers != undefined){
-            this.buffers.forEach(x => x.destroy());
+            this.buffers.filter(x => x != mapAsyncBuffer).forEach(x => x.destroy());
         }
     }
 }
@@ -76,19 +97,62 @@ export class StorageDef extends ResourceDef {
         super(id);
         Object.assign(this, data)
     }
+
+    makebufferss(device: GPUDevice, id: string) : void {
+        const count = this.bufferCount || 1;
+        const buffers: GPUBuffer[] = [];
+        
+        // Calculate byte size of a single element from WGSL format
+        if(this.format == undefined){
+            throw new MyError();
+        }
+        const elementSize = getElementSize(this.format);
+        
+        const byteSize = elementSize * (this.count || 1);
+
+        for (let i = 0; i < count; i++) {
+            buffers.push(device.createBuffer({
+                label: `Storage_${id}_${i}`,
+                size: byteSize,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
+            }));
+        }
+
+        this.buffers = buffers;
+        this.bufferCount = count;
+    }
 }
 
 
-interface FieldDef {
+export interface FieldDef {
     name  : string;
     offset: number;
     format: WgslFormat;
-    size  : number
+    size  : number;
+}
+
+export function FieldDefToStr(fld : FieldDef){
+    return `    ${fld.name} : ${fld.format};\n`;
+}
+
+export function makeFieldDefs(fields:FieldDef[]) : number {
+    const fieldDefs: FieldDef[] = [];
+
+    let offset = 0;
+    for (const field of fields) {
+        const [size, alignment] = getElementSizeAlignment(field.format);
+
+        field.size = size;
+        field.offset = Math.ceil(offset / alignment) * alignment;
+
+        offset += size;
+    }
+
+    return offset;
 }
 
 export class UniformDef extends ResourceDef {
-    fields?: Record<string, WgslFormat>; // for uniform
-    fieldDefs: FieldDef[] = [];
+    fields: FieldDef[] = [];
     totalSize: number;
     buffer!: GPUBuffer;
     obj? : any;
@@ -97,35 +161,24 @@ export class UniformDef extends ResourceDef {
         super(id);
         Object.assign(this, data);
 
-        if(this.fields == undefined){
-            if(this.obj == undefined){
-                throw new MyError();
-            }
+        if(this.obj == undefined){
+            assert(this.fields.length != 0);
+        }
+        else{
 
-            this.fields = {};
             for (const [name, val] of Object.entries(this.obj)){
                 assert(typeof val == "number");
-
-                this.fields[name] = 'f32';
+                this.fields.push({ name, format: 'f32' } as FieldDef);
             }
         }
 
-        let offset = 0;
-        for (const [name, format] of Object.entries(this.fields)) {
-            const [size, alignment] = getElementSizeAlignment(format);
-
-            // Round up offset to alignment boundary (insert padding)
-            offset = Math.ceil(offset / alignment) * alignment;
-            this.fieldDefs.push({name, offset, format, size});
-
-            offset += size;
-        }
+        let offset = makeFieldDefs(this.fields);
 
         // Round up total size to 16 byte boundary as well
         this.totalSize = Math.ceil(offset / 16) * 16;
     }
 
-    initUniform(device: GPUDevice){
+    makebufferss(device: GPUDevice, id: string) : void {
         this.buffer = device.createBuffer({
             label: `Uniform_${this.id}`,
             size: this.totalSize,
@@ -139,7 +192,7 @@ export class UniformDef extends ResourceDef {
         const view = new DataView(arrayBuffer);
 
         for(const [name, val] of Object.entries(obj)) {
-            const info = this.fieldDefs.find(x => x.name == name)!;
+            const info = this.fields.find(x => x.name == name)!;
             assert(info != undefined);
 
             if(['f32', 'u32', 'i32'].includes(info.format)){
@@ -165,14 +218,66 @@ export class UniformDef extends ResourceDef {
     }
 }
 
-export class MeshDef extends ResourceDef {
+abstract class MeshReadBackDef extends ResourceDef {
+    data!: Float32Array;
+
+    abstract getUsage() : number;
+
+    makebufferss(device: GPUDevice, id: string) : void {
+        const buffer = device.createBuffer({
+            label: `Storage_${id}`,
+            size: this.data.byteLength,
+            usage: this.getUsage()
+        });
+
+        this.buffers = [buffer];
+        this.bufferCount = 1;
+    }
+}
+
+export class MeshDef extends MeshReadBackDef {
     shape!: MeshShape;
     division?: number;
-    data!: Float32Array;
 
     constructor(id: string, data : any){
         super(id);
         Object.assign(this, data)
         assert(this.type == 'mesh');
+    }
+
+    getUsage() : number {
+        return GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX;
+    }
+}
+
+export class ReadBackDef extends MeshReadBackDef {
+    structDef : StructDeclaration;
+    labels = new Map<string, LabelDef>();
+
+    constructor(id: string, data : any){
+        super(id);
+        Object.assign(this, data);
+        const format = data.format;
+        assert(theSchema.structs != undefined && typeof format == "string");
+        this.structDef = theSchema.structs!.find(x => x.name == format)!;
+        assert(this.structDef != undefined);
+
+        const cnt = this.structDef.size / 4;
+        this.data = new Float32Array(cnt);
+    }
+
+    getUsage() : number {
+        return GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ;
+    }
+
+    setLabelValues(){
+        for(const label of this.labels.values()){
+            const field = this.structDef.fields.find(x => x.name == label.name)!;
+            assert(field != undefined);
+
+            const idx = field.offset / 4;
+
+            label.valueSpan.textContent = this.data[idx].toFixed(label.decimalPlaces);
+        }
     }
 }

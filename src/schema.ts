@@ -1,17 +1,12 @@
 import { makeArrowMesh, makeCylinderMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
 import { assert, MyError } from './utils.js';
-import { FunctionExpression } from './parser.js';
-import { getElementSizeAlignment, MeshDef, MeshShape, ResourceDef, StorageDef, UniformDef } from './resource.js';
+import { FunctionExpression, StructDeclaration } from './parser.js';
+import { MeshDef, MeshShape, ReadBackDef, ResourceDef, StorageDef, UniformDef } from './resource.js';
 import { ComputePassBuilder, NodeDef, RenderPassBuilder } from './pipeline.js';
 import { UIDef } from './SimUI.js';
 import { CanvasDef } from './SimulationRunner.js';
 
 export let theSchema : SimulationSchema;
-
-function getElementSize(format : string) : number {
-    const [size, _] = getElementSizeAlignment(format);
-    return size;
-}
 
 function getShapeStride(shape: MeshShape) : number {
     switch(shape){
@@ -27,6 +22,7 @@ function getShapeStride(shape: MeshShape) : number {
 
 export interface ISimulationSchema {
     name?: string;
+    structs? : StructDeclaration[];
     resources: Record<string, ResourceDef>;
     shaders: NodeDef[];
     uis? : UIDef[];
@@ -36,6 +32,7 @@ export interface ISimulationSchema {
 
 export class SimulationSchema {
     name?: string;
+    structs? : StructDeclaration[];
     resources: Map<string, ResourceDef>;
     shaders: NodeDef[];
     nodeMap : Map<string, NodeDef>;
@@ -48,6 +45,11 @@ export class SimulationSchema {
         theSchema = this;
 
         this.name = data.name;
+        this.structs = data.structs;
+        if(this.structs != undefined){
+            this.structs.forEach(x => x.setStructSize());
+        }
+
         this.resources = new Map<string, ResourceDef>();
         for(const [id, val] of Object.entries(data.resources)){
             // let def: ResourceDef;
@@ -71,50 +73,18 @@ export class SimulationSchema {
                     throw new Error();
                 }
 
-                const buffer = device.createBuffer({
-                    label: `Storage_${id}`,
-                    size: def.data.byteLength,
-                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
-                });
-
-                def.buffers = [buffer];
-                def.bufferCount = 1;
-
                 this.resources.set(id, def);
             }
             else if(val.type == "storage"){
                 const def = new StorageDef(id, val as any);
-
-                const count = def.bufferCount || 1;
-                const buffers: GPUBuffer[] = [];
-                
-                // Calculate byte size of a single element from WGSL format
-                if(def.format == undefined){
-                    throw new MyError();
-                }
-                const elementSize = getElementSize(def.format);
-                
-                const byteSize = elementSize * (def.count || 1);
-
-                for (let i = 0; i < count; i++) {
-                    buffers.push(device.createBuffer({
-                        label: `Storage_${id}_${i}`,
-                        size: byteSize,
-                        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.VERTEX
-                    }));
-                }
-
-                def.buffers = buffers;
-                def.bufferCount = count;
-
-
+                this.resources.set(id, def);
+            }
+            else if(val.type == "readback"){
+                const def = new ReadBackDef(id, val as any);
                 this.resources.set(id, def);
             }
             else if(val.type == "uniform"){
                 const def = new UniformDef(id, val as any);
-
-                def.initUniform(device);
-
                 this.resources.set(id, def);
             }
             else{
@@ -123,9 +93,12 @@ export class SimulationSchema {
         }
 
         if(! this.resources.has("Camera")){
-            const Camera = { type: 'uniform', fields: { viewProjection: 'mat4x4<f32>', view: 'mat4x4<f32>' } };
+            const fields = [
+                { name: "viewProjection", format: 'mat4x4<f32>' },
+                { name: "view", format: 'mat4x4<f32>' }
+            ];
+            const Camera = { type: 'uniform', fields };
             const def = new UniformDef("Camera", Camera);
-            def.initUniform(device);
             this.resources.set("Camera", def);
             // msg("make camera");
         }

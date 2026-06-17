@@ -35,7 +35,7 @@ export function makeWgslSkeleton(schemaText : string) : string {
                 code += `struct ${bind.resource}Struct {\n`;
                 let offset = 0;
                 let padIdx = 0;
-                for (const fld of res.fieldDefs) {
+                for (const fld of res.fields) {
                     while(offset < fld.offset){
 
                         code += `    pad${padIdx}: f32,\n`;
@@ -45,6 +45,15 @@ export function makeWgslSkeleton(schemaText : string) : string {
                     offset += fld.size;
                 }
                 code += `};\n\n`;
+            }
+        }
+
+        if(schema.structs != undefined){
+            const storages = Array.from(node.bindings.values()).map(x => x.resourceDef).filter(x => x instanceof StorageDef);
+            for(const st of schema.structs){
+                if(storages.some(x => x.format == st.name)){
+                    code += st.toSource();
+                }
             }
         }
 
@@ -69,7 +78,15 @@ export function makeWgslSkeleton(schemaText : string) : string {
                 const isAtomic = res.format?.includes('atomic');
                 if (isAtomic) access = 'read_write';
 
-                code += `@group(${group}) @binding(${bindingNum}) var<storage, ${access}> ${varName}: array<${res.format}>;\n`;
+                let typeName : string;
+                if(res.count != undefined && 1 < res.count){
+                    typeName = `array<${res.format}>`;
+                }
+                else{
+                    typeName = `${res.format}`;
+                }
+
+                code += `@group(${group}) @binding(${bindingNum}) var<storage, ${access}> ${varName}: ${typeName};\n`;
             }
         }
 

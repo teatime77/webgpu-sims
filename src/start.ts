@@ -11,7 +11,7 @@ import { appManager, initialPath } from "./AppManager.js";
 
 
 export function makeSimulationSchema(jsonText: string){
-    try {
+    // try {
 
         const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
         if(k != -1){
@@ -22,9 +22,9 @@ export function makeSimulationSchema(jsonText: string){
         const schema = new SimulationSchema(theDevice, schemaDef);
 
         return schema;
-    } catch (e) {
-        throw new MyError();
-    }
+    // } catch (e) {
+    //     throw new MyError();
+    // }
 }
 
 export function clearSchema(){
@@ -75,7 +75,7 @@ export function initEventHandler(){
                             + schemaText;
 
         await copyToClipboard(instruction);
-        showToast($btn("copy-rulebook-btn"), "Text successfully copied to clipboard!");
+        showToast("Text successfully copied to clipboard!", 3, $btn("copy-rulebook-btn"));
     });
 
     $btn("create-copy-skeleton-btn").addEventListener("click", async()=>{
@@ -84,7 +84,7 @@ export function initEventHandler(){
                             + wgslSkeleton;
 
         await copyToClipboard(instruction);
-        showToast($btn("create-copy-skeleton-btn"), "Text successfully copied to clipboard!");
+        showToast("Text successfully copied to clipboard!", 3, $btn("create-copy-skeleton-btn"));
 
         makeShaderEditors();
     });

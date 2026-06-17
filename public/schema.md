@@ -41,8 +41,26 @@ The `resources` field is a **Key-Value Dictionary (Object)**. Order does not mat
 
 **Resource Types:**
 
-* **Uniforms:**
-* Format: `{ type: "uniform", obj: [Reference to state object] }`
+There are four types of resources:
+
+1. `uniform`
+WebGPU uniform variables.
+2. `storage`
+WGSL uses these to read and write data for mathematical and physical calculations.
+They output the position and color of shapes and are also used as instance data for the render pipeline.
+3. `mesh`
+Mesh data such as the vertex positions and normals of primitive shapes like spheres, cylinders, and arrows.
+4. `readback`
+A staging buffer for copying WGSL calculation results to a TypeScript Float32Array.
+
+#### **1. uniform**
+* Format:
+```js
+{ 
+    type: "uniform", 
+    obj: [Reference to state object] 
+}
+```
 
 If the name of the uniform variable is `Params` and the object pointed to by `obj` has `time` property , the app sets the elapsed time to `time`.
 
@@ -50,7 +68,7 @@ The elapsed time is in seconds, and the value of `time` is 0 on the first shader
 
 Compute shaders can perform initialization when the value of `time` is 0.
 
-* **Storage Buffers:**
+#### **2. storage**
 * Format:
 ```typescript
 {
@@ -97,14 +115,43 @@ If the buffer generates procedural geometry without a mesh, specify a `topology`
       * **Memory Stride:** 10 floats per VERTEX `[x, y, z, r, g, b, a, nx, ny, nz]`.
       * **Count Calculation:** `NUM_VERTICES * 10`
 
-* **Meshes:**
-* Format: `{ type: "mesh", shape: '[tube|cylinder|arrow|sphere]', division: [Number] }`
+#### **3. mesh**
+* Format:
+```js
+{ 
+    type: "mesh", 
+    shape: '[tube|cylinder|arrow|sphere]', 
+    division: [Number] 
+}
+```
 
 The average division values ​​for each type are as follows:
 * tube : 16
 * cylinder : 16
 * arrow : 16
 * sphere : 2
+
+#### **4. readback**
+* Format:
+```js
+{ 
+    type: "readback", 
+    format: [struct name], 
+}
+```
+
+Keys of `storage` and `readback` resources are used `copy` instruction in the script(described later).
+
+The following script copies the contents of storageB to readbackC after shaderA has been executed.
+```js
+const schema = {
+    // ...
+    script: ()=>{
+        execute(shaderA);
+        copy(storageB, readbackC);
+    }
+};
+```
 
 #### canvasId (optional)
 
@@ -151,11 +198,17 @@ Renders an HTML `<input type="range" />` slider. Use this for continuous numeric
 * `max` (Number): The maximum allowed value.
 * `step` (Number): The increment step size.
 
-
 * **Example:**
 ```javascript
-{ type: "range", obj: state, name: "gravity", label: "Gravity", min: 1.0, max: 20.0, step: 0.1 }
-
+{ 
+    type: "range", 
+    obj: state, 
+    name: "gravity", 
+    label: "Gravity", 
+    min: 1.0, 
+    max: 20.0, 
+    step: 0.1 
+}
 ```
 
 #### 2. Select Component (`type: "select"`)
@@ -181,10 +234,84 @@ Renders an HTML `<select>` dropdown menu. Use this for switching between discret
         { value: 2, text: "3d_z2 (donut+lobes)" }
     ]
 }
-
 ```
 
-### D. Additional `canvases` (optional)
+#### 3. Label Component (`type: "label"`)
+
+Renders an span HTML. 
+Use this to show the result value calculated by the shader.
+
+* **Specific Properties:**
+* `name` (string): The field name in the struct declaration.
+* `label`(string):Human-readable display text.
+* `resource`(string): The key of the `readback` resource.
+* `decimalPlaces` (number): number of decimal places 
+
+* **Example:**
+```javascript
+{ 
+    type: "label", 
+    name:"result", 
+    label:"result value", 
+    resource:"Readback", 
+    decimalPlaces:3 
+}
+```
+
+
+### D. `structs` (optional)
+
+`structs` is used when copying WGSL calculation results to a TypeScript Float32Array using the `readback` resource.
+
+In the following example, after executing `calculator`, `Result` is copied to `Readback`, and `result` value in `Readback` is displayed in a `label`.
+#### Example:
+```js
+const schema = {
+    // ...
+    structs: `
+        struct ResultStruct {
+            result: f32,
+        };
+    `
+    ,
+    resources: {
+        Result: { type:'storage', format: 'ResultStruct', count:1 },
+        Readback: { type:'readback', format: 'ResultStruct' }
+    }
+    ,
+    shaders: [
+        {
+            id: 'calculator',
+            type: 'compute',
+            // ...
+            bindings: [
+                { resource: 'Result', access: 'read_write' },
+            ]
+        }
+    ]
+    ,
+    script: ()=>{
+        execute(calculator);
+        copy(Result, Readback);
+    }
+    ,
+    uis:[
+        { type: "label", name:"result", label:"calculation result", resource:"Readback", decimalPlaces:3 },
+    ]
+};
+```
+
+The app generates a WGSL skeleton like the one below.
+```wgsl
+struct ResultStruct {
+    result: f32,
+};
+
+@group(0) @binding(0) var<storage, read_write> Result: ResultStruct;
+```
+
+
+### E. Additional `canvases` (optional)
 
 By default, the app draws on the main canvas, but you can also draw on multiple additional canvases.
 
@@ -204,7 +331,7 @@ const schema = {
 };
 ```
 
-### E. `script` (optional)
+### F. `script` (optional)
 
 By default, the shaders in `shaders` are executed sequentially once each time a frame is rendered.
 
@@ -264,6 +391,49 @@ When implementing the TypeScript schema or WGSL logic, you MUST adhere to the fo
 * **Correct (Phony Assignment):** `_ = rand();`
 * **Correct (Named Dummy):** `let dummy = rand();`
 
+Here is the explanation text formatted to drop perfectly into the **"3. Common WebGPU Gotchas & Best Practices"** section of your `schema.md` document.
+
+I have titled it "The TypedArray Readback Trap" and structured it to match the existing format of the document.
+
+---
+
+### F. The TypedArray Readback Trap (Mixed-Type Structs)
+
+**The Problem:** In WebGPU, accumulation counters or precise indices require `u32` to avoid the precision loss that happens with `f32` after reaching 16,777,216. However, when the frontend reads the staging buffer, it typically maps the entire memory pool into a single `Float32Array`. If you try to read a `u32` struct field directly out of that `Float32Array`, JavaScript interprets the raw integer bits as an IEEE 754 floating-point number, resulting in `NaN` or severely corrupted values. Working around this on the CPU side requires cumbersome memory mapping using `DataView` or overlapping `Uint32Array` views.
+
+**The Rule:** Use the **"Dual-Field Casting" (or Shadow Field)** pattern. Keep your `u32` fields in the struct for safe, high-capacity WGSL calculations, but define companion `f32` fields strictly for UI display. Cast the `u32` values to the `f32` display fields at the very end of your compute pipeline. This allows the frontend to safely and lazily read the entire struct from a single `Float32Array`.
+
+* **Example Struct:**
+
+```wgsl
+struct ResultStruct {
+    piValue: f32,
+    
+    // Internal WGSL counters (Safe from precision loss)
+    totalSamples_calc: u32,
+    totalInside_calc: u32,
+    
+    // Frontend UI display values (Safe to read from Float32Array)
+    totalSamples_display: f32,
+    totalInside_display: f32,
+};
+
+```
+
+* **Example Implementation:**
+
+```wgsl
+// 1. Perform safe accumulation using u32
+Result.totalSamples_calc += 100000u;
+Result.totalInside_calc += frame_inside_count;
+
+// ... other math logic ...
+
+// 2. Cast to f32 right before the shader exits for easy JS readback
+Result.totalSamples_display = f32(Result.totalSamples_calc);
+Result.totalInside_display = f32(Result.totalInside_calc);
+
+```
 ---
 
 # Examples

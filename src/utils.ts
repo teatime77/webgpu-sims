@@ -1,3 +1,5 @@
+let toastTimer : number | undefined;
+
 export class MyError extends Error {
 }
 
@@ -126,25 +128,44 @@ export async function copyToClipboard(textToCopy: string): Promise<void> {
   }
 }
 
-export function showToast(btn : HTMLButtonElement, text :string){
+export function showToast(text :string, timeout : number = 3, btn? : HTMLButtonElement){
+    if(toastTimer != undefined){
+        clearTimeout(toastTimer);
+    }
+
     const toastMessage = $div('toast-message');
     toastMessage.textContent = text;
 
-    // Get the exact dimensions and position of the button
-    const rect = btn.getBoundingClientRect();
+    let x : number;
+    let y : number;
+
+    if(btn != undefined){
+        // Get the exact dimensions and position of the button
+        const rect = btn.getBoundingClientRect();
+        x = rect.left + window.scrollX;
+        y = rect.bottom + window.scrollY + 10;
+    }
+    else{
+        const clientWidth = document.documentElement.clientWidth;
+        const clientHeight = document.documentElement.clientHeight;
+
+        x = clientWidth / 2;
+        y = clientHeight / 2;
+    }
 
     // Set position to the bottom-left of the button
     // window.scrollY/X ensures it stays accurate even if the user has scrolled down the page
-    toastMessage.style.left = `${rect.left + window.scrollX}px`;
+    toastMessage.style.left = `${x}px`;
 
     // rect.bottom is the bottom edge of the button. We add 10px for a small gap.
-    toastMessage.style.top = `${rect.bottom + window.scrollY + 10}px`; 
+    toastMessage.style.top = `${y}px`; 
 
     toastMessage.classList.add('show');
 
-    setTimeout(() => {
+    toastTimer = setTimeout(() => {
+        toastTimer = undefined;
         toastMessage.classList.remove('show');
-    }, 3000);
+    }, timeout * 1000);
 }
 
 export function generateTimestamp(): string {

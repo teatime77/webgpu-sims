@@ -3,15 +3,16 @@
 // ============================================================================
 
 import { msg, assert, MyError, range } from "./utils.js";
-import { CanvasDef, theRunner } from "./SimulationRunner.js";
+import { CanvasDef, theDevice, theRunner } from "./SimulationRunner.js";
 import { ComputePassBuilder } from "./pipeline.js";
-import { ButtonDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
+import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
 import { ISimulationSchema, theSchema } from "./schema.js";
-import { ResourceDef, StorageDef } from "./resource.js";
+import { FieldDef, FieldDefToStr, makeFieldDefs, ReadBackDef, ResourceDef, StorageDef, WgslFormat } from "./resource.js";
 
-type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string | FunctionExpression;
+type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string | FunctionExpression | StructDeclaration;
 
 const constValues = new Map<string, ValueType>();
+export let mapAsyncBuffer : GPUBuffer | undefined;
 
 // ============================================================================
 // Abstract Base Class
@@ -88,6 +89,37 @@ export class Program extends BaseASTNode {
 
     toSource(): string {
         return this.variables().map(decl => decl.toSource()).join('\n\n');
+    }
+}
+
+export class StructDeclaration extends BaseASTNode {
+    readonly type = 'StructDeclaration';
+    name: string;
+    fields:FieldDef[];
+    size : number = NaN;
+
+    constructor(name: string, fields:FieldDef[]) {
+        super();
+        this.name = name;
+        this.fields = fields;
+    }
+
+    getValue() : ValueType {
+        return this;
+    }
+
+    toSource(): string {
+        return `
+struct ${this.name} {
+${this.fields.map(x => FieldDefToStr(x)).join("")} 
+};\n`;
+    }
+
+    setStructSize(){
+        let offset = makeFieldDefs(this.fields);
+
+        const cnt = Math.ceil(offset / 4);
+        this.size = cnt * 4;
     }
 }
 
@@ -326,12 +358,13 @@ class ForStatement extends Statement {
     }
 }
 
-class CallStatement extends Statement {
+export class CallStatement extends Statement {
     readonly type = 'CallStatement';
     callExpr : CallExpression;
     shader? : ComputePassBuilder;
-    srcBuffer? : GPUBuffer;
-    dstBuffer? : GPUBuffer;
+    srcStorage? : StorageDef;
+    dstStorage? : ReadBackDef;
+    busy : boolean = false;
 
     constructor(callExpr : CallExpression){
         super();
@@ -371,21 +404,62 @@ class CallStatement extends Statement {
                 this.shader!.dispatch(theRunner.currentCommandEncoder!);
                 return;
             }
-            else if(this.callExpr.callee.name == "readback"){
-                if(this.srcBuffer == undefined){
+            else if(this.callExpr.callee.name == "copy"){
+                if(this.srcStorage == undefined){
                     if(this.callExpr.arguments.length == 2){
                         const names = this.callExpr.arguments.map(x => this.getName(x));
                         const resources = names.map(x => theSchema.resources.get(x)) as StorageDef[];
-                        assert(resources.every(x => x instanceof StorageDef));
+                        assert(resources.length == 2);
+                        [this.srcStorage, this.dstStorage] = [resources[0], resources[1] as ReadBackDef];
+                        assert(this.srcStorage instanceof StorageDef && this.dstStorage instanceof ReadBackDef);
+                        msg(`copy:${this.srcStorage.id} => ${this.dstStorage.id}`);
                     }
-
+                    else{
+                        throw new MyError();
+                    }
                 }
 
-                assert([this.srcBuffer, this.dstBuffer].every(x => x instanceof GPUBuffer));
+                theRunner.copyStorages.push(this);
+                return;
             }
         }
 
         throw new MyError();
+    }
+
+    async copyBuffers(device : GPUDevice){
+        if(this.busy){
+            return;
+        }
+
+        this.busy = true;
+        if(this.srcStorage instanceof StorageDef && this.dstStorage instanceof ReadBackDef){
+
+            const srcBuffer = this.srcStorage.buffers[0];
+            const dstBuffer = this.dstStorage.buffers[0];
+
+            const sizes = [srcBuffer.size, dstBuffer.size, this.dstStorage.structDef.size, this.dstStorage.data.byteLength];
+            assert(sizes.every(x => x == sizes[0]));
+
+            const copyEncoder = device.createCommandEncoder();
+            copyEncoder.copyBufferToBuffer(srcBuffer, 0, dstBuffer, 0, this.dstStorage.structDef.size);
+            device.queue.submit([copyEncoder.finish()]);
+
+            // Wait for the GPU to finish the copy and map the buffer
+            mapAsyncBuffer = dstBuffer;
+            await dstBuffer.mapAsync(GPUMapMode.READ);
+            mapAsyncBuffer = undefined;
+
+            // Read AND copy the data into a new ArrayBuffer using .slice()
+            this.dstStorage.data.set(new Float32Array(dstBuffer.getMappedRange()));
+
+            // Now it is safe to unmap. finalScalars contains a safe copy of the data.
+            dstBuffer.unmap();
+
+            this.dstStorage.setLabelValues();
+        }
+
+        this.busy = false;
     }
 }
 
@@ -550,7 +624,7 @@ export class Lexer {
         }
 
         // Punctuators (Added +, /, %, and simplified the regex)
-        if (/[{}\[\]():=,.\*;\-+/%]/.test(char)) {
+        if (/[{}\[\]()<>:=,.\*;\-+/%`]/.test(char)) {
             this.pos++;
             return { type: 'Punctuator', value: char, start, end: this.pos };
         }
@@ -645,6 +719,11 @@ export class Parser {
         return token;
     }
 
+    private consumeIdentifier(): string {
+        const id = this.consumeType("Identifier");
+        return id.value;
+    }
+
     public parse(): Program {
         const body = new Map<string, VariableDeclaration>();
         while (this.peek().type !== 'EOF') {
@@ -674,6 +753,54 @@ export class Parser {
                 break;
             }
         }
+    }
+
+    private parseStructDeclarations(){
+        this.consume("`");
+        
+        const elements : StructDeclaration[] = [];
+        while(this.peek().value != "`"){
+            this.consume("struct");
+            const structName = this.consumeIdentifier();
+
+            this.consume("{");
+
+            const fields:FieldDef[] = [];
+            while(this.peek().value != "}"){
+                const fieldName = this.consumeIdentifier();
+                this.consume(":");
+                let typeName = this.consumeIdentifier();
+                if(this.peek().value == "<"){
+                    this.consume("<");
+                    const elementType = this.consumeIdentifier();
+                    this.consume(">");
+                    typeName = `${typeName}<${elementType}>`;
+                }
+
+                const field = { name:fieldName, format:typeName } as FieldDef;
+                fields.push(field);
+
+                const token = this.peek();
+                if(token.value == ","){
+                    this.consume(",");
+                }
+                else{
+                    break;
+                }
+            }
+
+            this.consume("}");
+            this.consume(';');
+
+            const structDecl = new StructDeclaration(structName, fields);
+            elements.push(structDecl);
+
+            msg(`struct:${structDecl.toSource()}`);
+        }
+
+        this.consume("`");
+
+        return new ArrayExpression(elements);
     }
 
     private parseVariableDeclaration(): VariableDeclaration {
@@ -783,6 +910,10 @@ export class Parser {
         // Handle Arrays
         else if (token.type === 'Punctuator' && token.value === '[') {
             node = this.parseArray();
+        }
+
+        else if (token.type === 'Punctuator' && token.value === "`") {
+            node = this.parseStructDeclarations();
         }
 
         // Handle Functions (Reads body as raw string)
@@ -1069,6 +1200,7 @@ function readUIs(obj : ObjectExpression) : UIDef {
         case "min":
         case "max":
         case "step":
+        case "decimalPlaces":
             data[key] = value.getNumber();
             break;
         case "reset":
@@ -1079,6 +1211,10 @@ function readUIs(obj : ObjectExpression) : UIDef {
             data[key] = (value as ArrayExpression).elements.map(x => readOption(x as ObjectExpression))
             break;
         }
+        case "resource":{
+            data["resourceId"] = value.getString();
+            break;
+        }
         default:
             throw new MyError();
         }
@@ -1087,7 +1223,7 @@ function readUIs(obj : ObjectExpression) : UIDef {
     switch(data.type){
     case "range" : return data as RangeDef;
     case "select": return data as SelectDef;
-    case "button": return data as ButtonDef;
+    case "label": return data as LabelDef;
     default      : throw new MyError();
     }
 }
@@ -1121,6 +1257,14 @@ function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
         switch(key){
         case "name":
             schema[key] = value;
+            break;
+        case "structs":
+            if(value instanceof ArrayExpression){
+                schema[key] = value.elements;
+            }
+            else{
+                throw new MyError();
+            }
             break;
         case "resources":
             schema[key] = readResources(value as ObjectExpression);

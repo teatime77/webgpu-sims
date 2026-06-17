@@ -1,9 +1,10 @@
+import { ReadBackDef } from "./resource.js";
 import { SimulationSchema } from "./schema.js";
 import type { SimulationRunner } from "./SimulationRunner.js";
-import { $div } from "./utils.js";
+import { $div, MyError } from "./utils.js";
 
 export interface UIDef {
-    type : "range" | "select" | "button",
+    type : "range" | "select" | "label",
     obj:any,
     name:string,
     label: string, 
@@ -22,12 +23,15 @@ export interface SelectDef extends UIDef {
     reset? : boolean
 }
 
-export interface ButtonDef extends UIDef {
+export interface LabelDef extends UIDef {
+    resourceId : string;
+    resource : ReadBackDef;
+    valueSpan : HTMLSpanElement;
+    decimalPlaces: number;
 }
 
 export class SimUI {
     private container: HTMLElement;
-    private hud: HTMLElement;
 
     constructor() {
         // Remove old UI to prevent duplicates during HMR (Hot Module Replacement)
@@ -47,17 +51,6 @@ export class SimUI {
 
 
         $div("uis-div").appendChild(this.container);
-
-        // ★ Create elements for HUD
-        this.hud = document.createElement('div');
-        this.hud.style.padding = '8px';
-        this.hud.style.marginBottom = '8px';
-        this.hud.style.borderBottom = '1px solid #444';
-        this.hud.style.color = '#0af'; // Slightly standout color
-        this.hud.style.fontSize = '14px';
-        this.hud.style.fontWeight = 'bold';
-        this.hud.style.fontFamily = 'monospace';
-        this.container.prepend(this.hud);
     }
 
     /**
@@ -100,10 +93,35 @@ export class SimUI {
         });
 
         row.appendChild(lbl);
-        row.appendChild(slider);
+        lbl.appendChild(slider);
         row.appendChild(valDisp);
         this.container.appendChild(row);
     }
+
+    addLabel(data:LabelDef) {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '8px';
+        row.style.padding = '4px 0';
+
+        const lbl = document.createElement('span');
+        lbl.textContent = data.label;
+        lbl.style.minWidth = '80px';
+        lbl.style.fontSize = '13px';
+
+        data.valueSpan = document.createElement('span');
+        data.valueSpan.textContent = "";
+        data.valueSpan.style.minWidth = '40px';
+        data.valueSpan.style.textAlign = 'right';
+        data.valueSpan.style.fontFamily = 'monospace';
+        data.valueSpan.style.fontSize = '12px';
+
+        row.appendChild(lbl);
+        row.appendChild(data.valueSpan);
+        this.container.appendChild(row);
+    }
+
 
     /**
      * Adds a dropdown list (Select)
@@ -167,6 +185,17 @@ export class SimUI {
         const initial = data.initial ?? data.obj[data.name];
         this.addSelect(data.label, data.options, initial, onChange);
     }
+
+    makeLabel(schema: SimulationSchema, data : LabelDef){
+        this.addLabel(data);
+
+        const readback = schema.resources.get(data.resourceId);
+        if(!(readback instanceof ReadBackDef)){
+            throw new MyError();
+        }
+
+        readback.labels.set(data.name, data);
+    }
 }
 
 export function makeUIs(runner:SimulationRunner, schema: SimulationSchema){
@@ -182,6 +211,10 @@ export function makeUIs(runner:SimulationRunner, schema: SimulationSchema){
 
         case "select":
             simUI.makeSelect(runner, ui as SelectDef);
+            break;
+
+        case "label":
+            simUI.makeLabel(schema, ui as LabelDef);
             break;
 
         default:

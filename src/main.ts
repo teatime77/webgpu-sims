@@ -31,6 +31,10 @@ export async function bootstrap(sim: SimulationSchema) {
         captureTool = new CaptureTool();
     }
 
+    for(const [id, res] of sim.resources.entries()){
+        res.makebufferss(theDevice, id);
+    }
+
     if(sim.uis){
         makeUIs(runner, sim);
     }
@@ -169,6 +173,8 @@ export async function bootstrap(sim: SimulationSchema) {
             return;
         }
 
+        runner.copyStorages = [];
+
         // 1. Initialize command encoder and run Compute Shaders first
         runner.currentCommandEncoder = theDevice.createCommandEncoder();
 
@@ -183,6 +189,11 @@ export async function bootstrap(sim: SimulationSchema) {
 
         // Submit compute passes immediately
         theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
+
+        for(const cp of runner.copyStorages){
+            cp.copyBuffers(theDevice).then(data =>{
+            });
+        }
 
         const renders = runner.getRenders();
         const clearedCanvases = new Set<string>();
