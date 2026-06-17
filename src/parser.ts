@@ -9,7 +9,7 @@ import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
 import { ISimulationSchema, theSchema } from "./schema.js";
 import { FieldDef, FieldDefToStr, makeFieldDefs, ReadBackDef, ResourceDef, StorageDef, WgslFormat } from "./resource.js";
 import { Lexer, Token, TokenType } from "./lexer.js";
-import { BaseASTNode, Program, StructDeclaration, VariableDeclaration, ObjectExpression, ArrayExpression, Literal, Identifier, UnaryExpression, BinaryExpression, GroupExpression, Statement, BlockStatement, ForStatement, CallStatement, FunctionExpression, MemberExpression, CallExpression, constValues } from "./syntax.js";
+import { BaseASTNode, Program, StructDeclaration, VariableDeclaration, ObjectExpression, ArrayExpression, Literal, Identifier, UnaryExpression, BinaryExpression, GroupExpression, Statement, BlockStatement, ForStatement, CallStatement, FunctionExpression, MemberExpression, CallExpression, constValues, Expression, IfStatement, AssignmentStatement } from "./syntax.js";
 
 
 
@@ -35,6 +35,10 @@ export class Parser {
 
     private peek(): Token {
         return this.currentToken;
+    }
+
+    private peekText(): string {
+        return this.currentToken.value;
     }
 
     private consume(expectedValue?: string): Token {
@@ -170,12 +174,26 @@ export class Parser {
         return va;
     }
 
-    public parseExpression(): BaseASTNode {
-        return this.parseAdditive();
+    public parseExpression(): Expression {
+        return this.parseRelational();
+    }
+
+    private parseRelational() : Expression {
+        let left = this.parseAdditive();
+
+        if(["==", "!=", "<", ">", "<=", ">="].includes(this.peekText())){
+            const operator = this.consume().value;
+            let right = this.parseAdditive();
+
+            return new BinaryExpression(left, operator, right);
+        }
+        else{
+            return left;
+        }
     }
 
     // 1. Level: + and - (Left Associative)
-    private parseAdditive(): BaseASTNode {
+    private parseAdditive(): Expression {
         let left = this.parseMultiplicative();
         
         while (this.peek().value === '+' || this.peek().value === '-') {
@@ -188,7 +206,7 @@ export class Parser {
     }
 
     // 2. Level: *, /, and % (Left Associative)
-    private parseMultiplicative(): BaseASTNode {
+    private parseMultiplicative(): Expression {
         let left = this.parseExponentiation();
         
         while (this.peek().value === '*' || this.peek().value === '/' || this.peek().value === '%') {
@@ -201,7 +219,7 @@ export class Parser {
     }
 
     // 3. Level: ** (Right Associative)
-    private parseExponentiation(): BaseASTNode {
+    private parseExponentiation(): Expression {
         let left = this.parsePrimary();
         
         if (this.peek().value === '**') {
@@ -215,7 +233,7 @@ export class Parser {
     }
 
     // 4. Level: Unary, Groupings, Primitives, Identifiers, Objects, Arrays
-    private parsePrimary(): BaseASTNode {
+    private parsePrimary(): Expression {
         const token = this.peek();
         let node: BaseASTNode;
 
@@ -310,7 +328,7 @@ export class Parser {
         return node;
     }
 
-    private parseObject(): ObjectExpression {
+    private parseObject(): Expression {
         const properties = [];
         this.consume('{');
 
@@ -344,12 +362,24 @@ export class Parser {
         return new ArrayExpression(elements);
     }
 
-    private parseCallStatement() : CallStatement {
-        const callExpr = this.parsePrimary() as CallExpression;
-        assert(callExpr instanceof CallExpression);
-        this.consume(';');
+    private parseSingleStatement() : Statement {
+        const expr = this.parsePrimary();
+        if(expr instanceof CallExpression){
+            this.consume(';');
 
-        return new CallStatement(callExpr);
+            return new CallStatement(expr);
+        }
+
+        if([ "=", "+=", "-=", "*=", "/=" ].includes(this.peekText())){
+            const operator = this.consume().value;
+
+            const right = this.parsePrimary();
+            this.consume(';');
+
+            return new AssignmentStatement(expr, operator, right);
+        }
+
+        throw new MyError();
     }
 
     private parseBlock() : BlockStatement {
@@ -379,6 +409,40 @@ export class Parser {
         return new ForStatement(iteratorToken.value, collection, block);
     }
 
+    private parseIfSub(conditions : Expression[], blocks:BlockStatement[]){
+        this.consume("if");
+        this.consume("(");
+        const condition = this.parseExpression();
+        this.consume(")");        
+        const block = this.parseBlock();
+
+        conditions.push(condition);
+        blocks.push(block);
+    }
+
+    private parseIf() : IfStatement {
+        let conditions : Expression[] = [];
+        let blocks:BlockStatement[] = [];
+
+        this.parseIfSub(conditions, blocks);
+
+        while(this.peekText() == "else"){
+            this.consume("else");
+
+            if(this.peekText() == "if"){
+                this.parseIfSub(conditions, blocks);
+                continue;
+            }
+            else if(this.peekText() == "{"){
+                const block = this.parseBlock();
+                blocks.push(block);
+                break;
+            }
+        }
+
+        return new IfStatement(conditions, blocks);
+    }
+
     private parseStatement() : Statement {
         const token = this.peek();
         if(token.value == "{"){
@@ -387,8 +451,11 @@ export class Parser {
         else if(token.value == "for"){
             return this.parseFor();
         }
+        else if(token.value == "if"){
+            return this.parseIf();
+        }
         else if(token.type == "Identifier"){
-            return this.parseCallStatement();
+            return this.parseSingleStatement();
         }
         else{
             throw new MyError();

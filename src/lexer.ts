@@ -59,9 +59,7 @@ export class Lexer {
         const nextChar = this.pos + 1 < this.source.length ? this.source[this.pos + 1] : `\0`;
         const doubleChar = char + nextChar;
 
-        switch(doubleChar){
-        case "**":
-        case "=>":
+        if([ "**", "=>", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=" ].includes(doubleChar)){
             this.pos += 2;
             return { type: 'Punctuator', value: doubleChar, start, end: this.pos };
         }

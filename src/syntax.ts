@@ -120,26 +120,23 @@ ${this.fields.map(x => FieldDefToStr(x)).join("")}
     }
 }
 
-export class VariableDeclaration extends BaseASTNode {
-    readonly type = 'VariableDeclaration';
-    name: string;
-    init: BaseASTNode;
-    typeAnnotation?: string;
+export class Variable {
+    name : string;
+    value: ValueType | undefined;
 
-    constructor(name: string, init: BaseASTNode, typeAnnotation?: string) {
-        super();
+    constructor(name : string){
         this.name = name;
-        this.init = init;
-        this.typeAnnotation = typeAnnotation;
     }
 
-    toSource(): string {
-        const typeDef = this.typeAnnotation ? `: ${this.typeAnnotation}` : '';
-        return `const ${this.name}${typeDef} = ${this.init.toSource()};`;
+    setValue(value : ValueType){
+        this.value = value;
     }
 }
 
-export class ObjectExpression extends BaseASTNode {
+export abstract class  Expression extends BaseASTNode {
+}
+
+export class ObjectExpression extends Expression {
     readonly type = 'ObjectExpression';
     properties: { key: string; value: BaseASTNode }[];
 
@@ -169,7 +166,7 @@ export class ObjectExpression extends BaseASTNode {
     }
 }
 
-export class ArrayExpression extends BaseASTNode {
+export class ArrayExpression extends Expression {
     readonly type = 'ArrayExpression';
     elements: BaseASTNode[];
 
@@ -188,7 +185,7 @@ export class ArrayExpression extends BaseASTNode {
     }
 }
 
-export class Literal extends BaseASTNode {
+export class Literal extends Expression {
     readonly type = 'Literal';
     value: string | number | boolean;
     rawType: 'string' | 'number' | 'boolean';
@@ -232,7 +229,7 @@ export class Identifier extends BaseASTNode {
     }
 }
 
-export class UnaryExpression extends BaseASTNode {
+export class UnaryExpression extends Expression {
     readonly type = 'UnaryExpression';
     operator: string;
     argument: BaseASTNode;
@@ -254,13 +251,13 @@ export class UnaryExpression extends BaseASTNode {
     }
 }
 
-export class BinaryExpression extends BaseASTNode {
+export class BinaryExpression extends Expression {
     readonly type = 'BinaryExpression';
-    left: BaseASTNode;
+    left: Expression;
     operator: string;
-    right: BaseASTNode;
+    right: Expression;
 
-    constructor(left: BaseASTNode, operator: string, right: BaseASTNode) {
+    constructor(left: Expression, operator: string, right: Expression) {
         super();
         this.left = left;
         this.operator = operator;
@@ -279,12 +276,18 @@ export class BinaryExpression extends BaseASTNode {
         case "-": return n1 - n2;
         case "*": return n1 * n2;
         case "/": return n1 / n2;
+        case "==": return n1 == n2; 
+        case "!=": return n1 != n2; 
+        case "<" : return n1 <  n2; 
+        case ">" : return n1 >  n2; 
+        case "<=": return n1 <= n2; 
+        case ">=": return n1 >= n2; 
         default: throw new MyError();
         }
     }
 }
 
-export class GroupExpression extends BaseASTNode {
+export class GroupExpression extends Expression {
     readonly type = 'GroupExpression';
     expression: BaseASTNode;
 
@@ -303,7 +306,34 @@ export class GroupExpression extends BaseASTNode {
 }
 
 export abstract class Statement extends BaseASTNode {
+    parent : Statement | null = null;
     abstract exec() : void;
+
+    setParent(parent : Statement | null){
+        this.parent = parent;
+    }
+}
+
+export class VariableDeclaration extends Statement {
+    readonly type = 'VariableDeclaration';
+    name: string;
+    init: BaseASTNode;
+    typeAnnotation?: string;
+
+    constructor(name: string, init: BaseASTNode, typeAnnotation?: string) {
+        super();
+        this.name = name;
+        this.init = init;
+        this.typeAnnotation = typeAnnotation;
+    }
+
+    toSource(): string {
+        const typeDef = this.typeAnnotation ? `: ${this.typeAnnotation}` : '';
+        return `const ${this.name}${typeDef} = ${this.init.toSource()};`;
+    }
+
+    exec() : void {
+    }
 }
 
 export class BlockStatement extends Statement {
@@ -313,6 +343,8 @@ export class BlockStatement extends Statement {
     constructor(statements : Statement[]){
         super();
         this.statements = statements.slice();
+
+        this.statements.forEach(x => x.setParent(this));
     }
 
     toSource(): string {
@@ -329,16 +361,18 @@ export class BlockStatement extends Statement {
 
 export class ForStatement extends Statement {
     readonly type = 'ForStatement';
-    iterator : string;
+    iterator : Variable;
     collection  : CallExpression;
     block : BlockStatement;
 
     constructor(iterator : string, collection  : BaseASTNode, block : BlockStatement){
         super();
-        this.iterator = iterator;
+        this.iterator = new Variable(iterator);
         assert(collection instanceof CallExpression);
         this.collection  = collection as CallExpression;
         this.block = block;
+
+        this.block.setParent(this);
     }
 
     toSource(): string {
@@ -348,10 +382,66 @@ export class ForStatement extends Statement {
     exec() : void {
         const collection = this.collection.getValue();
         if(Array.isArray(collection)){
-            for(const _ of collection){
+            for(const value of collection){
+                this.iterator.setValue(value);
                 this.block.exec();
             }
         }
+    }
+}
+
+export class IfStatement extends Statement {
+    readonly type = 'IfStatement';
+    conditions : Expression[];
+    blocks:BlockStatement[];
+
+    constructor(conditions : Expression[], blocks:BlockStatement[]){
+        super();
+        this.conditions = conditions;
+        this.blocks = blocks;
+
+        this.blocks.forEach(x => x.setParent(this));
+    }
+
+    hasElse() : boolean {
+        return this.conditions.length < this.blocks.length;
+    }
+
+    exec() : void {
+        for(const [idx, expr] of this.conditions.entries()){
+            const ok = expr.getBoolean();
+            if(ok){
+                this.blocks[idx].exec();
+                return;
+            }
+        }
+
+        if(this.hasElse()){
+            this.blocks.at(-1)!.exec();
+        }
+    }
+
+    toSource(): string {
+        let str = "";
+
+        for(const [idx, expr] of this.conditions.entries()){
+            if(idx == 0){
+                str += "if";
+            }
+            else{
+                str += "else if";
+            }
+
+            str += `(${expr})`;
+            str += `${this.blocks[idx]}`;
+        }
+
+
+        if(this.hasElse()){
+            str += `else ${this.blocks.at(-1)!}`;
+        }
+
+        return str;
     }
 }
 
@@ -460,6 +550,26 @@ export class CallStatement extends Statement {
     }
 }
 
+export class AssignmentStatement extends Statement {
+    readonly type = 'AssignmentStatement';
+    lvalue: Expression;
+    operator: string;
+    rvalue: Expression;
+
+    constructor(lvalue: Expression, operator: string, rvalue: Expression){
+        super();
+        this.lvalue = lvalue;
+        this.operator = operator;
+        this.rvalue = rvalue;
+    }
+
+    toSource(): string {
+        return `${this.lvalue} ${this.operator} ${this.rvalue};\n`;
+    }
+
+    exec() : void {
+    }
+}
 
 
 export class FunctionExpression extends BaseASTNode {
@@ -484,12 +594,12 @@ export class FunctionExpression extends BaseASTNode {
     }
 }
 
-export class MemberExpression extends BaseASTNode {
+export class MemberExpression extends Expression {
     readonly type = 'MemberExpression';
-    object: BaseASTNode;
+    object: Expression;
     property: Identifier;
 
-    constructor(object: BaseASTNode, property: Identifier) {
+    constructor(object: Expression, property: Identifier) {
         super();
         this.object = object;
         this.property = property;
@@ -500,12 +610,12 @@ export class MemberExpression extends BaseASTNode {
     }
 }
 
-export class CallExpression extends BaseASTNode {
+export class CallExpression extends Expression {
     readonly type = 'CallExpression';
-    callee: BaseASTNode;
+    callee: Expression;
     arguments: BaseASTNode[];
 
-    constructor(callee: BaseASTNode, args: BaseASTNode[]) {
+    constructor(callee: Expression, args: BaseASTNode[]) {
         super();
         this.callee = callee;
         this.arguments = args;
