@@ -100,6 +100,29 @@ export async function fetchText(fileURL: string) {
     return text;
 }
 
+export async function fetchTextResponse(fileURL: string) : Promise<string | Response> {
+    const response = await fetch(fileURL);
+    if(response.ok){
+        const text = await response!.text();
+
+        return text;
+    }
+    else{
+        return response;
+    }
+}
+
+export async function fetchJson(url : string) {
+    const resp = await fetchTextResponse(url);
+    if(resp instanceof Response){
+        msg(`fetch json error:${resp.statusText}`);
+        return undefined;
+    }
+    else{
+        const obj  = JSON.parse(resp);
+        return obj;
+    }
+}
 
 export async function sleep(milliseconds : number) : Promise<void> {
     return new Promise((resolve) => {

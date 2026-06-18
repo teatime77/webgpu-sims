@@ -580,7 +580,7 @@ export class CallStatement extends Statement {
                 }
 
                 if(tick % 10 == 0){
-                    msg(`execute: ${this.shader!.id}`);
+                    // msg(`execute: ${this.shader!.id}`);
                 }
                 assert(this.shader instanceof ComputePassBuilder);
                 this.shader!.dispatch(theRunner);
@@ -594,7 +594,7 @@ export class CallStatement extends Statement {
                         assert(resources.length == 2);
                         [this.srcStorage, this.dstStorage] = [resources[0], resources[1] as ReadBackDef];
                         assert(this.srcStorage instanceof StorageDef && this.dstStorage instanceof ReadBackDef);
-                        msg(`copy:${this.srcStorage.id} => ${this.dstStorage.id}`);
+                        // msg(`copy:${this.srcStorage.id} => ${this.dstStorage.id}`);
                     }
                     else{
                         throw new MyError();
@@ -675,7 +675,7 @@ export class AssignmentStatement extends Statement {
         if(this.lvalue instanceof MemberExpression && this.lvalue.object.uniform != undefined){
             theRunner.changedUniforms.add(this.lvalue.object.uniform);
             if(tick % 10 == 0){
-                msg(`assign uniform:${this.lvalue} <= ${this.rvalue}(${this.rvalue.getValue()})`);
+                // msg(`assign uniform:${this.lvalue} <= ${this.rvalue}(${this.rvalue.getValue()})`);
             }
         }
 

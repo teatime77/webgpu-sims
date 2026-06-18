@@ -335,18 +335,48 @@ const schema = {
 
 By default, the shaders in `shaders` are executed sequentially once each time a frame is rendered.
 
-If you want to change the number of times a specific shader is executed, you can specify this in a script.
+You can use a script to contorl executions as follows:
+* Control the number of executions using a `for` loop.
+* Change the execution path by referencing the value of a uniform variable in an `if` statement's conditional expression.
+* Assign a value to a uniform variable.
+* Copy the WGSL calculation result to the readback buffer using the `copy` statement.
 
-For example, the following script executes shaderB three times.
+The script interpreter has only the bare minimum of features.  
+The following features are not available:
+
+* `for` statements that specify the termination condition and incrementing the loop variable.  
 ```js
+for(const i = 0; i < 2; i++){ ... }
+```
+* `switch` statement
+
+#### Examples:
+```js
+const state = {
+    time: 0.0,
+    index: 0.0, 
+};
 const schema = {
     // ...
+    ,
+    resources: {
+        Params: { type: 'uniform', obj: state },
+        Result: { type:'storage', format: 'ResultStruct', count:1 },
+        Readback: { type:'readback', format: 'ResultStruct' }
+    }
+    // ...
     script: ()=>{
-        execute(shaderA);
-        for(const _ of range(3)){
-            execute(shaderB);
+        if (state.time == 0.0) {
+            execute(shaderInit);
+        } 
+        else {
+            for (const i of range(2)) {
+                state.index = i;
+                execute(shaderUpdate);
+            }
         }
-        execute(shaderC);
+
+        copy(Result, Readback);
     }
 };
 ```

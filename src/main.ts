@@ -2,7 +2,7 @@ import { CaptureTool } from './CaptureTool.js';
 import { getMesh, initDevice, theDevice, theRunner, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $btn, $canvas, $div, assert, fetchText, msg, MyError, parseURL } from './utils.js';
+import { $btn, $canvas, $div, assert, fetchJson, fetchText, msg, MyError, parseURL } from './utils.js';
 import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
 import { appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
@@ -325,13 +325,28 @@ export async function initApp(){
             break;
         }
 
-        const names = line.split("/");
-        const authorId = names.at(-3)!;
-        const title = names.at(-2)!;
+        const url = "docs/" + line.replace("/schema.js", "/");
+
+        let authorId : string;
+        let title : string;
+
+        const article = await fetchJson(url + "article.json");
+
+        if(article != undefined){
+
+            authorId = article.author;
+            title    = article.title;
+        }
+        else{
+
+            const names = line.split("/");
+            authorId = names.at(-3)!;
+            title = names.at(-2)!.replaceAll("_", " ").replaceAll("-", " ");
+        }
         // msg(`name:[${authorId}][${title}]`)
         const schemaUrl = `docs/${line}`;
 
-        const thumbnailUrl = `docs/${authorId}/${title}/thumbnail.png`;   
+        const thumbnailUrl = url + "thumbnail.png";   
         msg(`thumbnail-Url:${thumbnailUrl}`);
 
         theArticles.push({ authorId, title, thumbnailUrl, schemaUrl });
