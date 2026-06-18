@@ -2,7 +2,7 @@ import { ShadingModel } from "./pipeline.js";
 import { theSchema } from "./schema.js";
 import { LabelDef } from "./SimUI.js";
 import { theDevice } from "./SimulationRunner.js";
-import { mapAsyncBuffer, StructDeclaration } from "./syntax.js";
+import { Const, mapAsyncBuffer, StructDeclaration } from "./syntax.js";
 import { assert, MyError } from "./utils.js";
 
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
@@ -155,7 +155,7 @@ export class UniformDef extends ResourceDef {
     fields: FieldDef[] = [];
     totalSize: number;
     buffer!: GPUBuffer;
-    obj? : any;
+    obj? : Const;
 
     constructor(id: string, data : any){
         super(id);
@@ -166,7 +166,7 @@ export class UniformDef extends ResourceDef {
         }
         else{
 
-            for (const [name, val] of Object.entries(this.obj)){
+            for (const [name, val] of Object.entries(this.obj.value)){
                 assert(typeof val == "number");
                 this.fields.push({ name, format: 'f32' } as FieldDef);
             }
@@ -187,11 +187,15 @@ export class UniformDef extends ResourceDef {
     }
 
     /** Equivalent to updateVariables in V1: construct binary from JS object and transfer at once */
-    update(obj : any) {
+    writeUniformBuffer() {
+        if(this.obj == undefined){
+            throw new MyError();
+        }
+
         const arrayBuffer = new ArrayBuffer(this.totalSize);
         const view = new DataView(arrayBuffer);
 
-        for(const [name, val] of Object.entries(obj)) {
+        for(const [name, val] of Object.entries(this.obj.value)) {
             const info = this.fields.find(x => x.name == name)!;
             assert(info != undefined);
 

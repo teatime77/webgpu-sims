@@ -5,27 +5,10 @@ import { makeWgslSkeleton } from "./generate_skeleton.js";
 import { SimulationSchema, theSchema } from "./schema.js";
 import { theDevice, theRunner } from "./SimulationRunner.js";
 import {  makeShaderEditors, setNodeShaderCode } from "./editor.js";
-import { parseSchema } from "./parser.js";
 import {  } from "./index.js";
 import { appManager, initialPath } from "./AppManager.js";
+import { makeSimulationSchema } from "./parser.js";
 
-
-export function makeSimulationSchema(jsonText: string){
-    // try {
-
-        const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
-        if(k != -1){
-            jsonText = jsonText.substring(0, k);
-        }
-
-        const schemaDef = parseSchema(jsonText);
-        const schema = new SimulationSchema(theDevice, schemaDef);
-
-        return schema;
-    // } catch (e) {
-    //     throw new MyError();
-    // }
-}
 
 export function clearSchema(){
     if(theRunner != undefined){

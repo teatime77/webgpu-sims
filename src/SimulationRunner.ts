@@ -5,6 +5,7 @@ import { OrbitCamera } from './camera.js';
 import { SimulationSchema, theSchema } from './schema.js';
 import { MeshDef, UniformDef } from './resource.js';
 import { NodeDef, RenderPassBuilder } from './pipeline.js';
+import { ResolveVariableReferences } from './parser.js';
 
 export let theDevice: GPUDevice;
 export let theFormat: GPUTextureFormat;
@@ -58,6 +59,7 @@ export class SimulationRunner {
     private contexts: Map<string, GPUCanvasContext> = new Map();
 
     private depthViews: Map<string, GPUTextureView> = new Map();
+    changedUniforms = new Set<UniformDef>();
 
     constructor(){
         theRunner = this;
@@ -233,11 +235,9 @@ export class SimulationRunner {
     }
 
     // Added clearScreen parameter with a default of true
-    render(render : RenderPassBuilder, hasDepth?: boolean, clearScreen: boolean = true) {
+    render(canvasEncoder: GPUCommandEncoder, render : RenderPassBuilder, hasDepth?: boolean, clearScreen: boolean = true) {
         const instanceCount = render.instanceCount ?? 1;
         const canvasId = render.canvasId ?? 'main-canvas';
-
-        if (!this.currentCommandEncoder) throw new Error("CommandEncoder is not active.");
 
         const builder = theSchema.getNode(render.id) as RenderPassBuilder;
         const useDepth = hasDepth !== undefined ? hasDepth : builder.hasDepth;
@@ -263,7 +263,7 @@ export class SimulationRunner {
                 depthStoreOp: 'store'
             };
         }
-        const rPass = this.currentCommandEncoder.beginRenderPass(passDesc);
+        const rPass = canvasEncoder.beginRenderPass(passDesc);
         
         // 🌟 Use the sanitized finalInstanceCount here
         builder.draw(rPass, render.vertexCount!, finalInstanceCount);
@@ -275,12 +275,8 @@ export class SimulationRunner {
         return Array.from(theSchema.shaders).filter(x => x instanceof RenderPassBuilder) as RenderPassBuilder[];
     }
 
-    getUniforms() : UniformDef[] {
-        return Array.from(theSchema.resources.values()).filter(x => x instanceof UniformDef && x.obj != undefined) as UniformDef[];
-    }
-
     initScript(){
-        this.generator = runSchema(this, theSchema.script);
+        this.generator = runSchema(theSchema, this);
         this.startTime = NaN;
 
         for(const [key, def] of theSchema.resources.entries()){
@@ -294,13 +290,15 @@ export class SimulationRunner {
 
     setTime(){
         const uni = theSchema.getUniform("Params");
-        if(uni != undefined && uni.obj != undefined && typeof uni.obj.time == "number" ){
-            if(isNaN(this.startTime)){
-                this.startTime = Date.now();
-                uni.obj.time = 0;
-            }
-            else{
-                uni.obj.time = (Date.now() - this.startTime) / 1000.0;
+        if(uni != undefined && uni.obj != undefined){
+            if(typeof uni.obj.value.time == "number"){
+                if(isNaN(this.startTime)){
+                    this.startTime = Date.now();
+                    uni.obj.value.time = 0;
+                }
+                else{
+                    uni.obj.value.time = (Date.now() - this.startTime) / 1000.0;
+                }
             }
         }
     }
@@ -317,22 +315,22 @@ export function getMesh(node : NodeDef) : MeshDef | undefined {
     return mesh;
 }
 
-export function* runSchema(runner : SimulationRunner, script?:FunctionExpression) : Generator<PassCommand, void, unknown> {
-    const uniforms = runner.getUniforms();
+export function* runSchema(schema:SimulationSchema, runner : SimulationRunner) : Generator<PassCommand, void, unknown> {
+    const uniforms = schema.getUniforms();
     const shaders = theSchema.getComputeShaders();
 
     while(true){
         for(const uni of uniforms){
-            uni.update(uni.obj);
+            uni.writeUniformBuffer();
         }
 
-        if(script != undefined){
-            script.execFunction();
+        if(schema.script != undefined){
+            schema.script.execFunction();
         }
         else{
 
             for(const shader of shaders){
-                shader.dispatch(runner.currentCommandEncoder!);
+                shader.dispatch(runner);
             }
         }
 

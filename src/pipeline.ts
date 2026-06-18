@@ -1,5 +1,6 @@
 import { ResourceDef } from "./resource.js";
 import { theSchema } from "./schema.js";
+import { SimulationRunner, theDevice } from "./SimulationRunner.js";
 import { assert, MyError } from "./utils.js";
 
 export type ShadingModel = 'triangle-color' | 'vertex-color' | 'vertex-color-normal';
@@ -60,13 +61,13 @@ export class ComputePassBuilder extends NodeDef{
         
         // 1. Create shader module
         const module = device.createShaderModule({ 
-            label: `Compute Module (${entryPoint})`,
+            label: `Compute Module (${this.id}:${entryPoint})`,
             code: shaderCode 
         });
 
         // 2. Create pipeline (auto-inferred from WGSL by layout: 'auto')
         this.pipeline = device.createComputePipeline({
-            label: `Compute Pipeline (${entryPoint})`,
+            label: `Compute Pipeline (${this.id}:${entryPoint})`,
             layout: 'auto',
             compute: { module, entryPoint }
         });
@@ -115,15 +116,30 @@ export class ComputePassBuilder extends NodeDef{
      * Dispatches (executes) the compute pass.
      * Dynamically generates and sets BindGroups at runtime.
      */
-    dispatch(encoder : GPUCommandEncoder) {
-        assert(encoder != undefined);
+    dispatch(runner : SimulationRunner) {
+        if(runner.currentCommandEncoder == null){
+            throw new MyError();
+        }
 
-        const passEncoder = encoder.beginComputePass();
+        if(runner.changedUniforms.size != 0){
+            // 1a. Submit pending commands so they run with the OLD uniform data
+            theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
+            runner.currentCommandEncoder = theDevice.createCommandEncoder();
+
+            // 1b. NOW it is safe to overwrite the uniform buffer on the queue
+            for(const uni of runner.changedUniforms.values()){
+                uni.writeUniformBuffer();
+            }
+            runner.changedUniforms.clear();
+        }
+
+        const passEncoder = runner.currentCommandEncoder!.beginComputePass();
         passEncoder.setPipeline(this.pipeline);
 
         // Create and set BindGroups for all registered groups
         for (const [groupIndex, entries] of this.bindGroupEntries.entries()) {
             const bindGroup = this.device.createBindGroup({
+                label:`bind-Group(${this.id})`,
                 layout: this.pipeline.getBindGroupLayout(groupIndex),
                 entries: entries
             });
@@ -153,7 +169,6 @@ export class ComputePassBuilder extends NodeDef{
 
         // Dispatch workgroups
         passEncoder.dispatchWorkgroups(x, y, z);
-
         passEncoder.end();
     }
 }
@@ -287,6 +302,7 @@ export class RenderPassBuilder extends NodeDef {
 
         for (const [groupIndex, entries] of this.bindGroupEntries.entries()) {
             const bindGroup = this.device.createBindGroup({
+                label:`bind-Group(${this.id})`,
                 layout: this.pipeline.getBindGroupLayout(groupIndex),
                 entries: entries
             });

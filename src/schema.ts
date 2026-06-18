@@ -229,6 +229,10 @@ export class SimulationSchema {
         return node;
     }
 
+    getUniforms() : UniformDef[] {
+        return Array.from(this.resources.values()).filter(x => x instanceof UniformDef && x.obj != undefined) as UniformDef[];
+    }
+
     getUniform(id:string) : UniformDef | undefined {
         const res = this.resources.get(id);
         if(res instanceof UniformDef){

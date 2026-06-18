@@ -10,6 +10,7 @@ export type TokenType = 'Keyword' | 'Identifier' | 'Number' | 'String' | 'Punctu
 export interface Token {
     type: TokenType;
     value: string;
+    line : number;
     start: number;
     end: number;
 }
@@ -17,8 +18,9 @@ export interface Token {
 export class Lexer {
     private pos: number = 0;
     private source: string;
-    private tokens : Token[] = [];
+    tokens : Token[] = [];
     private tokenPos = 0;
+    private linePos = 0;
 
     constructor(source: string) {
         this.source = source;
@@ -34,6 +36,9 @@ export class Lexer {
     private skipWhitespaceAndComments() {
         while (this.pos < this.source.length) {
             const char = this.source[this.pos];
+            if(char == "\n"){
+                this.linePos++;
+            }
             if (/\s/.test(char)) {
                 this.pos++;
             } else if (char === '/' && this.source[this.pos + 1] === '/') {
@@ -51,7 +56,7 @@ export class Lexer {
         this.skipWhitespaceAndComments();
 
         if (this.pos >= this.source.length) {
-            return { type: 'EOF', value: '', start: this.pos, end: this.pos };
+            return { type: 'EOF', value: '', start: this.pos, end: this.pos, line:this.linePos };
         }
 
         const start = this.pos;
@@ -61,7 +66,7 @@ export class Lexer {
 
         if([ "**", "=>", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=" ].includes(doubleChar)){
             this.pos += 2;
-            return { type: 'Punctuator', value: doubleChar, start, end: this.pos };
+            return { type: 'Punctuator', value: doubleChar, start, end: this.pos, line:this.linePos };
         }
 
         // Numbers (Handles decimals)
@@ -71,13 +76,13 @@ export class Lexer {
                 numStr += this.source[this.pos];
                 this.pos++;
             }
-            return { type: 'Number', value: numStr, start, end: this.pos };
+            return { type: 'Number', value: numStr, start, end: this.pos, line:this.linePos };
         }
 
         // Punctuators (Added +, /, %, and simplified the regex)
         if (/[{}\[\]()<>:=,.\*;\-+/%`]/.test(char)) {
             this.pos++;
-            return { type: 'Punctuator', value: char, start, end: this.pos };
+            return { type: 'Punctuator', value: char, start, end: this.pos, line:this.linePos };
         }
 
         // Strings
@@ -93,7 +98,7 @@ export class Lexer {
                 this.pos++;
             }
             this.pos++; // Skip closing quote
-            return { type: 'String', value: str, start, end: this.pos };
+            return { type: 'String', value: str, start, end: this.pos, line:this.linePos };
         }
 
         // Identifiers and Keywords
@@ -106,10 +111,10 @@ export class Lexer {
 
             const keywords = ['const', 'function', 'true', 'false'];
             if (keywords.includes(idStr)) {
-                return { type: 'Keyword', value: idStr, start, end: this.pos };
+                return { type: 'Keyword', value: idStr, start, end: this.pos, line:this.linePos };
             }
 
-            return { type: 'Identifier', value: idStr, start, end: this.pos };
+            return { type: 'Identifier', value: idStr, start, end: this.pos, line:this.linePos };
         }
 
         throw new Error(`Unexpected character '${char}' at index ${this.pos}`);

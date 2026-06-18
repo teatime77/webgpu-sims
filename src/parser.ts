@@ -6,11 +6,27 @@ import { msg, assert, MyError, range } from "./utils.js";
 import { CanvasDef, theDevice, theRunner } from "./SimulationRunner.js";
 import { ComputePassBuilder } from "./pipeline.js";
 import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
-import { ISimulationSchema, theSchema } from "./schema.js";
-import { FieldDef, FieldDefToStr, makeFieldDefs, ReadBackDef, ResourceDef, StorageDef, WgslFormat } from "./resource.js";
+import { ISimulationSchema, SimulationSchema, theSchema } from "./schema.js";
+import { FieldDef, FieldDefToStr, makeFieldDefs, ReadBackDef, ResourceDef, StorageDef, UniformDef, WgslFormat } from "./resource.js";
 import { Lexer, Token, TokenType } from "./lexer.js";
-import { BaseASTNode, Program, StructDeclaration, VariableDeclaration, ObjectExpression, ArrayExpression, Literal, Identifier, UnaryExpression, BinaryExpression, GroupExpression, Statement, BlockStatement, ForStatement, CallStatement, FunctionExpression, MemberExpression, CallExpression, constValues, Expression, IfStatement, AssignmentStatement } from "./syntax.js";
+import { BaseASTNode, Program, StructDeclaration, VariableDeclaration, ObjectExpression, ArrayExpression, Literal, Identifier, UnaryExpression, BinaryExpression, GroupExpression, Statement, BlockStatement, ForStatement, CallStatement, FunctionExpression, MemberExpression, CallExpression, constValues, Expression, IfStatement, AssignmentStatement, Variable, Const } from "./syntax.js";
 
+let lexer: Lexer;
+
+class SyntaxError extends MyError {
+    constructor(token : Token, message : string){
+        super(message);
+
+        const tokens = lexer.tokens.filter(x => x.line == token.line);        
+        const words = tokens.map(x => x.value);
+        const idx = tokens.indexOf(token);
+        if(idx != -1){
+            words.splice(idx, 0, "^");
+        }
+
+        msg(`syntax error:${message}\n${words.join(" ")}`);
+    }
+}
 
 
 
@@ -26,6 +42,8 @@ export class Parser {
         this.source = source;
         this.lexer = new Lexer(source);
         this.advance();
+
+        lexer = this.lexer;
     }
 
     private advance() {
@@ -44,7 +62,7 @@ export class Parser {
     private consume(expectedValue?: string): Token {
         const token = this.currentToken;
         if (expectedValue && token.value !== expectedValue) {
-            throw new Error(`Expected '${expectedValue}' but found '${token.value}' at index ${token.start}`);
+            throw new SyntaxError(token, `Expected '${expectedValue}' but found '${token.value}' at index ${token.start}`);
         }
         this.advance();
         return token;
@@ -53,7 +71,7 @@ export class Parser {
     private consumeType(expectedType: TokenType): Token {
         const token = this.currentToken;
         if (token.type !== expectedType) {
-            throw new Error(`Expected '${expectedType}' but found '${token.value}' at index ${token.start}`);
+            throw new SyntaxError(token, `Expected '${expectedType}' but found '${token.value}' at index ${token.start}`);
         }
         this.advance();
         return token;
@@ -65,24 +83,25 @@ export class Parser {
     }
 
     public parse(): Program {
-        const body = new Map<string, VariableDeclaration>();
+        const varDecls : VariableDeclaration[] = [];
+
         while (this.peek().type !== 'EOF') {
             switch(this.currentToken.value){
             case "import":
             case "export":
                 this.parseImportExport();
                 break;
-            case "const":{
-                const va = this.parseVariableDeclaration();
-                body.set(va.name, va);
-                break;
 
+            case "const":{
+                const varDecl = this.parseVariableDeclaration();
+                varDecls.push(varDecl);
+                break;
             }
             default:
-                throw new MyError();
+                throw new SyntaxError(this.peek(), `parse program error`);
             }
         }
-        return new Program(body);
+        return new Program(varDecls);
     }
 
     parseImportExport(){
@@ -147,7 +166,9 @@ export class Parser {
         this.consume('const'); // Expect const
         
         const nameToken = this.consume();
-        if (nameToken.type !== 'Identifier') throw new Error(`Expected Identifier after const`);
+        if (nameToken.type !== 'Identifier'){
+            throw new SyntaxError(nameToken, `Expected Identifier after const`);
+        } 
 
         let typeAnnotation;
         // Handle TypeScript type annotation (e.g. : SimulationSchema)
@@ -168,7 +189,7 @@ export class Parser {
         const va = new VariableDeclaration(nameToken.value, init, typeAnnotation);
 
         const value = init.getValue();
-        constValues.set(va.name, value);
+        constValues.set(va.variable.name, { name:va.variable.name, value} );
         // msg(`const-Values:${va.name} = ${value}`);
 
         return va;
@@ -297,7 +318,7 @@ export class Parser {
         }
 
         else {
-            throw new Error(`Unexpected token '${token.value}' at index ${token.start}`);
+            throw new SyntaxError(token, `Unexpected token '${token.value}' at index ${token.start}`);
         }
 
         // Handle trailing property accesses and method calls
@@ -306,7 +327,7 @@ export class Parser {
                 this.consume('.');
                 const propToken = this.consume();
                 if (propToken.type !== 'Identifier') {
-                    throw new Error(`Expected Identifier after '.' at index ${propToken.start}`);
+                    throw new SyntaxError(propToken, `Expected Identifier after '.' at index ${propToken.start}`);
                 }
                 node = new MemberExpression(node, new Identifier(propToken.value));
             } else if (this.peek().value === '(') {
@@ -329,7 +350,7 @@ export class Parser {
     }
 
     private parseObject(): Expression {
-        const properties = [];
+        const properties = new Map<string, Expression>();
         this.consume('{');
 
         while (this.peek().value !== '}') {
@@ -338,7 +359,7 @@ export class Parser {
             
             this.consume(':');
             const value = this.parseExpression();
-            properties.push({ key, value });
+            properties.set(key, value);
 
             if (this.peek().value === ',') {
                 this.consume(',');
@@ -379,7 +400,7 @@ export class Parser {
             return new AssignmentStatement(expr, operator, right);
         }
 
-        throw new MyError();
+        throw new SyntaxError(this.peek(), "parse Single Statement error");
     }
 
     private parseBlock() : BlockStatement {
@@ -458,7 +479,7 @@ export class Parser {
             return this.parseSingleStatement();
         }
         else{
-            throw new MyError();
+            throw new SyntaxError(token, "parse statement error");
         }
     }
 
@@ -471,10 +492,10 @@ export class Parser {
     }
 }
 
-function getObj(value : Identifier){
+function getObj(value : Identifier) : Const {
     assert(value instanceof Identifier);
-    const obj = constValues.get(value.name);
-    assert(typeof obj == "object");
+    const obj = constValues.get(value.name)!;
+    assert(obj != undefined);
     return obj;
 }
 
@@ -483,7 +504,7 @@ function readResource(resourceObj:ObjectExpression) {
 
     const data : any = {};
 
-    for(const {key, value} of resourceObj.properties){
+    for(const [key, value] of resourceObj.properties.entries()){
         switch(key){
         case "type":
             data[key] = value.getString();
@@ -522,7 +543,7 @@ function readResource(resourceObj:ObjectExpression) {
 function readResources(resourceObj:ObjectExpression){
     assert(resourceObj instanceof ObjectExpression);
     const data : any = {};
-    for(const {key, value} of resourceObj.properties){
+    for(const [key, value] of resourceObj.properties.entries()){
         data[key] = readResource(value as ObjectExpression);
     }
 
@@ -540,7 +561,7 @@ function readShaders(shaders:ArrayExpression){
     const shadersData = [];
     for(const shaderObj of shaders.elements as ObjectExpression[]){
         const shader : any = {};
-        for(const {key, value} of shaderObj.properties){
+        for(const [key, value] of shaderObj.properties.entries()){
             switch(key){
             case "id":
                 shader.id = value.getString();
@@ -571,7 +592,7 @@ function readShaders(shaders:ArrayExpression){
 function readOption(obj : ObjectExpression){
     assert(obj instanceof ObjectExpression);
     const data : any = {};
-    for(const {key, value} of obj.properties){
+    for(const [key, value] of obj.properties.entries()){
         switch(key){
         case "value":
             data[key] = value.getNumber();
@@ -590,7 +611,7 @@ function readOption(obj : ObjectExpression){
 function readUIs(obj : ObjectExpression) : UIDef {
     assert(obj instanceof ObjectExpression);
     const data : any = {};
-    for(const {key, value} of obj.properties){
+    for(const [key, value] of obj.properties.entries()){
         switch(key){
         case "type":
         case "name":
@@ -635,7 +656,7 @@ function readCanvases(obj : ObjectExpression) : CanvasDef {
     assert(obj instanceof ObjectExpression);
     const data : CanvasDef = {} as CanvasDef;
 
-    for(const {key, value} of obj.properties){
+    for(const [key, value] of obj.properties.entries()){
         switch(key){
         case "id":
             data[key] = value.getString();
@@ -653,10 +674,10 @@ function readCanvases(obj : ObjectExpression) : CanvasDef {
     return data;
 }
 
-function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
+function ObjectExprToSchemaDef(schemaObj : ObjectExpression) : ISimulationSchema{
     const schema : any = {};
 
-    for(const {key, value} of schemaObj.properties){
+    for(const [key, value] of schemaObj.properties.entries()){
         switch(key){
         case "name":
             schema[key] = value;
@@ -695,20 +716,86 @@ function makeSchema(schemaObj : ObjectExpression) : ISimulationSchema{
     return schema as ISimulationSchema;
 }
 
-export function parseSchema(text : string) : ISimulationSchema {
-    constValues.clear();
 
-    const parser = new Parser(text);
-    const prg = parser.parse();
-    // msg(`${"-".repeat(50)}\n${prg.toSource()}\n${"-".repeat(50)}`);
+export function makeSimulationSchema(jsonText: string){
+    // try {
 
-    const schemaVar = prg.variables().find(x => x.name == "schema");
-    if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
-        const schema = makeSchema(schemaVar.init);
-        // msg(`${"=".repeat(50)} \n ${JSON.stringify(schema, null, 4)} ${"=".repeat(50)}`);
+        const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
+        if(k != -1){
+            jsonText = jsonText.substring(0, k);
+        }
 
-        return schema;
+        constValues.clear();
+
+        const parser = new Parser(jsonText);
+        const prg = parser.parse();
+
+        const schemaVar = prg.varDecls.map(x => x.variable).find(x => x.name == "schema");
+        if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
+            const schemaDef = ObjectExprToSchemaDef(schemaVar.init);
+
+            const schema = new SimulationSchema(theDevice, schemaDef);
+            ResolveVariableReferences(prg, schema);
+
+            return schema;
+        }
+        else{
+
+            throw new MyError();
+        }
+
+    // } catch (e) {
+    //     throw new MyError();
+    // }
+}
+
+export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
+    const all : BaseASTNode[] = [];
+    prg.getAll(all);
+    const ids = all.filter(x => x instanceof Identifier && !x.isFieldReference()) as Identifier[];
+    ids.filter(x => x.parent == null).forEach(x => msg(`no parent:${x.name}`));
+
+    const resourceKeys = new Set<string>(schema.resources.keys());
+    const shaderIds = new Set<string>(schema.shaders.map(x => x.id));
+    const uniforms = schema.getUniforms().filter(x => x.obj != undefined);
+
+    L:
+    for(const id of ids){
+        if(["execute", "copy", "range"].includes(id.name)){
+            continue;
+        }
+        if(id.name == "Math" && id.parent instanceof MemberExpression){
+            continue;
+        }
+        if(shaderIds.has(id.name) || resourceKeys.has(id.name)){
+            continue;
+        }
+
+        const res = schema.resources.get(id.name);
+        if(res != undefined){
+            if(res instanceof UniformDef && res.obj != undefined){
+                msg(`set uniform ref:${res.id}.${id.name}`);
+                id.uniform = res;
+            }
+            continue;
+        }
+
+        const uniform = uniforms.find(x => x.obj!.name == id.name);
+        if(uniform != undefined){
+            msg(`set uniform obj ref:${uniform.id} ${id.name}`);
+            id.uniform = uniform;
+            continue;
+        }
+
+        for(let node = id.parent; node != null; node = node.parent){
+            const va = node.getVariables().find(x => x.name == id.name);
+            if(va != undefined){
+                id.refVar = va;
+                msg(`ref:${id.name} parent:${id.parent}`);
+                continue L;
+            }
+        }
+
+        throw new MyError();
     }
-
-    throw new MyError();
 }

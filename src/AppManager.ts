@@ -1,6 +1,7 @@
 import { clearShaderEditors, makeShaderEditors } from "./editor.js";
 import { Article, bootstrap, theArticles } from "./main.js";
-import { clearSchema, makeSimulationSchema } from "./start.js";
+import { makeSimulationSchema } from "./parser.js";
+import { clearSchema } from "./start.js";
 import { $, $div, $img, $txt, assert, fetchText, msg, sleep, urlBase } from "./utils.js";
 
 export type ViewName = "login-view" | "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view";

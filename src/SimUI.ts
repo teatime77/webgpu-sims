@@ -1,11 +1,12 @@
 import { ReadBackDef } from "./resource.js";
 import { SimulationSchema } from "./schema.js";
 import type { SimulationRunner } from "./SimulationRunner.js";
+import { Const } from "./syntax.js";
 import { $div, MyError } from "./utils.js";
 
 export interface UIDef {
     type : "range" | "select" | "label",
-    obj:any,
+    obj:Const,
     name:string,
     label: string, 
 }
@@ -166,23 +167,23 @@ export class SimUI {
 
     makeRange(data : RangeDef){
         function onChange(val: number) :void {
-            data.obj[data.name] = val;
+            data.obj.value[data.name] = val;
         }
 
-        const initial = data.initial ?? data.obj[data.name];
+        const initial = data.initial ?? data.obj.value[data.name];
         this.addRange(data.label, data.min, data.max, data.step, initial, onChange);
     }
 
     makeSelect(runner:SimulationRunner, data : SelectDef){
         async function onChange(val: number) : Promise<void> {
-            data.obj[data.name] = val;
+            data.obj.value[data.name] = val;
 
             if(data.reset !== false){
                 runner.initScript();
             }
         }
 
-        const initial = data.initial ?? data.obj[data.name];
+        const initial = data.initial ?? data.obj.value[data.name];
         this.addSelect(data.label, data.options, initial, onChange);
     }
 

@@ -3,13 +3,19 @@ import { CanvasDef, theDevice, theRunner } from "./SimulationRunner.js";
 import { ComputePassBuilder } from "./pipeline.js";
 import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
 import { ISimulationSchema, theSchema } from "./schema.js";
-import { FieldDef, FieldDefToStr, makeFieldDefs, ReadBackDef, ResourceDef, StorageDef, WgslFormat } from "./resource.js";
+import { FieldDef, FieldDefToStr, makeFieldDefs, ReadBackDef, ResourceDef, StorageDef, UniformDef, WgslFormat } from "./resource.js";
 import { Lexer, Token, TokenType } from "./lexer.js";
 
 type ValueType = number | number[] | Record<string, any> | Record<string, any>[] | boolean | string | FunctionExpression | StructDeclaration;
 
-export const constValues = new Map<string, ValueType>();
+export interface Const {
+    name : string;
+    value : any;
+}
+
+export const constValues = new Map<string, Const>();
 export let mapAsyncBuffer : GPUBuffer | undefined;
+let tick = 0;
 
 // ============================================================================
 // Abstract Base Class
@@ -17,9 +23,30 @@ export let mapAsyncBuffer : GPUBuffer | undefined;
 export abstract class BaseASTNode {
     // Forces every subclass to define its node type
     abstract readonly type: string;
+    parent : Expression | Statement | null = null;
+    children : Expression[] = [];
 
     // Generates code back from the AST
     abstract toSource(): string;
+
+    private setParent(parent : Expression | Statement | null = null){
+        this.parent = parent;
+    }
+
+    setParents(children : Iterable<BaseASTNode>){
+        const arr = Array.from(children);
+        this.children.push(...arr);
+        for(const x of arr){ x.setParent(this) }
+    }
+
+    getAll(all:BaseASTNode[]){
+        all.push(this);
+        this.children.forEach(x => x.getAll(all));
+    }
+
+    getVariables() : Variable[] {
+        return [];
+    }
 
     toString() : string{
         return this.toSource();
@@ -73,19 +100,20 @@ export abstract class BaseASTNode {
 
 export class Program extends BaseASTNode {
     readonly type = 'Program';
-    body: Map<string, VariableDeclaration>;
+    varDecls : VariableDeclaration[];
 
-    constructor(body: Map<string, VariableDeclaration>) {
+    constructor(varDecls : VariableDeclaration[]) {
         super();
-        this.body = body;
+        this.varDecls = varDecls.slice();
+        this.setParents(this.varDecls);
     }
 
-    variables() : VariableDeclaration[] {
-        return Array.from(this.body.values());
+    getVariables() : Variable[] {
+        return this.varDecls.map(x => x.variable);
     }
 
     toSource(): string {
-        return this.variables().map(decl => decl.toSource()).join('\n\n');
+        throw new MyError();
     }
 }
 
@@ -120,16 +148,45 @@ ${this.fields.map(x => FieldDefToStr(x)).join("")}
     }
 }
 
-export class Variable {
+export class Variable extends BaseASTNode {
+    readonly type = 'Variable';
     name : string;
-    value: ValueType | undefined;
+    typeAnnotation?: string;
+    init? : Expression;
+    value?: Expression;
 
-    constructor(name : string){
+    constructor(name : string, typeAnnotation?: string, init? : Expression){
+        super();
         this.name = name;
+        this.typeAnnotation = typeAnnotation;
+        this.init = init;
+        this.value = init;
+
+        if(this.init != undefined){
+            this.setParents([this.init]);
+        }
     }
 
-    setValue(value : ValueType){
+    getValue() : ValueType {
+        if(this.value == undefined){
+            throw new MyError();
+        }
+
+        if(this.value instanceof Expression){
+            return this.value.getValue();
+        }
+
+        return this.value;
+    }
+
+    setValue(value : Expression){
         this.value = value;
+    }
+
+    toSource(): string {
+        const typeDef = this.typeAnnotation ? `: ${this.typeAnnotation}` : '';
+        const init = this.init != undefined ? ` = $${this.init}` : "";
+        return `${this.name}${typeDef}${init}`;
     }
 }
 
@@ -138,23 +195,25 @@ export abstract class  Expression extends BaseASTNode {
 
 export class ObjectExpression extends Expression {
     readonly type = 'ObjectExpression';
-    properties: { key: string; value: BaseASTNode }[];
+    properties: Map<string, Expression>;
 
-    constructor(properties: { key: string; value: BaseASTNode }[]) {
+    constructor(properties: Map<string, Expression>) {
         super();
         this.properties = properties;
+
+        this.setParents(this.properties.values());
     }
 
     toSource(): string {
-        const props = this.properties
-            .map(p => `    ${p.key}: ${p.value.toSource()}`)
+        const props = Array.from(this.properties.entries()
+            .map(p => `    ${p[0]}: ${p[1].toSource()}`)) 
             .join(',\n');
         return `{\n${props}\n}`;
     }
 
     toObject() : any {
         const data : any = {};
-        for(const {key, value} of this.properties){
+        for(const [key, value] of this.properties.entries()){
             data[key] = value.getValue();
         }
 
@@ -173,6 +232,8 @@ export class ArrayExpression extends Expression {
     constructor(elements: BaseASTNode[]) {
         super();
         this.elements = elements;
+
+        this.setParents(this.elements);
     }
 
     toSource(): string {
@@ -211,21 +272,44 @@ export class Literal extends Expression {
 export class Identifier extends BaseASTNode {
     readonly type = 'Identifier';
     name: string;
+    refVar? : Variable;
+    uniform?: UniformDef;
 
     constructor(name: string) {
         super();
         this.name = name;
+        if(name == "state"){
+            msg("");
+        }
+    }
+
+    isFieldReference() : boolean {
+        return this.parent instanceof MemberExpression && this.parent.property == this;
     }
 
     toSource(): string {
         return this.name;
     }
 
-    getValue() : ValueType {
-        const value = constValues.get(this.name)!;
-        assert(value != undefined);
+    setValue(val : Expression){
+        if(this.refVar != undefined){
+            this.refVar.setValue(val);
+        }
+    }
 
-        return value;
+    getValue() : ValueType {
+        if(this.refVar != undefined){
+            return this.refVar.getValue();
+        }
+
+        if(this.uniform != undefined){
+            return this.uniform;
+        }
+
+        const cnst = constValues.get(this.name)!;
+        assert(cnst != undefined);
+
+        return cnst.value;
     }
 }
 
@@ -238,6 +322,8 @@ export class UnaryExpression extends Expression {
         super();
         this.operator = operator;
         this.argument = argument;
+
+        this.setParents([this.argument]);
     }
 
     toSource(): string {
@@ -262,6 +348,8 @@ export class BinaryExpression extends Expression {
         this.left = left;
         this.operator = operator;
         this.right = right;
+
+        this.setParents([this.left, this.right]);
     }
 
     toSource(): string {
@@ -294,6 +382,8 @@ export class GroupExpression extends Expression {
     constructor(expression: BaseASTNode) {
         super();
         this.expression = expression;
+
+        this.setParents([this.expression]);
     }
 
     toSource(): string {
@@ -306,30 +396,26 @@ export class GroupExpression extends Expression {
 }
 
 export abstract class Statement extends BaseASTNode {
-    parent : Statement | null = null;
     abstract exec() : void;
-
-    setParent(parent : Statement | null){
-        this.parent = parent;
-    }
 }
 
 export class VariableDeclaration extends Statement {
     readonly type = 'VariableDeclaration';
-    name: string;
-    init: BaseASTNode;
-    typeAnnotation?: string;
+    variable : Variable;
 
     constructor(name: string, init: BaseASTNode, typeAnnotation?: string) {
         super();
-        this.name = name;
-        this.init = init;
-        this.typeAnnotation = typeAnnotation;
+        this.variable = new Variable(name, typeAnnotation, init);
+
+        this.setParents([this.variable]);
+    }
+
+    getVariables() : Variable[] {
+        return [this.variable];
     }
 
     toSource(): string {
-        const typeDef = this.typeAnnotation ? `: ${this.typeAnnotation}` : '';
-        return `const ${this.name}${typeDef} = ${this.init.toSource()};`;
+        return `const ${this.variable};`;
     }
 
     exec() : void {
@@ -344,7 +430,7 @@ export class BlockStatement extends Statement {
         super();
         this.statements = statements.slice();
 
-        this.statements.forEach(x => x.setParent(this));
+        this.setParents(this.statements);
     }
 
     toSource(): string {
@@ -372,7 +458,11 @@ export class ForStatement extends Statement {
         this.collection  = collection as CallExpression;
         this.block = block;
 
-        this.block.setParent(this);
+        this.setParents([this.collection, this.block]);
+    }
+
+    getVariables() : Variable[] {
+        return [this.iterator];
     }
 
     toSource(): string {
@@ -400,7 +490,7 @@ export class IfStatement extends Statement {
         this.conditions = conditions;
         this.blocks = blocks;
 
-        this.blocks.forEach(x => x.setParent(this));
+        this.setParents(this.conditions.concat(this.blocks));
     }
 
     hasElse() : boolean {
@@ -456,6 +546,8 @@ export class CallStatement extends Statement {
     constructor(callExpr : CallExpression){
         super();
         this.callExpr = callExpr;
+
+        this.setParents([this.callExpr]);
     }
 
     toSource(): string {
@@ -487,8 +579,11 @@ export class CallStatement extends Statement {
                     }
                 }
 
+                if(tick % 10 == 0){
+                    msg(`execute: ${this.shader!.id}`);
+                }
                 assert(this.shader instanceof ComputePassBuilder);
-                this.shader!.dispatch(theRunner.currentCommandEncoder!);
+                this.shader!.dispatch(theRunner);
                 return;
             }
             else if(this.callExpr.callee.name == "copy"){
@@ -552,15 +647,24 @@ export class CallStatement extends Statement {
 
 export class AssignmentStatement extends Statement {
     readonly type = 'AssignmentStatement';
-    lvalue: Expression;
+    lvalue: MemberExpression | Identifier;
     operator: string;
     rvalue: Expression;
 
     constructor(lvalue: Expression, operator: string, rvalue: Expression){
         super();
-        this.lvalue = lvalue;
+        if(lvalue instanceof MemberExpression || lvalue instanceof Identifier){
+
+            this.lvalue = lvalue;
+        }
+        else{
+            throw new MyError();
+        }
+
         this.operator = operator;
         this.rvalue = rvalue;
+
+        this.setParents([this.lvalue, this.rvalue]);
     }
 
     toSource(): string {
@@ -568,6 +672,14 @@ export class AssignmentStatement extends Statement {
     }
 
     exec() : void {
+        if(this.lvalue instanceof MemberExpression && this.lvalue.object.uniform != undefined){
+            theRunner.changedUniforms.add(this.lvalue.object.uniform);
+            if(tick % 10 == 0){
+                msg(`assign uniform:${this.lvalue} <= ${this.rvalue}(${this.rvalue.getValue()})`);
+            }
+        }
+
+        this.lvalue.setValue(this.rvalue);
     }
 }
 
@@ -579,6 +691,8 @@ export class FunctionExpression extends BaseASTNode {
     constructor(body: BlockStatement) {
         super();
         this.body = body;
+
+        this.setParents([this.body]);
     }
 
     toSource(): string {
@@ -589,36 +703,92 @@ export class FunctionExpression extends BaseASTNode {
         return this;
     }
 
-    execFunction(){
+    execFunction(){        
         this.body.exec();
+        tick++;
     }
 }
 
 export class MemberExpression extends Expression {
     readonly type = 'MemberExpression';
-    object: Expression;
+    object: Identifier;
     property: Identifier;
 
     constructor(object: Expression, property: Identifier) {
         super();
-        this.object = object;
+        if(object instanceof Identifier){
+            this.object = object;
+        }
+        else{
+            throw new MyError();
+        }
         this.property = property;
+
+        this.setParents([this.object]);
     }
 
     toSource(): string {
         return `${this.object.toSource()}.${this.property.toSource()}`;
+    }
+
+    getObject() : ObjectExpression{
+        const id = this.object;
+        if(id.refVar != undefined && id.refVar.value instanceof ObjectExpression){
+            return id.refVar.value;
+        }
+
+        throw new MyError();
+    }
+
+    setValue(val : Expression){
+        assert(this.getValue() != undefined);
+
+        if(this.object.uniform != undefined){
+            if(this.object.uniform.obj == undefined){
+                throw new MyError();
+            }
+            this.object.uniform.obj.value[this.property.name] = val.getNumber();
+        }
+        else{
+
+            const obj = this.getObject();
+            obj.properties.set(this.property.name, val);
+        }
+    }
+
+    getValue() : ValueType {
+        let value : any;
+
+        if(this.object.uniform != undefined){
+            if(this.object.uniform.obj == undefined){
+                throw new MyError();
+            }
+            value = this.object.uniform.obj.value[this.property.name];
+        }
+        else{
+            const obj = this.getObject();
+            value = obj.properties.get(this.property.name);
+        }
+
+        if(value != undefined){
+            return value;
+        }
+        
+        throw new MyError();
     }
 }
 
 export class CallExpression extends Expression {
     readonly type = 'CallExpression';
     callee: Expression;
-    arguments: BaseASTNode[];
+    arguments: Expression[];
 
     constructor(callee: Expression, args: BaseASTNode[]) {
         super();
         this.callee = callee;
         this.arguments = args;
+
+        this.setParents([this.callee].concat(this.arguments));
     }
 
     toSource(): string {

@@ -177,6 +177,7 @@ export async function bootstrap(sim: SimulationSchema) {
 
         // 1. Initialize command encoder and run Compute Shaders first
         runner.currentCommandEncoder = theDevice.createCommandEncoder();
+        runner.changedUniforms.clear();
 
         while (true) {
             runner.setTime();
@@ -189,6 +190,7 @@ export async function bootstrap(sim: SimulationSchema) {
 
         // Submit compute passes immediately
         theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
+        runner.currentCommandEncoder = null;
 
         for(const cp of runner.copyStorages){
             cp.copyBuffers(theDevice).then(data =>{
@@ -210,7 +212,6 @@ export async function bootstrap(sim: SimulationSchema) {
 
             // Create a dedicated, clean command encoder for this canvas block
             const canvasEncoder = theDevice.createCommandEncoder();
-            runner.currentCommandEncoder = canvasEncoder; // Re-route the runner to use this encoder
 
             const rendersforCanvas = renders.filter(x => x.getCanvasId() == canvasDef.id);
             for(const render of rendersforCanvas){
@@ -221,7 +222,7 @@ export async function bootstrap(sim: SimulationSchema) {
                 const shouldClear = !clearedCanvases.has(canvasDef.id);
                 clearedCanvases.add(canvasDef.id);
 
-                theRunner.render(render, true, shouldClear);
+                theRunner.render(canvasEncoder, render, true, shouldClear);
             }
 
             // 🌟 SUBMIT IMMEDIATELY: Locks in the draw calls with the current uniform state
@@ -233,7 +234,6 @@ export async function bootstrap(sim: SimulationSchema) {
             afterFrame = undefined;
         }
         
-        runner.currentCommandEncoder = null;
         requestAnimationFrame(frame);
     }
 
