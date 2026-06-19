@@ -325,7 +325,7 @@ export function* runSchema(schema:SimulationSchema, runner : SimulationRunner) :
         }
 
         if(schema.script != undefined){
-            schema.script.execFunction();
+            yield* schema.script.execFunction();
         }
         else{
 

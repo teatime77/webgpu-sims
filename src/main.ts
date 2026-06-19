@@ -175,10 +175,14 @@ export async function bootstrap(sim: SimulationSchema) {
             while (true) {
                 runner.setTime();
                 const result = runner.generator!.next();
-                if (result.done) break;
+                if (result.done){
+                    break;
+                } 
                 
                 const val = result.value;
-                if (val === 'frame') break; // or if yielded for readback
+                if (val === 'frame'){
+                    break; // or if yielded for readback
+                } 
             }
 
             // Submit compute passes immediately

@@ -1,5 +1,5 @@
 import { msg, assert, MyError, range } from "./utils.js";
-import { CanvasDef, theDevice, theRunner } from "./SimulationRunner.js";
+import { CanvasDef, PassCommand, theDevice, theRunner } from "./SimulationRunner.js";
 import { ComputePassBuilder } from "./pipeline.js";
 import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
 import { ISimulationSchema, theSchema } from "./schema.js";
@@ -396,7 +396,10 @@ export class GroupExpression extends Expression {
 }
 
 export abstract class Statement extends BaseASTNode {
-    abstract exec() : void;
+    // abstract *exec();
+
+    *exec() : Generator<PassCommand, void, unknown>{
+    }
 }
 
 export class VariableDeclaration extends Statement {
@@ -417,8 +420,17 @@ export class VariableDeclaration extends Statement {
     toSource(): string {
         return `const ${this.variable};`;
     }
+}
 
-    exec() : void {
+export class YieldStatement extends Statement {
+    readonly type = 'YieldStatement';
+
+    toSource(): string {
+        return `yield;\n`;
+    }
+
+    *exec() : Generator<PassCommand, void, unknown>{
+        yield "frame";
     }
 }
 
@@ -438,9 +450,9 @@ export class BlockStatement extends Statement {
         return `{\n${s}}\n`;
     }
 
-    exec() : void {
+    *exec() : Generator<PassCommand, void, unknown>{
         for(const stmt of this.statements){
-            stmt.exec();
+            yield* stmt.exec();
         }
     }
 }
@@ -469,12 +481,12 @@ export class ForStatement extends Statement {
         return `for(const ${this.iterator} of ${this.collection}) ${this.block}`;
     }
 
-    exec() : void {
+    *exec() : Generator<PassCommand, void, unknown>{
         const collection = this.collection.getValue();
         if(Array.isArray(collection)){
             for(const value of collection){
                 this.iterator.setValue(value);
-                this.block.exec();
+                yield* this.block.exec();
             }
         }
     }
@@ -497,17 +509,17 @@ export class IfStatement extends Statement {
         return this.conditions.length < this.blocks.length;
     }
 
-    exec() : void {
+    *exec() : Generator<PassCommand, void, unknown>{
         for(const [idx, expr] of this.conditions.entries()){
             const ok = expr.getBoolean();
             if(ok){
-                this.blocks[idx].exec();
+                yield* this.blocks[idx].exec();
                 return;
             }
         }
 
         if(this.hasElse()){
-            this.blocks.at(-1)!.exec();
+            yield* this.blocks.at(-1)!.exec();
         }
     }
 
@@ -566,7 +578,7 @@ export class CallStatement extends Statement {
         }
     }
 
-    exec() : void {
+    *exec() : Generator<PassCommand, void, unknown> {
         if(this.callExpr.callee instanceof Identifier){
             if(this.callExpr.callee.name == "execute"){
 
@@ -681,7 +693,7 @@ export class AssignmentStatement extends Statement {
         return `${this.lvalue} ${this.operator} ${this.rvalue};\n`;
     }
 
-    exec() : void {
+    *exec() : Generator<PassCommand, void, unknown> {
         if(this.lvalue instanceof MemberExpression && this.lvalue.object.uniform != undefined){
             theRunner.changedUniforms.add(this.lvalue.object.uniform);
             if(tick % 10 == 0){
@@ -713,8 +725,8 @@ export class FunctionExpression extends BaseASTNode {
         return this;
     }
 
-    execFunction(){        
-        this.body.exec();
+    *execFunction() : Generator<PassCommand, void, unknown>{        
+        yield* this.body.exec();
         tick++;
     }
 }
