@@ -9,7 +9,7 @@ import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
 import { ISimulationSchema, SimulationSchema, theSchema } from "./schema.js";
 import { FieldDef, FieldDefToStr, makeFieldDefs, ReadBackDef, ResourceDef, StorageDef, UniformDef, WgslFormat } from "./resource.js";
 import { Lexer, Token, TokenType } from "./lexer.js";
-import { BaseASTNode, Program, StructDeclaration, VariableDeclaration, ObjectExpression, ArrayExpression, Literal, Identifier, UnaryExpression, BinaryExpression, GroupExpression, Statement, BlockStatement, ForStatement, CallStatement, FunctionExpression, MemberExpression, CallExpression, constValues, Expression, IfStatement, AssignmentStatement, Variable, Const, YieldStatement } from "./syntax.js";
+import { BaseASTNode, Program, StructDeclaration, VariableDeclaration, ObjectExpression, ArrayExpression, Literal, Identifier, UnaryExpression, BinaryExpression, GroupExpression, Statement, BlockStatement, ForStatement, CallStatement, FunctionExpression, MemberExpression, CallExpression, constValues, Expression, IfStatement, AssignmentStatement, Variable, Const, YieldStatement, WhileStatement } from "./syntax.js";
 
 let lexer: Lexer;
 
@@ -416,6 +416,17 @@ export class Parser {
         return new BlockStatement(statements);
     }
 
+    private parseWhile() : WhileStatement {
+        this.consume("while");
+        this.consume("(");
+        const condition = this.parseExpression();
+        this.consume(")");
+
+        const block = this.parseBlock();
+
+        return new WhileStatement(condition, block);
+    }
+
     private parseFor() : ForStatement {
         this.consume("for");
         this.consume("(");
@@ -473,6 +484,9 @@ export class Parser {
             this.consume('yield');
             this.consume(';');
             return new YieldStatement();
+        }
+        else if(token.value == "while"){
+            return this.parseWhile();
         }
         else if(token.value == "for"){
             return this.parseFor();

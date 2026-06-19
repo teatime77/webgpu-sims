@@ -457,6 +457,32 @@ export class BlockStatement extends Statement {
     }
 }
 
+export class WhileStatement extends Statement {
+    readonly type = 'WhileStatement';
+    condition : Expression;
+    block : BlockStatement;
+
+    constructor(condition : Expression, block : BlockStatement){
+        super();
+        this.condition = condition;
+        this.block = block;
+    }
+
+    toSource(): string {
+        return `while(${this.condition}) ${this.block}`;
+    }
+
+    *exec() : Generator<PassCommand, void, unknown>{
+        while(true){
+            const ok = this.condition.getBoolean();
+            if(!ok){
+                break;
+            }
+            yield* this.block.exec();
+        }
+    }
+}
+
 export class ForStatement extends Statement {
     readonly type = 'ForStatement';
     iterator : Variable;
