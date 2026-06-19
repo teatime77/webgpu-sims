@@ -163,28 +163,32 @@ export async function bootstrap(sim: SimulationSchema) {
             return;
         }
 
-        runner.copyStorages = [];
+        // 1. Check if any copies from the previous frame are still pending
+        const isWaitingForGPU = runner.copyStorages.some(cp => cp.busy);
 
-        // 1. Initialize command encoder and run Compute Shaders first
-        runner.currentCommandEncoder = theDevice.createCommandEncoder();
-        runner.changedUniforms.clear();
+        // 2. Only advance the generator if the CPU has the fresh data
+        if (!isWaitingForGPU) {
+            runner.copyStorages = []; // Clear the queue
+            runner.currentCommandEncoder = theDevice.createCommandEncoder();
+            runner.changedUniforms.clear();
 
-        while (true) {
-            runner.setTime();
-            const result = runner.generator!.next();
-            if (result.done) break;
-            
-            const val = result.value;
-            if (val === 'frame') break;
-        }
+            while (true) {
+                runner.setTime();
+                const result = runner.generator!.next();
+                if (result.done) break;
+                
+                const val = result.value;
+                if (val === 'frame') break; // or if yielded for readback
+            }
 
-        // Submit compute passes immediately
-        theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
-        runner.currentCommandEncoder = null;
+            // Submit compute passes immediately
+            theDevice.queue.submit([runner.currentCommandEncoder.finish()]);
+            runner.currentCommandEncoder = null;
 
-        for(const cp of runner.copyStorages){
-            cp.copyBuffers(theDevice).then(data =>{
-            });
+            // Initiate any new copies that were requested during this generator step
+            for(const cp of runner.copyStorages){
+                cp.copyBuffers(theDevice).catch(console.error);
+            }
         }
 
         const renders = runner.getRenders();
