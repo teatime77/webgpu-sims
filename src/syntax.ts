@@ -571,11 +571,21 @@ export class CallStatement extends Statement {
             if(this.callExpr.callee.name == "execute"){
 
                 if(this.shader == undefined){
-                    if(this.callExpr.arguments.length == 1){
-                        const shaderNameTerm = this.callExpr.arguments[0];
-                        const shaderName = this.getName(shaderNameTerm);
+                    assert(1 <= this.callExpr.arguments.length)
 
-                        this.shader = theSchema.nodeMap.get(shaderName) as ComputePassBuilder;
+                    const shaderNameTerm = this.callExpr.arguments[0];
+                    const shaderName = this.getName(shaderNameTerm);
+
+                    this.shader = theSchema.nodeMap.get(shaderName) as ComputePassBuilder;
+
+                }
+
+                let overrides: Record<string, string> | undefined = undefined;
+                if (this.callExpr.arguments.length == 2) {
+                    // Parse the second argument as a standard JS object map
+                    const overrideTerm = this.callExpr.arguments[1];
+                    if (overrideTerm.type === 'ObjectExpression') {
+                        overrides = overrideTerm.getValue() as Record<string, string>;
                     }
                 }
 
@@ -583,7 +593,7 @@ export class CallStatement extends Statement {
                     // msg(`execute: ${this.shader!.id}`);
                 }
                 assert(this.shader instanceof ComputePassBuilder);
-                this.shader!.dispatch(theRunner);
+                this.shader!.dispatch(theRunner, overrides);
                 return;
             }
             else if(this.callExpr.callee.name == "copy"){

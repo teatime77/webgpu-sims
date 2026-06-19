@@ -99,6 +99,9 @@ export async function bootstrap(sim: SimulationSchema) {
                     case "vertex-color-normal":
                         fileName = "triangle/tri_vertex_color_normal_render.wgsl";
                         break;
+                    case "scalar-grid":
+                        fileName = "triangle/scalar_grid_render.wgsl"; 
+                        break;
                     default:
                         throw new MyError();
                     }
@@ -120,19 +123,6 @@ export async function bootstrap(sim: SimulationSchema) {
         
         if (node instanceof ComputePassBuilder) {
             node.initComputePass(theDevice, shader, 'main');
-            const groups = new Set<number>(node.bindings.map((b: ResourceBinding) => b.group || 0));
-            groups.forEach(g => {
-                node.setGroup(g);
-                node.bindings.filter((b: ResourceBinding) => (b.group || 0) === g).forEach((b: ResourceBinding) => {
-                    const res = b.resourceDef!;
-                    if(! (res instanceof MeshDef) && res.type === 'uniform'){
-                        node.addUniform(runner.getUniformBuffer(b.resource), b.binding);
-                    }
-                    else{
-                        node.addStorage(runner.getStorageBuffer(b.resource, b.historyLevel || 0), b.binding);
-                    }
-                });
-            });
         } 
         else if(node instanceof RenderPassBuilder){
 

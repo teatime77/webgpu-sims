@@ -175,6 +175,11 @@ export class SimulationSchema {
                     instanceCount = 1;
                     break;
 
+                case "scalar-grid":
+                    vertexCount = 3;   // Exactly 3 vertices to draw one full-screen triangle
+                    instanceCount = 1; // Drawn once
+                    break;                    
+
                 default:
                     throw new MyError();
                 }
