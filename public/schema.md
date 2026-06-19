@@ -77,7 +77,7 @@ Compute shaders can perform initialization when the value of `time` is 0.
     count: number, 
     meshRef?: string, 
     topology?: "point-list" | "line-list" | "triangle-list", 
-    shadingModel?: "triangle-color" | "vertex-color" | "vertex-color-normal",
+    shadingModel?: "triangle-color" | "vertex-color" | "vertex-color-normal" | "scalar-grid",
     canvasId? : string
 }
 ```
@@ -114,6 +114,12 @@ If the buffer generates procedural geometry without a mesh, specify a `topology`
     * `"vertex-color-normal"`: Processes per-vertex. Perfect smooth shading using explicit pre-calculated normals.
       * **Memory Stride:** 10 floats per VERTEX `[x, y, z, r, g, b, a, nx, ny, nz]`.
       * **Count Calculation:** `NUM_VERTICES * 10`
+    * `scalar-grid`: Processes a 1D array of scalars into a 2D full-screen grid visualization.  
+    This heavily optimizes memory bandwidth by bypassing 3D vertex math entirely, utilizing a single procedural full-screen triangle.  
+        * **Memory Stride:** 1 float per GRID CELL [value].  
+        * **Count Calculation:**  GRID_WIDTH * GRID_HEIGHT
+
+
 
 #### **3. mesh**
 * Format:
@@ -169,10 +175,12 @@ The `shaders` field is an **Array of Objects**. Order **strictly matters**. This
 * `type`: The type of pass (e.g., `"compute"`).
 * `workgroupSize`: Integer representing local invocation size (e.g., `64`).
 * `workgroupCount`: Total dispatches (usually calculated via constants).
-* `bindings`: An array mapping the previously defined `resources` to WGSL variables.
-* `resource`: Must exactly match a key defined in the `resources` object.
-* `varName`: The variable name to be injected into the WGSL code.
-* `access`: Set to `"read_write"` for mutable storage buffers.
+* `bindings`: An array mapping the previously defined `resources` to WGSL variables. Each binding object supports the following properties:
+    * `resource` (Required): Must exactly match a key defined in the `resources` object.
+    * `group` (Optional): Explicitly defines the `@group(X)` index in WGSL. (Defaults to `0`).
+    * `binding` (Optional): Explicitly defines the `@binding(X)` index in WGSL.
+    * `varName` (Optional): The variable name to be injected into the auto-generated WGSL skeleton.
+    * `access` (Optional): Set to `"read_write"` for mutable storage buffers.
 
 ---
 
@@ -335,48 +343,55 @@ const schema = {
 
 By default, the shaders in `shaders` are executed sequentially once each time a frame is rendered.
 
-You can use a script to contorl executions as follows:
-* Control the number of executions using a `for` loop.
-* Change the execution path by referencing the value of a uniform variable in an `if` statement's conditional expression.
-* Assign a value to a uniform variable.
-* Copy the WGSL calculation result to the readback buffer using the `copy` statement.
+The `script` property provides a custom execution environment to orchestrate complex computational flows (like iterative solvers or leapfrog integration). The script interpreter supports the following capabilities:
 
-The script interpreter has only the bare minimum of features.  
-The following features are not available:
+* **Loops:** Control executions using `for` (over arrays/ranges) and `while` loops.
+* **Conditionals:** Change the execution path using `if/else` statements referencing uniform variable states.
+* **Uniform Assignment:** Mutate global uniform state directly.
+* **Resource Swapping:** Pass a secondary overrides object to `execute(shader, overrides)` to dynamically swap bound uniform or storage buffers without triggering pipeline stalls.
+* **Asynchronous Pausing:** Use the `yield` keyword immediately after a `copy()` statement. This safely pauses the script's execution to wait for the GPU memory to map back to the CPU (e.g., reading a residual calculation) without blocking the browser's main render thread.
 
-* `for` statements that specify the termination condition and incrementing the loop variable.  
-```js
-for(const i = 0; i < 2; i++){ ... }
-```
-* `switch` statement
+The script interpreter has a strict, minimalist feature set. The following features are **not** available:
 
-#### Examples:
-```js
-const state = {
-    time: 0.0,
-    index: 0.0, 
-};
+* Traditional `for` loops with termination conditions (e.g., `for(let i = 0; i < 2; i++)`). Use `for (const i of range(N))` instead.
+* `switch` statements.
+
+#### Example: Dynamic Swapping and Convergence Loops
+
+```javascript
+const state_Hold = { eps: 0.0 };
+const state_Hhalf = { eps: 0.005 };
+
 const schema = {
     // ...
-    ,
     resources: {
-        Params: { type: 'uniform', obj: state },
-        Result: { type:'storage', format: 'ResultStruct', count:1 },
-        Readback: { type:'readback', format: 'ResultStruct' }
-    }
+        Params:      { type: 'uniform', obj: state_Hold },
+        Params_Half: { type: 'uniform', obj: state_Hhalf },
+        Result:      { type: 'storage', format: 'ResultStruct', count: 1 },
+        Readback:    { type: 'readback', format: 'ResultStruct' }
+    },
     // ...
-    script: ()=>{
-        if (state.time == 0.0) {
-            execute(shaderInit);
-        } 
-        else {
-            for (const i of range(2)) {
-                state.index = i;
-                execute(shaderUpdate);
-            }
-        }
+    script: () => {
+        // 1. Execute using an overridden BindGroup (Swaps Params for Params_Half)
+        execute(shaderInit, { Params: "Params_Half" });
 
+        // 2. Initial batch of work
+        for (const i of range(20)) {
+            execute(shaderSolver);
+        }
+        
+        // 3. Copy results and yield to await the GPU readback
         copy(Result, Readback);
+        yield;
+
+        // 4. Convergence Loop using the mapped Readback data
+        while (Readback.rho > 1e-12) {
+            for (const i of range(20)) {
+                execute(shaderSolver);
+            }
+            copy(Result, Readback);
+            yield; // Pause again to safely fetch the new rho
+        }
     }
 };
 ```
