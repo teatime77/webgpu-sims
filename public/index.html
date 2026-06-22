@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/TagInput.css">
     <link rel="stylesheet" href="css/editor.css">
-            <!-- "imports": { "gl-matrix": "./gl-matrix.js" } -->
 
     <script type="importmap">
         {
@@ -39,7 +38,6 @@
             <input type="search" id="headerSearch" name="search" placeholder="記事のタイトルやキーワードで検索..." size="30">
 
             <button id="wizard-btn" disabled>Wizard</button>
-            <button id="all-btn">All</button>
         </span>
     </header>
 
@@ -97,7 +95,6 @@
             <button id="run-sim-btn">Run Simulation</button>
         </li>
     </ol>
-
 </div>
 <div id="toast-message" class="toast">Text successfully copied to clipboard!</div>
 
@@ -139,6 +136,7 @@
         <div id="sub-canvases"></div>
     </main>
 </div>
+
 
 <script type="module">
     import { initApp } from './js/main.js';

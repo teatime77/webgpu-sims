@@ -273,7 +273,7 @@ export class Identifier extends BaseASTNode {
     readonly type = 'Identifier';
     name: string;
     refVar? : Variable;
-    uniform?: UniformDef;
+    resourceRef?: ResourceDef;
 
     constructor(name: string) {
         super();
@@ -302,8 +302,8 @@ export class Identifier extends BaseASTNode {
             return this.refVar.getValue();
         }
 
-        if(this.uniform != undefined){
-            return this.uniform;
+        if(this.resourceRef != undefined){
+            return this.resourceRef;
         }
 
         const cnst = constValues.get(this.name)!;
@@ -466,6 +466,8 @@ export class WhileStatement extends Statement {
         super();
         this.condition = condition;
         this.block = block;
+
+        this.setParents([this.condition, this.block]);
     }
 
     toSource(): string {
@@ -577,8 +579,8 @@ export class CallStatement extends Statement {
     readonly type = 'CallStatement';
     callExpr : CallExpression;
     shader? : ComputePassBuilder;
-    srcStorage? : StorageDef;
-    dstStorage? : ReadBackDef;
+    srcStorage? : StorageDef | ReadBackDef;
+    dstStorage? : StorageDef | ReadBackDef;
     busy : boolean = false;
 
     constructor(callExpr : CallExpression){
@@ -638,10 +640,9 @@ export class CallStatement extends Statement {
                 if(this.srcStorage == undefined){
                     if(this.callExpr.arguments.length == 2){
                         const names = this.callExpr.arguments.map(x => this.getName(x));
-                        const resources = names.map(x => theSchema.resources.get(x)) as StorageDef[];
-                        assert(resources.length == 2);
-                        [this.srcStorage, this.dstStorage] = [resources[0], resources[1] as ReadBackDef];
-                        assert(this.srcStorage instanceof StorageDef && this.dstStorage instanceof ReadBackDef);
+                        const resources = names.map(x => theSchema.resources.get(x)) as (StorageDef | ReadBackDef)[];
+                        assert(resources.length == 2 && resources.every(x => x instanceof StorageDef || x instanceof ReadBackDef));
+                        [this.srcStorage, this.dstStorage] = resources;
                         // msg(`copy:${this.srcStorage.id} => ${this.dstStorage.id}`);
                     }
                     else{
@@ -720,8 +721,8 @@ export class AssignmentStatement extends Statement {
     }
 
     *exec() : Generator<PassCommand, void, unknown> {
-        if(this.lvalue instanceof MemberExpression && this.lvalue.object.uniform != undefined){
-            theRunner.changedUniforms.add(this.lvalue.object.uniform);
+        if(this.lvalue instanceof MemberExpression && this.lvalue.object.resourceRef instanceof UniformDef){
+            theRunner.changedUniforms.add(this.lvalue.object.resourceRef);
             if(tick % 10 == 0){
                 // msg(`assign uniform:${this.lvalue} <= ${this.rvalue}(${this.rvalue.getValue()})`);
             }
@@ -791,11 +792,11 @@ export class MemberExpression extends Expression {
     setValue(val : Expression){
         assert(this.getValue() != undefined);
 
-        if(this.object.uniform != undefined){
-            if(this.object.uniform.obj == undefined){
+        if(this.object.resourceRef instanceof UniformDef){
+            if(this.object.resourceRef.obj == undefined){
                 throw new MyError();
             }
-            this.object.uniform.obj.value[this.property.name] = val.getNumber();
+            this.object.resourceRef.obj.value[this.property.name] = val.getNumber();
         }
         else{
 
@@ -807,11 +808,14 @@ export class MemberExpression extends Expression {
     getValue() : ValueType {
         let value : any;
 
-        if(this.object.uniform != undefined){
-            if(this.object.uniform.obj == undefined){
+        if(this.object.resourceRef instanceof UniformDef){
+            if(this.object.resourceRef.obj == undefined){
                 throw new MyError();
             }
-            value = this.object.uniform.obj.value[this.property.name];
+            value = this.object.resourceRef.obj.value[this.property.name];
+        }
+        else if(this.object.resourceRef instanceof ReadBackDef){
+            value = this.object.resourceRef.getFieldValue(this.property.name);
         }
         else{
             const obj = this.getObject();

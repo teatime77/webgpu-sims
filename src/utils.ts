@@ -4,6 +4,7 @@ export class MyError extends Error {
 }
 
 export let urlBase : string;
+export let urlParams : Map<string, string>;
 export let thumbnailBlob : Blob;
 
 export function assert(ok : boolean){
@@ -78,13 +79,13 @@ export function parseURL(): [string, string, Map<string, string>] {
     const queryString = parser.search.substring(1);
     const queries = queryString.split("&");
 
-    const params = new Map<string, string>();
+    urlParams = new Map<string, string>();
     queries.forEach(query => {
         const [key, value] = query.split("=");
-        params.set(decodeURIComponent(key), decodeURIComponent(value));
+        urlParams.set(decodeURIComponent(key), decodeURIComponent(value));
     });
         
-    return [ parser.origin, parser.pathname, params];
+    return [ parser.origin, parser.pathname, urlParams];
 }
 
 export async function fetchText(fileURL: string) {

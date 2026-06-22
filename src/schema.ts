@@ -176,8 +176,8 @@ export class SimulationSchema {
                     break;
 
                 case "scalar-grid":
-                    vertexCount = 3;   // Exactly 3 vertices to draw one full-screen triangle
-                    instanceCount = 1; // Drawn once
+                    vertexCount = 6;
+                    instanceCount = 1;
                     break;                    
 
                 default:
@@ -232,6 +232,10 @@ export class SimulationSchema {
         assert(node != undefined);
 
         return node;
+    }
+
+    getStorages() : StorageDef[] {
+        return Array.from(this.resources.values()).filter(x => x instanceof StorageDef);
     }
 
     getUniforms() : UniformDef[] {

@@ -1,4 +1,5 @@
 import { vec3, mat4 } from "gl-matrix";
+import { msg } from "./utils.js";
 
 export class OrbitCamera {
     private canvas: HTMLCanvasElement;
@@ -18,6 +19,11 @@ export class OrbitCamera {
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.attachEvents();
+    }
+
+    set2D(){
+        this.theta = 0;
+        this.phi = Math.PI / 2;
     }
 
     rotateCamera(dx: number, dy: number){
@@ -96,10 +102,10 @@ export class OrbitCamera {
         // When the wheel is turned
         this.canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
-            // msg(`wheel:${(e.target as HTMLCanvasElement).id}`)
-            // [Wheel: Zoom]
+
             this.distance += e.deltaY * this.distance * 0.001;
             this.distance = Math.max(1.0, this.distance); // Prevent getting too close
+            msg(`wheel:${(e.target as HTMLCanvasElement).id} distance:${this.distance.toFixed(2)}`);
         }, { passive: false });
 
         // --- Math Helpers ---

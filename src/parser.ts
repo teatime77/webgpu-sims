@@ -774,7 +774,6 @@ export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
     const ids = all.filter(x => x instanceof Identifier && !x.isFieldReference()) as Identifier[];
     ids.filter(x => x.parent == null).forEach(x => msg(`no parent:${x.name}`));
 
-    const resourceKeys = new Set<string>(schema.resources.keys());
     const shaderIds = new Set<string>(schema.shaders.map(x => x.id));
     const uniforms = schema.getUniforms().filter(x => x.obj != undefined);
 
@@ -786,15 +785,15 @@ export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
         if(id.name == "Math" && id.parent instanceof MemberExpression){
             continue;
         }
-        if(shaderIds.has(id.name) || resourceKeys.has(id.name)){
+        if(shaderIds.has(id.name)){
             continue;
         }
 
         const res = schema.resources.get(id.name);
         if(res != undefined){
-            if(res instanceof UniformDef && res.obj != undefined){
-                msg(`set uniform ref:${res.id}.${id.name}`);
-                id.uniform = res;
+            if(res instanceof UniformDef || res instanceof ReadBackDef){
+                msg(`set uniform/readback ref:${res.id}.${id.name}`);
+                id.resourceRef = res;
             }
             continue;
         }
@@ -802,7 +801,7 @@ export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
         const uniform = uniforms.find(x => x.obj!.name == id.name);
         if(uniform != undefined){
             msg(`set uniform obj ref:${uniform.id} ${id.name}`);
-            id.uniform = uniform;
+            id.resourceRef = uniform;
             continue;
         }
 

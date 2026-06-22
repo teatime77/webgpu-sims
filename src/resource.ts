@@ -274,14 +274,19 @@ export class ReadBackDef extends MeshReadBackDef {
         return GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ;
     }
 
+    getFieldValue(fieldName: string){
+        const field = this.structDef.fields.find(x => x.name == fieldName)!;
+        assert(field != undefined);
+
+        const idx = field.offset / 4;
+
+        return this.data[idx];
+    }
+
     setLabelValues(){
         for(const label of this.labels.values()){
-            const field = this.structDef.fields.find(x => x.name == label.name)!;
-            assert(field != undefined);
-
-            const idx = field.offset / 4;
-
-            label.valueSpan.textContent = this.data[idx].toFixed(label.decimalPlaces);
+            const value = this.getFieldValue(label.name);
+            label.valueSpan.textContent = value.toFixed(label.decimalPlaces);
         }
     }
 }

@@ -232,6 +232,17 @@ export class SimulationRunner {
             assert(canvasDef.canvas != undefined && canvasDef.context != undefined);
             canvasDef.camera = new OrbitCamera(canvasDef.canvas);
         }
+
+        const storages = sim.getStorages().filter(x => x.shadingModel == "scalar-grid");
+        for(const st of storages){
+            const can = sim.canvases.find(x => x.id == st.canvasId);
+            if(can == undefined){
+                mainCanvasDef.camera.set2D();
+            }
+            else{
+                can.camera.set2D();
+            }
+        }
     }
 
     // Added clearScreen parameter with a default of true

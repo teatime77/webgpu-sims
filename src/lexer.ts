@@ -72,9 +72,14 @@ export class Lexer {
         // Numbers (Handles decimals)
         if (/[0-9]/.test(char) || char == '.' && /[0-9]/.test(nextChar)) {
             let numStr = '';
-            while (this.pos < this.source.length && /[0-9\.]/.test(this.source[this.pos])) {
+            while (this.pos < this.source.length && /[0-9\.e]/.test(this.source[this.pos])) {
                 numStr += this.source[this.pos];
                 this.pos++;
+
+                if(this.source[this.pos - 1] == "e" && this.pos < this.source.length && this.source[this.pos] == "-"){
+                    numStr += this.source[this.pos];
+                    this.pos++;
+                }
             }
             return { type: 'Number', value: numStr, start, end: this.pos, line:this.linePos };
         }

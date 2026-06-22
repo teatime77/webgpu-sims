@@ -205,6 +205,10 @@ details .content {
     display: none;
 }
 
+.sub-canvas-wrapper{
+    display: inline-block;
+}
+
 /* ========================================================
    ARTICLES & BOX LAYOUT (Responsive Grid)
    Horizontal layout: Image Left, Text Right
