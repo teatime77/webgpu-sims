@@ -34,6 +34,14 @@ export function $(id : string) : HTMLElement {
     return ele;
 }
 
+export function $frm(id : string) : HTMLFormElement {
+    return $(id) as HTMLFormElement;
+}
+
+export function $dlg(id : string) : HTMLDialogElement {
+    return $(id) as HTMLDialogElement;
+}
+
 export function $div(id : string) : HTMLDivElement {
     return $(id) as HTMLDivElement;
 }
@@ -152,43 +160,18 @@ export async function copyToClipboard(textToCopy: string): Promise<void> {
   }
 }
 
-export function showToast(text :string, timeout : number = 3, btn? : HTMLButtonElement){
+export function showToast(text :string, timeout : number = 3){
     if(toastTimer != undefined){
         clearTimeout(toastTimer);
     }
 
-    const toastMessage = $div('toast-message');
-    toastMessage.textContent = text;
-
-    let x : number;
-    let y : number;
-
-    if(btn != undefined){
-        // Get the exact dimensions and position of the button
-        const rect = btn.getBoundingClientRect();
-        x = rect.left + window.scrollX;
-        y = rect.bottom + window.scrollY + 10;
-    }
-    else{
-        const clientWidth = document.documentElement.clientWidth;
-        const clientHeight = document.documentElement.clientHeight;
-
-        x = clientWidth / 2;
-        y = clientHeight / 2;
-    }
-
-    // Set position to the bottom-left of the button
-    // window.scrollY/X ensures it stays accurate even if the user has scrolled down the page
-    toastMessage.style.left = `${x}px`;
-
-    // rect.bottom is the bottom edge of the button. We add 10px for a small gap.
-    toastMessage.style.top = `${y}px`; 
-
-    toastMessage.classList.add('show');
+    const toast = $dlg("toast-message");
+    toast.textContent = text;
+    toast.showModal();
 
     toastTimer = setTimeout(() => {
         toastTimer = undefined;
-        toastMessage.classList.remove('show');
+        toast.close();
     }, timeout * 1000);
 }
 

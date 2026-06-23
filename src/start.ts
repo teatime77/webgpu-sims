@@ -58,7 +58,7 @@ export function initEventHandler(){
                             + schemaText;
 
         await copyToClipboard(instruction);
-        showToast("Text successfully copied to clipboard!", 3, $btn("copy-rulebook-btn"));
+        showToast("Text successfully copied to clipboard!", 3);
     });
 
     $btn("create-copy-skeleton-btn").addEventListener("click", async()=>{
@@ -67,7 +67,7 @@ export function initEventHandler(){
                             + wgslSkeleton;
 
         await copyToClipboard(instruction);
-        showToast("Text successfully copied to clipboard!", 3, $btn("create-copy-skeleton-btn"));
+        showToast("Text successfully copied to clipboard!", 3);
 
         makeShaderEditors();
     });

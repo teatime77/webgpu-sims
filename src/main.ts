@@ -2,10 +2,10 @@ import { CaptureTool } from './CaptureTool.js';
 import { getMesh, initDevice, theDevice, theRunner, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $btn, $canvas, $div, assert, fetchJson, fetchText, msg, MyError, parseURL } from './utils.js';
+import { $, $btn, $canvas, $div, assert, fetchJson, fetchText, msg, MyError, parseURL } from './utils.js';
 import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
-import { appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
+import { AppManager, appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
 import { SimulationSchema, theSchema } from './schema.js';
 import { ComputePassBuilder, RenderPassBuilder, ResourceBinding } from './pipeline.js';
 import { MeshDef, UniformDef } from './resource.js';
@@ -264,54 +264,63 @@ export interface Article extends AbstractArticle {
     schemaUrl : string;
 }
 
+export function makeArticleBox(div: HTMLDivElement, idx : number, doc : AbstractArticle, manager : AppManager){{
+    // msg(`doc: ${doc.authorId} ${doc.title} ${doc.thumbnailUrl}`);
+
+    const box = document.createElement("article");
+    box.className = "box";
+
+    box.addEventListener("click", (_: PointerEvent) => {
+        manager.navigateTo(`/post/${idx}`);
+    });
+
+    const imgDiv = document.createElement("div");
+    imgDiv.className = "box-thumbnail";
+
+    const img = document.createElement("img");
+    img.src = doc.thumbnailUrl!;
+
+    imgDiv.append(img);
+    box.appendChild(imgDiv);
+
+    const boxContent = document.createElement("div");
+    boxContent.className = "box-content";
+
+    const title = document.createElement("h2");
+    title.className = "box-title";
+    title.textContent = doc.title;
+
+    boxContent.appendChild(title);
+
+    const user = document.createElement("div");
+    user.className = "box-user-id";
+    user.textContent = doc.authorId;
+
+    boxContent.appendChild(user);
+    box.append(boxContent);
+
+    div.appendChild(box);
+}
+
+}
+
 async function getContents(articles : Article[]) {
 
     const div = $div("articles");
     for (const [idx, doc] of articles.entries()) {
-        // msg(`doc: ${doc.authorId} ${doc.title} ${doc.thumbnailUrl}`);
-
-        const box = document.createElement("article");
-        box.className = "box";
-
-        box.addEventListener("click", (_: PointerEvent) => {
-            appManager.navigateTo(`/post/${idx}`);
-        });
-
-        const imgDiv = document.createElement("div");
-        imgDiv.className = "box-thumbnail";
-
-        const img = document.createElement("img");
-        img.src = doc.thumbnailUrl!;
-
-        imgDiv.append(img);
-        box.appendChild(imgDiv);
-
-        const boxContent = document.createElement("div");
-        boxContent.className = "box-content";
-
-        const title = document.createElement("h2");
-        title.className = "box-title";
-        title.textContent = doc.title;
-
-        boxContent.appendChild(title);
-
-        const user = document.createElement("div");
-        user.className = "box-user-id";
-        user.textContent = doc.authorId;
-
-        boxContent.appendChild(user);
-        box.append(boxContent);
-
-        div.appendChild(box);
+        makeArticleBox(div, idx, doc, appManager);
     }
 }
 
 
-export async function initApp(){
-    initWebGpuSimsNavigationManager();
+export async function initApp(){   
     await initWebGpuSims();
+    initWebGpuSimsNavigationManager();
 
-    $btn("all-btn").addEventListener("click", async() => {
+    const allBtn = document.createElement("button");
+    allBtn.textContent = "All";
+    $("main-header-center").append(allBtn);
+    allBtn.addEventListener("click", async() => {
         await appManager.showAll();
     });
 

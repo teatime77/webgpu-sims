@@ -12,6 +12,18 @@ body {
   box-sizing: border-box;
 }
 
+.user-dlg {
+    background: #111;
+    color: white;
+    padding: 50px 50px;
+
+    display: flex;
+    flex-direction: column; /* 要素を上から下へ縦に並べる */
+    align-items: center;    /* 水平方向に中央揃え */
+    text-align: center;     /* 複数行になったテキストも中央揃えにする */
+    gap: 20px;              /* 要素と要素の間の余白（<br/>の代わり） */
+}
+
 /* ============================
    APP TITLE BUTTON (GPUSims)
    ============================ */
@@ -122,7 +134,13 @@ header > .at-right {
     height: auto;
 }
 
+#thumbnail-img {
+    margin: 10px;
+}
 
+/* #capture-panel {
+    display: none;
+} */
 
 /* >>>>>================================================== accordion */
 
@@ -379,26 +397,43 @@ details .content {
   margin-bottom: 0;
 }
 
-/* <<<<<================================================== Wizard */
+/* <<<<<================================================== Toast */
 
 .toast {
-  visibility: hidden;
+  /* デフォルトのダイアログスタイルをリセット */
+  border: none;
+  background: none;
+  margin: 0;
+  padding: 0;
+  
+  /* トーストの見た目 */
   background-color: #333;
   color: #fff;
-  padding: 8px 16px;
+  padding: 16px 16px;
+  border-color: white;
+  border-width: 5px;
+  border-style: ridge;
   border-radius: 24px; 
-  border-style: solid;
-  border-width: 1;
-  position: absolute; /* Crucial: Allows us to place it anywhere */
-  z-index: 1000;
+  white-space: nowrap;
+
+  /* ★画面中央に配置する設定 */
+  position: fixed;
+  inset: 50% auto auto 50%; /* 上から50%、左から50%の位置を基準にする */
+  transform: translate(-50%, -50%); /* 要素自身の幅と高さの半分だけ戻す */
+
+  /* アニメーション用 */
   opacity: 0;
-  transition: opacity 0.3s, visibility 0.3s;
-  white-space: nowrap; /* Prevents the text from wrapping awkwardly */
+  transition: opacity 0.3s, display 0.3s allow-discrete, overlay 0.3s allow-discrete;
 }
 
-.toast.show {
-  visibility: visible;
+/* ダイアログが開いている状態 */
+.toast[open] {
   opacity: 1;
+}
+
+/* 背景の黒透過（backdrop）を消す設定 */
+.toast::backdrop {
+  background: transparent;
 }
 
 

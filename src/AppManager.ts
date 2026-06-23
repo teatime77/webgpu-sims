@@ -4,7 +4,7 @@ import { makeSimulationSchema } from "./parser.js";
 import { clearSchema } from "./start.js";
 import { $, $div, $img, $txt, assert, fetchText, msg, sleep, urlBase } from "./utils.js";
 
-export type ViewName = "login-view" | "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view";
+export type ViewName = "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view";
 
 export let appManager : AppManager;
 export let initialPath : string;
@@ -14,19 +14,17 @@ export function setAppManager(app: AppManager){
 }
 
 export class AppManager {
-    loginView: HTMLDivElement;
     mainView: HTMLDivElement;
     editView: HTMLDivElement;
     wizardView: HTMLDivElement;
     views : HTMLDivElement[];
 
     constructor(){
-        this.loginView = $div("login-view");
         this.mainView = $div("main-view");
         this.editView = $div("edit-view");
         this.wizardView = $div("wizard-view");
 
-        this.views = [this.loginView, this.mainView, this.editView, this.wizardView];
+        this.views = [this.mainView, this.editView, this.wizardView];
 
         const buttons = document.getElementsByClassName("app-title-button");
         for(const button of buttons){
