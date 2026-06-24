@@ -255,6 +255,7 @@ export async function initWebGpuSims(){
 }
 
 export interface AbstractArticle {
+    id: string;
     authorId : string;
     title    : string;
     thumbnailUrl : string;
@@ -271,7 +272,7 @@ export function makeArticleBox(div: HTMLDivElement, idx : number, doc : Abstract
     box.className = "box";
 
     box.addEventListener("click", (_: PointerEvent) => {
-        manager.navigateTo(`/post/${idx}`);
+        manager.navigateTo(`/post/${doc.id}`);
     });
 
     const imgDiv = document.createElement("div");
@@ -334,6 +335,7 @@ export async function initApp(){
 
         const url = "docs/" + line.replace("/schema.js", "/");
 
+        let id: string;
         let authorId : string;
         let title : string;
 
@@ -341,14 +343,16 @@ export async function initApp(){
 
         if(article != undefined){
 
+            id       = article.id;
             authorId = article.author;
             title    = article.title;
         }
         else{
-
+            
             const names = line.split("/");
             authorId = names.at(-3)!;
             title = names.at(-2)!.replaceAll("_", " ").replaceAll("-", " ");
+            id = title;
         }
         // msg(`name:[${authorId}][${title}]`)
         const schemaUrl = `docs/${line}`;
@@ -356,7 +360,7 @@ export async function initApp(){
         const thumbnailUrl = url + "thumbnail.png";   
         msg(`thumbnail-Url:${thumbnailUrl}`);
 
-        theArticles.push({ authorId, title, thumbnailUrl, schemaUrl });
+        theArticles.push({ id, authorId, title, thumbnailUrl, schemaUrl });
     }
 
     appManager.showView("main-view");

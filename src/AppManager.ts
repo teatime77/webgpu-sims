@@ -96,10 +96,10 @@ export class AppManager {
             this.showView("edit-view");
             const texts = path.split("/");
             assert(texts.length == 3);
-            const idx = parseInt(texts[2]);
-            assert(!(isNaN(idx)) && 0 <= idx && idx < theArticles.length)
+            const id = texts[2];
             // msg(`post:${texts}`);
-            const article = theArticles[idx];
+            const article = theArticles.find(x => x.id == id)!;
+            assert(article != undefined);
             await this.showArticle(article);
         }
         else if(path == "/wizard"){

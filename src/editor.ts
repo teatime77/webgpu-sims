@@ -206,8 +206,38 @@ export function makeShaderEditors(){
         nodeDiv.dataset.nodeId = node.id
 
         const p = document.createElement("p");
+        p.className = "editor-header";
 
-        p.textContent = `compute shader for ${id}`;
+        const idSpan = document.createElement("span");
+        idSpan.textContent = `compute shader for ${id}`;
+        idSpan.className = "editor-header-span";
+
+        p.append(idSpan);
+        for(const s of ["－", "🗗", "🗖"]){
+            const btn = document.createElement("button");
+            btn.className = "testarea-size";
+            btn.innerHTML = `<span>${s}</span>`;
+
+            switch(s){
+            case "－": btn.title = "Collapse"; break;
+            case "🗗": btn.title = "Default" ; break;
+            case "🗖": btn.title = "Expand" ; break;
+            }
+
+            btn.addEventListener("click", (ev:PointerEvent)=>{
+                let height = "400px";
+
+                switch(s){
+                case "－": height =   "5px"; break;
+                case "🗗": height = "400px"; break;
+                case "🗖": height = "800px"; break;
+                }
+
+                $(`editor-container-${id}`).style.height = height;
+            });
+
+            p.append(btn);
+        }
         
         const editorDiv = document.createElement("div");
         const textarea = document.createElement("textarea");
@@ -221,6 +251,7 @@ export function makeShaderEditors(){
         }
 
         editorDiv.className = "editor-container";
+        editorDiv.id = `editor-container-${id}`;
         
         textarea.className = "hidden-textarea";
         textarea.spellcheck= false;

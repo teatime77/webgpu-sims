@@ -1,3 +1,26 @@
+.wizard-steps li p.editor-header {
+    display: flex;
+    align-items: center; /* 縦方向の中央揃え（必要に応じて） */
+    gap: 1px;            /* ボタン同士の隙間（お好みで） */    
+    margin-bottom: 0;
+}
+
+.editor-header-span {
+    margin-right: auto;
+}
+
+.wizard-steps li p.editor-header button {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    font-size:medium;
+    padding: 0;
+}
+
+.wizard-steps li p.editor-header button.testarea-size span {
+    display: inline-block; /* transformを効かせるために必要 */
+    transform: translateY(-3px); /* 上に2px移動（下なら正の値） */
+}
 
 .editor-container {
     position: relative;
