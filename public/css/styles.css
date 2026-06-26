@@ -306,7 +306,7 @@ details .content {
   overflow: hidden;
 }
 
-.box-user-id {
+.box-user-id, .box-ai {
   font-size: 0.85rem;
   color: #aaa;
   margin-top: auto; 

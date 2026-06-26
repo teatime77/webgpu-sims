@@ -259,6 +259,7 @@ export interface AbstractArticle {
     authorId : string;
     title    : string;
     thumbnailUrl : string;
+    ai: string | undefined,
 }
 
 export interface Article extends AbstractArticle {
@@ -292,6 +293,13 @@ export function makeArticleBox(div: HTMLDivElement, idx : number, doc : Abstract
     title.textContent = doc.title;
 
     boxContent.appendChild(title);
+
+    if(doc.ai != undefined){
+        const ai = document.createElement("div");
+        ai.className = "box-ai";
+        ai.textContent = doc.ai;
+        boxContent.append(ai);
+    }
 
     const user = document.createElement("div");
     user.className = "box-user-id";
@@ -338,6 +346,7 @@ export async function initApp(){
         let id: string;
         let authorId : string;
         let title : string;
+        let ai : string | undefined;
 
         const article = await fetchJson(url + "article.json");
 
@@ -346,6 +355,7 @@ export async function initApp(){
             id       = article.id;
             authorId = article.author;
             title    = article.title;
+            ai       = article.ai;
         }
         else{
             
@@ -360,7 +370,7 @@ export async function initApp(){
         const thumbnailUrl = url + "thumbnail.png";   
         msg(`thumbnail-Url:${thumbnailUrl}`);
 
-        theArticles.push({ id, authorId, title, thumbnailUrl, schemaUrl });
+        theArticles.push({ id, authorId, title, thumbnailUrl, schemaUrl, ai });
     }
 
     appManager.showView("main-view");

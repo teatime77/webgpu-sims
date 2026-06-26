@@ -1,5 +1,5 @@
 /* Container holding the entire component */
-.tag-input-wrapper {
+#tag-input-wrapper {
   position: relative;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   width: 100%;
@@ -7,24 +7,15 @@
 }
 
 /* The box containing pills and the input */
-.tag-input-pills {
+#tag-input-pills {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  padding: 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background-color: #ffffff;
   cursor: text;
   min-height: 42px;
   box-sizing: border-box;
   transition: border-color 0.2s ease;
-}
-
-.tag-input-pills:focus-within {
-  border-color: #3b82f6;
-  outline: 1px solid #3b82f6;
 }
 
 /* Individual Pill */
@@ -59,19 +50,13 @@
 }
 
 /* The actual text input field */
-.tag-input-field {
-  border: none;
-  outline: none;
+#tag-input-field {
   flex-grow: 1;
   min-width: 120px;
-  font-size: 14px;
-  padding: 4px 0;
-  background: transparent;
-  color: #111827;
 }
 
 /* Autocomplete Dropdown List */
-.tag-input-dropdown {
+#tag-input-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
@@ -89,7 +74,7 @@
   display: none; /* Hidden by default */
 }
 
-.tag-input-dropdown.active {
+#tag-input-dropdown.active {
   display: block;
 }
 

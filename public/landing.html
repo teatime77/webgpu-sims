@@ -3,69 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPUSims - Build the Universe in Your Browser</title>
+    <title>GPUSims | Build a Universe in Your Browser</title>
     <style>
         /* ============================
-           CSS VARIABLES (From App Theme)
+           CSS VARIABLES (THEME)
            ============================ */
         :root {
-            color-scheme: dark;
-            --bg-page: #111111;
+            color-scheme: dark; 
+            --bg-page: #121212;
             --bg-element: #27272a;
             --bg-element-hover: #3f3f46;
             --text-main: #e4e4e7;
-            --text-muted: #a1a1aa;
             --border-idle: #3f3f46;
             --border-hover: #52525b;
-            --accent-base: #3730a3;
-            --accent-hover: #312e81;
-            --accent-active: #1e1b4b;
-            --accent-focus: #4338ca;
+            --accent-base: #3730a3;   
+            --accent-hover: #312e81;  
+            --accent-active: #1e1b4b; 
+            --accent-focus: #4338ca;  
         }
 
         /* ============================
-           GLOBAL STYLES
+           GLOBAL RESETS
            ============================ */
         body {
             margin: 0;
-            padding: 0;
             background-color: var(--bg-page);
             color: var(--text-main);
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: sans-serif;
+            box-sizing: border-box;
             line-height: 1.6;
         }
 
-        a {
-            text-decoration: none;
+        *, *::before, *::after {
+            box-sizing: inherit;
         }
 
         /* ============================
-           TYPOGRAPHY & BRAND
+           TYPOGRAPHY & BRANDING
            ============================ */
         h1, h2, h3 {
             color: #ffffff;
-            line-height: 1.2;
+            margin-top: 0;
         }
 
-        .brand-accent {
+        .text-accent {
             color: var(--accent-focus);
         }
 
-        .app-title {
+        .app-title-button {
             background-color: transparent;
             color: var(--text-main);
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 800;
+            font-family: inherit;
             letter-spacing: 1px;
             padding: 8px 16px;
             border: 2px solid transparent;
             border-radius: 16px;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
-            display: inline-block;
         }
 
-        .app-title:hover {
+        .app-title-button .brand-accent {
+            color: var(--accent-focus);
+        }
+
+        .app-title-button:hover {
             background-color: var(--bg-element);
             border-color: var(--accent-focus);
             color: #ffffff;
@@ -75,282 +78,229 @@
         /* ============================
            BUTTONS
            ============================ */
-        .btn {
-            display: inline-block;
-            padding: 14px 28px;
-            font-size: 18px;
-            font-weight: 600;
+        button.primary-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
             border: none;
-            border-radius: 24px;
+            border-radius: 24px; 
             background-color: var(--accent-base);
             color: var(--text-main);
             cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            text-align: center;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .btn:hover {
+        button.primary-btn:hover {
             background-color: var(--accent-hover);
         }
 
-        .btn:active {
+        button.primary-btn:active {
             background-color: var(--accent-active);
-            transform: scale(0.98);
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            border: 2px solid var(--border-idle);
-        }
-
-        .btn-outline:hover {
-            background-color: var(--bg-element);
-            border-color: var(--border-hover);
         }
 
         /* ============================
-           LAYOUT & SECTIONS
+           LAYOUT & CONTAINERS
            ============================ */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
         header {
-            padding: 20px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-idle);
+            background-color: var(--bg-element);
         }
 
-        section {
-            padding: 80px 0;
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 20px;
         }
 
-        /* Hero Section */
-        .hero {
+        .hero-section {
             text-align: center;
-            padding: 100px 20px;
-            background: radial-gradient(circle at 50% 30%, rgba(67, 56, 202, 0.15) 0%, transparent 60%);
+            padding: 80px 20px;
+            background: linear-gradient(180deg, var(--bg-element) 0%, var(--bg-page) 100%);
+            border-bottom: 1px solid var(--border-idle);
         }
 
-        .hero h1 {
-            font-size: 4rem;
+        .hero-section h1 {
+            font-size: 3rem;
             margin-bottom: 20px;
-            letter-spacing: -1px;
         }
 
-        .hero p {
-            font-size: 1.25rem;
+        .hero-section p {
+            font-size: 1.2rem;
             max-width: 700px;
             margin: 0 auto 40px auto;
+            color: #aaa;
         }
 
-        .hero-buttons {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-        }
-
-        /* Value Prop Section */
-        .value-prop {
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: var(--bg-element);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid var(--border-idle);
-        }
-
-        .value-prop h2 {
-            margin-top: 0;
-        }
-
-        /* Features Section */
+        /* ============================
+           GRID & CARDS (Based on .box)
+           ============================ */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
+            gap: 20px;
             margin-top: 40px;
         }
 
-        .feature-card {
+        .box {
             background-color: var(--bg-element);
             border: 1px solid var(--border-idle);
             border-radius: 12px;
-            padding: 32px;
-            transition: transform 0.2s, border-color 0.2s;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
         }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-focus);
+        .box:hover {
+            background-color: var(--bg-element-hover);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
         }
 
-        .feature-card h3 {
-            margin-top: 0;
-            color: var(--accent-focus);
+        .box h3 {
+            margin-bottom: 15px;
+            color: var(--text-main);
         }
 
-        /* Workflow Section */
-        .workflow-steps {
+        .box p {
+            color: #aaa;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        /* ============================
+           NUMBERED STEPS
+           ============================ */
+        .steps-list {
+            list-style: none;
+            padding: 0;
+            margin: 40px 0;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            max-width: 800px;
-            margin: 40px auto 0 auto;
         }
 
-        .step-card {
+        .steps-list li {
             background-color: var(--bg-element);
+            border: 1px solid var(--border-idle);
             border-left: 4px solid var(--accent-focus);
             border-radius: 0 12px 12px 0;
-            padding: 24px 32px;
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
+            padding: 24px;
+            font-size: 1.1rem;
         }
 
-        .step-number {
-            background-color: var(--accent-focus);
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            flex-shrink: 0;
+        .steps-list strong {
+            color: #fff;
         }
 
-        .step-content h3 {
-            margin: 0 0 8px 0;
+        .hint-box {
+            background-color: rgba(55, 48, 163, 0.15);
+            border-left: 4px solid var(--accent-focus);
+            border-radius: 0 8px 8px 0;
+            padding: 16px;
+            margin: 16px 0 0 0;
+            font-style: italic;
         }
 
-        .step-content p {
-            margin: 0;
-        }
-
-        /* CTA Footer */
-        .cta-footer {
-            text-align: center;
-            padding: 100px 20px;
-            background-color: var(--bg-element);
-            border-top: 1px solid var(--border-idle);
-        }
-
-        .cta-footer h2 {
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-        }
-
+        /* ============================
+           FOOTER
+           ============================ */
         footer {
             text-align: center;
-            padding: 24px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
+            padding: 40px 20px;
             border-top: 1px solid var(--border-idle);
+            background-color: var(--bg-element);
+            color: #888;
+            margin-top: 60px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <a href="index.html" class="app-title">
+    <header>
+        <div class="at-left">
+            <button class="app-title-button">
                 <span class="brand-accent">GPU</span>Sims
-            </a>
-            <a href="index.html" class="btn btn-outline" style="padding: 8px 20px; font-size: 15px;">Launch App</a>
-        </header>
-    </div>
-
-    <section class="hero container">
-        <h1>Build the Universe in Your Browser.</h1>
-        <p>The AI-first WebGPU framework for high-performance physical simulations, complex mathematics, and real-time graphics rendering.</p>
-        <div class="hero-buttons">
-            <a href="index.html" class="btn">Launch Workspace</a>
-            <a href="#workflow" class="btn btn-outline">See How It Works</a>
+            </button>
         </div>
-    </section>
-
-    <section class="container">
-        <div class="value-prop">
-            <h2>Raw GPU Power Meets Declarative Simplicity</h2>
-            <p>GPUSims fundamentally rethinks how browser-based simulations are built. By enforcing a strict separation between your simulation's "blueprint" (a declarative TypeScript schema) and its "orchestration" (procedural WGSL execution), we give you maximum transparency, maintainability, and control over complex compute pipelines.</p>
+        <div class="at-right">
+            <button class="primary-btn">Launch App</button>
         </div>
-    </section>
+    </header>
 
-    <section class="container">
-        <h2 style="text-align: center; font-size: 2.5rem;">Core Features</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>Native AI Collaboration</h3>
-                <p>Built from the ground up for a "ping-pong" workflow. Seamlessly collaborate with AI to generate schemas, scaffold memory pools, and write compute shader logic without ever losing your architectural context.</p>
+    <main>
+        <section class="hero-section">
+            <div class="container" style="padding-top: 0; padding-bottom: 0;">
+                <h1>Build a Universe in Your Browser with <span class="text-accent">Vibe Coding</span></h1>
+                <p>Create breathtakingly beautiful simulations—from the sweeping orbits of a galaxy down to the electron clouds of a hydrogen atom—without writing a single line of code.</p>
+                <button class="primary-btn" style="font-size: 1.2rem; padding: 16px 32px;">Start Building Now</button>
             </div>
-            <div class="feature-card">
-                <h3>Blazing Fast WebGPU Compute</h3>
-                <p>Push the limits of in-browser performance. Handle massive particle swarms, N-body physics, and advanced mathematical visualizations using highly optimized storage buffers and compute passes.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Declarative Memory Management</h3>
-                <p>Define your global state, uniforms, and storage buffers in a centralized, type-safe TypeScript registry. Let the framework handle the heavy lifting of WebGPU bindings.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Interactive by Default</h3>
-                <p>Instantly generate interactive UI control panels—from continuous range sliders to discrete state selectors—that bind directly to your mutable physics parameters.</p>
-            </div>
-            <div class="feature-card" style="grid-column: 1 / -1; text-align: center;">
-                <h3>STEM-Ready Visualization</h3>
-                <p style="max-width: 800px; margin: 0 auto;">Whether you are building advanced mathematical proof assistants, demonstrating fluid dynamics, or exploring theoretical physics, GPUSims provides the rendering topologies (point-lists, vector fields, and custom 3D meshes) to bring the abstract to life.</p>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="workflow" class="container">
-        <h2 style="text-align: center; font-size: 2.5rem;">The Ping-Pong Workflow</h2>
-        <p style="text-align: center; max-width: 600px; margin: 0 auto;">Experience a revolutionary approach to writing shader code where your environment and your AI assistant work in perfect sync.</p>
-        
-        <div class="workflow-steps">
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                    <h3>Architect the Schema</h3>
-                    <p>Describe your physics model to the AI. It generates a strict, type-safe TypeScript schema defining your memory pool and execution pipeline.</p>
+        <section class="container">
+            <h2>How It Works</h2>
+            <p>Bring your ideas to life through a simple, conversational workflow with AI:</p>
+            
+            <ol class="steps-list">
+                <li>
+                    <strong>1. Set the Stage:</strong> Provide the AI with a brief prompt outlining the app's architecture.
+                </li>
+                <li>
+                    <strong>2. Generate the Blueprint:</strong> Ask the AI to create a schema for your simulation.
+                    <div class="hint-box">Example: "Create a simulation of the electron orbitals of a hydrogen atom."</div>
+                </li>
+                <li>
+                    <strong>3. Auto-Generate the Skeleton:</strong> The app automatically translates your schema into a foundational code skeleton.
+                </li>
+                <li>
+                    <strong>4. Finalize the Logic:</strong> The AI implements the complex mathematics into the skeleton, delivering a fully functional simulation.
+                </li>
+            </ol>
+        </section>
+
+        <section class="container" style="padding-top: 20px;">
+            <h2>Why It Works: The Power of Separation</h2>
+            <p>This platform leverages WebGPU to deliver lightning-fast 3D animation and parallel computing directly in your browser. To make this accessible, we handle the heavy lifting: the app automatically manages all the complex WebGPU orchestration and boilerplate.</p>
+            <p>This strict separation means the AI is only responsible for creating the schema and writing the core logic. By removing the burden of GPU memory management, the AI can focus entirely on translating advanced mathematics into flawless code.</p>
+        </section>
+
+        <section class="container" style="padding-top: 20px;">
+            <h2>Seamless AI Collaboration</h2>
+            <div class="features-grid">
+                <div class="box">
+                    <h3>Iterate and Perfect</h3>
+                    <p>Translating advanced physics into code can sometimes yield errors. If the simulation doesn't compile, simply copy the error message back to the AI and say, <em>"Please fix this error."</em> The AI will adjust the math and get you back on track.</p>
+                </div>
+                <div class="box">
+                    <h3>Visual Debugging</h3>
+                    <p>Sometimes the code runs, but the physics just don't look right. Capture a screenshot of your simulation directly within the app and feed it back to the AI. The AI will analyze the image, verify the visual output, and correct the code.</p>
                 </div>
             </div>
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                    <h3>Auto-Generate the Skeleton</h3>
-                    <p>Paste the schema into GPUSims. The platform instantly parses the data and hands you a perfectly bound WGSL skeleton.</p>
-                </div>
-            </div>
-            <div class="step-card">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                    <h3>Implement the Logic</h3>
-                    <p>Pass the skeleton back to the AI to implement the core mathematical logic inside the main functions, free from boilerplate distractions.</p>
-                </div>
-            </div>
-            <div class="step-card">
-                <div class="step-number">4</div>
-                <div class="step-content">
-                    <h3>Execute</h3>
-                    <p>Paste the finalized WGSL code into the GPUSims environment and run your live physical simulation instantly.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="cta-footer">
-        <h2>Ready to write your first compute shader?</h2>
-        <p style="margin-bottom: 30px;">Jump into the workspace and start exploring the limits of WebGPU.</p>
-        <a href="index.html" class="btn" style="font-size: 20px; padding: 16px 40px;">Start Simulating Now</a>
-    </section>
+        <section class="container" style="padding-top: 20px;">
+            <h2>A New Way to Learn Physics and Math</h2>
+            <p>Tackling dense textbooks on mathematics and physics can be a daunting task. This app transforms abstract theories into interactive, visual experiences.</p>
+            <p>Because the AI generates mathematically sophisticated code, it acts as your personal tutor. You can simply ask, <em>"Explain the mathematical background and the code for this simulation,"</em> and the AI will break it down for you. If a concept is still unclear, you can continue asking questions until it clicks.</p>
+        </section>
+
+        <section class="container" style="padding-top: 20px;">
+            <h2>Technical Specifications & Limitations</h2>
+            <p>While WebGPU unlocks incredibly powerful parallel processing inside the browser, it has a few architectural differences compared to full-scale numerical computing systems like CUDA:</p>
+            <ul>
+                <li style="margin-bottom: 10px;"><strong>Precision:</strong> It currently supports single-precision floating-point arithmetic (f32), rather than double-precision.</li>
+                <li style="margin-bottom: 10px;"><strong>Libraries:</strong> It cannot natively utilize traditional numerical computing libraries like LAPACK.</li>
+            </ul>
+            <p><strong>The Silver Lining:</strong> WebGPU and CUDA share fundamental principles regarding parallel thread execution and memory optimization. Mastering simulations here serves as an excellent, visual stepping stone if you decide to explore CUDA in the future.</p>
+        </section>
+    </main>
 
     <footer>
         <p>&copy; 2026 GPUSims. All rights reserved.</p>

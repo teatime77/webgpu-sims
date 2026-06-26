@@ -5,7 +5,11 @@ export class MyError extends Error {
 
 export let urlBase : string;
 export let urlParams : Map<string, string>;
-export let thumbnailBlob : Blob;
+export let thumbnailBlob : Blob | undefined;
+
+export function clearThumbnailBlob(){
+    thumbnailBlob = undefined;
+}
 
 export function assert(ok : boolean){
     if(!ok){
