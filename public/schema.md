@@ -479,6 +479,35 @@ Result.totalSamples_display = f32(Result.totalSamples_calc);
 Result.totalInside_display = f32(Result.totalInside_calc);
 
 ```
+
+---
+
+### G. The Struct Separator Trap (Semicolons vs. Commas)
+
+**The Problem:** Developers coming from C, Rust, or older WGSL drafts instinctively terminate each struct member with a semicolon (e.g., `condensateFraction: f32;`). Early versions of the WGSL specification did use semicolons, and a lot of legacy sample code (and some auto-generated skeletons) still emits them. However, the modern WGSL specification finalized struct members as a **comma-separated list**. When the current Chrome/Tint compiler encounters a semicolon after a member, it expects the struct to be closed and immediately fails with a parsing error: `error: expected '}' for struct declaration`.
+
+**The Rule:** Always separate struct members with commas, exactly like fields in a TypeScript object or arguments in a function call. A trailing comma after the final member is permitted and recommended for clean diffs. Never terminate a member with a semicolon. (Note: the semicolon still correctly terminates the whole `struct {...};` declaration itself — the trap is only about the *separators between members*.)
+
+* **Incorrect (legacy/C-style semicolons):**
+
+```wgsl
+struct ResultStruct {
+    condensateFraction: f32;
+    condensedCount_calc: u32;
+    condensedCount_display: f32;
+};
+```
+
+* **Correct (comma-separated members):**
+
+```wgsl
+struct ResultStruct {
+    condensateFraction: f32,
+    condensedCount_calc: u32,
+    condensedCount_display: f32,
+};
+```
+
 ---
 
 # Examples

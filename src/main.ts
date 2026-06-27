@@ -294,6 +294,11 @@ export function makeArticleBox(div: HTMLDivElement, idx : number, doc : Abstract
 
     boxContent.appendChild(title);
 
+    const user = document.createElement("div");
+    user.className = "box-user-id";
+    user.textContent = doc.authorId;
+    boxContent.appendChild(user);
+
     if(doc.ai != undefined){
         const ai = document.createElement("div");
         ai.className = "box-ai";
@@ -301,11 +306,6 @@ export function makeArticleBox(div: HTMLDivElement, idx : number, doc : Abstract
         boxContent.append(ai);
     }
 
-    const user = document.createElement("div");
-    user.className = "box-user-id";
-    user.textContent = doc.authorId;
-
-    boxContent.appendChild(user);
     box.append(boxContent);
 
     div.appendChild(box);
