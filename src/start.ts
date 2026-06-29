@@ -1,12 +1,12 @@
-import { Article, bootstrap, schemaText, setAfterFrame, theArticles } from "./main.js";
-import { msg, assert, $, $btn, $div, $inp, downloadMarkdownFile, hideHtml, MyError, showHtml, $txt, copyToClipboard, showToast, captureThumbnail, $img, fetchText, urlBase, sleep } from "./utils.js";
+import { Article, bootstrap, schemaText, setAfterFrame } from "./main.js";
+import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail } from "./utils.js";
 // import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
-import { SimulationSchema, theSchema } from "./schema.js";
-import { theDevice, theRunner } from "./SimulationRunner.js";
+import { theSchema } from "./schema.js";
+import { theRunner } from "./SimulationRunner.js";
 import {  makeShaderEditors, setNodeShaderCode } from "./editor.js";
 import {  } from "./index.js";
-import { appManager, initialPath } from "./AppManager.js";
+import { appManager } from "./AppManager.js";
 import { makeSimulationSchema } from "./parser.js";
 
 

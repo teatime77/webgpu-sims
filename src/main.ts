@@ -240,15 +240,13 @@ export async function bootstrap(sim: SimulationSchema) {
     sim.isReady = true;
 }
 
-export async function initWebGpuSims(){
-    parseURL();
+export async function initWebGpuSims(is_static_server : boolean){
+    parseURL(is_static_server);
 
     await initDevice();
-    fetchText("schema.md").then((value:string)=>{
-        schemaText = value;
-        // msg("schema loaded");
-        $btn("wizard-btn").disabled = false;
-    });
+    schemaText = await fetchText("schema.md");
+
+    $btn("wizard-btn").disabled = false;
 
     initEventHandler();
     initSyntaxHighlightEditor($div("schema-editor"));
@@ -324,27 +322,12 @@ export async function getArticles(){
 
         const url = urlHome + "docs/" + line.replace("/schema.js", "/");
 
-        let id: string;
-        let authorId : string;
-        let title : string;
-        let ai : string | undefined;
-
         const article = await fetchJson(url + "article.json");
+        const id       = article.id;
+        const authorId = article.author;
+        const title    = article.title;
+        const ai       = article.ai;
 
-        if(article != undefined){
-
-            id       = article.id;
-            authorId = article.author;
-            title    = article.title;
-            ai       = article.ai;
-        }
-        else{
-            
-            const names = line.split("/");
-            authorId = names.at(-3)!;
-            title = names.at(-2)!.replaceAll("_", " ").replaceAll("-", " ");
-            id = title;
-        }
         // msg(`name:[${authorId}][${title}]`)
         const schemaUrl = `docs/${line}`;
 
@@ -368,7 +351,7 @@ export async function getContents() {
 
 
 export async function initApp(){   
-    await initWebGpuSims();
+    await initWebGpuSims(true);
     initWebGpuSimsNavigationManager();
 
     const allBtn = document.createElement("button");

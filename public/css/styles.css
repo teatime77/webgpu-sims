@@ -17,11 +17,14 @@ body {
     color: white;
     padding: 50px 50px;
 
-    display: flex;
     flex-direction: column; /* 要素を上から下へ縦に並べる */
     align-items: center;    /* 水平方向に中央揃え */
     text-align: center;     /* 複数行になったテキストも中央揃えにする */
     gap: 20px;              /* 要素と要素の間の余白（<br/>の代わり） */
+}
+
+.user-dlg[open]{
+    display: flex;
 }
 
 /* ============================
@@ -75,7 +78,7 @@ body {
   grid-template-rows: auto 1fr auto; 
 }
 
-#landing-view, #main-view, #wizard-view, #edit-view {
+#landing-view, #main-view, #wizard-view, #edit-view, #article-view {
   display: none;
 }
 
@@ -193,7 +196,6 @@ details .content {
 
 
 #article-view {
-    display: grid;
     grid-template-rows: auto auto auto 1fr; 
     
     /* 以下を追記・修正 */

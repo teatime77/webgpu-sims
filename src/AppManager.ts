@@ -2,7 +2,7 @@ import { clearShaderEditors, makeShaderEditors } from "./editor.js";
 import { Article, bootstrap, getArticles, getContents, theArticles } from "./main.js";
 import { makeSimulationSchema } from "./parser.js";
 import { clearSchema } from "./start.js";
-import { $, $div, $img, $txt, assert, fetchText, msg, setUrlHome, sleep, urlBase, urlHash, urlHome, urlOrigin, urlPathName } from "./utils.js";
+import { $, $div, $img, $txt, assert, fetchText, msg, MyError, sleep, isStaticServer, urlHash, urlHome, urlOrigin, urlPathName } from "./utils.js";
 
 export type ViewName = "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view" | "landing-view";
 
@@ -14,7 +14,6 @@ export function setAppManager(app: AppManager){
 }
 
 export class AppManager {
-    isStaticServer: boolean;
     landingView: HTMLDivElement;
     mainView: HTMLDivElement;
     editView: HTMLDivElement;
@@ -22,7 +21,6 @@ export class AppManager {
     views : HTMLDivElement[];
 
     constructor(){
-        this.isStaticServer = true;
         this.landingView = $div("landing-view");
         this.mainView = $div("main-view");
         this.editView = $div("edit-view");
@@ -148,7 +146,7 @@ export class AppManager {
         // 第2引数: タイトル(現在はほとんどのブラウザで無視されるため空文字でOK)
         // 第3引数: 新しいURLパス
         let url: string;
-        if(this.isStaticServer){
+        if(isStaticServer){
             url = `${urlHome}#${view}`;
         }
         else{
@@ -174,6 +172,5 @@ export class AppManager {
 
 export function initWebGpuSimsNavigationManager(){
     appManager = new AppManager();
-    setUrlHome(urlOrigin + urlPathName);
     appManager.initRender();
 }

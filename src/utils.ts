@@ -3,6 +3,7 @@ let toastTimer : number | undefined;
 export class MyError extends Error {
 }
 
+export let isStaticServer: boolean;
 export let urlOrigin : string;
 export let urlBase : string;
 export let urlPathName : string;
@@ -10,11 +11,6 @@ export let urlHome : string;
 export let urlHash : string;
 export let urlParams : Map<string, string>;
 export let thumbnailBlob : Blob | undefined;
-
-export function setUrlHome(home : string){
-    urlHome = home;
-    msg(`home:${urlHome}`);
-}
 
 export function clearThumbnailBlob(){
     thumbnailBlob = undefined;
@@ -87,7 +83,9 @@ export function hideHtml(ele: HTMLElement){
     ele.style.display = "none";
 }
 
-export function parseURL(): [string, string, Map<string, string>] {
+export function parseURL(is_static_server : boolean): [string, string, Map<string, string>] {
+    isStaticServer = is_static_server;
+
     msg(`url:${window.location.href}`);
     const url = document.location.href;
     const parser = new URL(url);
@@ -109,44 +107,42 @@ export function parseURL(): [string, string, Map<string, string>] {
         const [key, value] = query.split("=");
         urlParams.set(decodeURIComponent(key), decodeURIComponent(value));
     });
-        
+
+    if(isStaticServer){
+        urlHome = urlOrigin + urlPathName;
+    }
+    else{
+        urlHome = urlOrigin + "/";
+    }
+
     return [ urlOrigin, parser.pathname, urlParams];
 }
 
-export async function fetchText(fileURL: string) {
-    if(!fileURL.startsWith("http")){
-        fileURL = `${urlHome}${fileURL}`;
-        // msg(`fetch Text:${fileURL}`);
-    }
+export async function fetchText(url: string) {
+    let url2 = url.startsWith("http") ? url : `${urlHome}${url}`;
 
-
-    const response = await fetch(fileURL);
-    const text = await response!.text();
-
-    return text;
-}
-
-export async function fetchTextResponse(fileURL: string) : Promise<string | Response> {
-    const response = await fetch(fileURL);
+    const response = await fetch(url2);
     if(response.ok){
-        const text = await response!.text();
+        const data = await response.text();
 
-        return text;
+        return data;
     }
     else{
-        return response;
+        throw new MyError(`fetch text:[${url == url2 ? url : url+"/"+url2}] ${response.statusText}`);
     }
 }
 
 export async function fetchJson(url : string) {
-    const resp = await fetchTextResponse(url);
-    if(resp instanceof Response){
-        msg(`fetch json error:${resp.statusText}`);
-        return undefined;
+    let url2 = url.startsWith("http") ? url : `${urlHome}${url}`;
+
+    const response = await fetch(url2);
+    if(response.ok){
+        const data = await response.json();
+
+        return data;
     }
     else{
-        const obj  = JSON.parse(resp);
-        return obj;
+        throw new MyError(`fetch json error:[${url == url2 ? url : url+"/"+url2}] ${response.statusText}`);
     }
 }
 
