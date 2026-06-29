@@ -1,0 +1,99 @@
+.md-body {
+    line-height: 1.7;
+}
+
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4,
+.md-body h5,
+.md-body h6 {
+    margin-top: 1.4em;
+    margin-bottom: 0.5em;
+}
+
+.md-body p {
+    margin: 0.8em 0;
+}
+
+.md-body ul,
+.md-body ol {
+    margin: 0.8em 0 0.8em 1.5em;
+}
+
+.md-body blockquote {
+    margin: 1em 0;
+    padding-left: 1em;
+    border-left: 4px solid #888;
+    color: #ccc;
+}
+
+.md-code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.md-code-block code {
+    font-family: inherit;
+}
+
+.md-body code {
+    background: #2a2a2a;
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    font-family: Consolas, "Courier New", monospace;
+}
+
+.md-code-block code {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+}
+
+.md-token-default {
+    color: #d4d4d4;
+}
+
+.md-token-keyword {
+    color: #569cd6;
+}
+
+.md-token-type {
+    color: #4ec9b0;
+}
+
+.md-token-attribute {
+    color: #c586c0;
+}
+
+.md-token-number {
+    color: #b5cea8;
+}
+
+.md-token-comment {
+    color: #6a9955;
+}
+
+.md-token-bracket {
+    color: #ffd700;
+}
+
+.md-token-string {
+    color: #ce9178;
+}
+
+.md-math-inline {
+    white-space: normal;
+}
+
+.md-math-block {
+    margin: 1em 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+}
