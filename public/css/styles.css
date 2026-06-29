@@ -7,7 +7,7 @@ body {
   font-family: sans-serif;
 
   /* Lock the main browser window from scrolling */
-  overflow: hidden; 
+  overflow: auto; 
   /* Recommended: Ensures padding is included in height calculations */
   box-sizing: border-box;
 }
@@ -73,6 +73,10 @@ body {
   height: calc(100vh - 20px); /* 100vh から body の padding (上下10pxずつ) を引く */
   display: grid;      
   grid-template-rows: auto 1fr auto; 
+}
+
+#landing-view, #main-view, #wizard-view, #edit-view {
+  display: none;
 }
 
 /* メインエリアのスクロール設定（推奨） */

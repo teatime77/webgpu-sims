@@ -2,7 +2,7 @@ import { CaptureTool } from './CaptureTool.js';
 import { getMesh, initDevice, theDevice, theRunner, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $, $btn, $canvas, $div, assert, fetchJson, fetchText, msg, MyError, parseURL } from './utils.js';
+import { $, $btn, $canvas, $div, assert, fetchJson, fetchText, msg, MyError, parseURL, urlHash, urlHome, urlOrigin, urlPathName } from './utils.js';
 import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
 import { AppManager, appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
@@ -11,7 +11,7 @@ import { ComputePassBuilder, RenderPassBuilder, ResourceBinding } from './pipeli
 import { MeshDef, UniformDef } from './resource.js';
 
 export let schemaText : string;
-export let theArticles : Article[];
+export let theArticles : Article[] = [];
 
 let captureTool : CaptureTool;
 
@@ -313,35 +313,16 @@ export function makeArticleBox(div: HTMLDivElement, idx : number, doc : Abstract
 
 }
 
-async function getContents(articles : Article[]) {
-
-    const div = $div("articles");
-    for (const [idx, doc] of articles.entries()) {
-        makeArticleBox(div, idx, doc, appManager);
-    }
-}
-
-
-export async function initApp(){   
-    await initWebGpuSims();
-    initWebGpuSimsNavigationManager();
-
-    const allBtn = document.createElement("button");
-    allBtn.textContent = "All";
-    $("main-header-center").append(allBtn);
-    allBtn.addEventListener("click", async() => {
-        await appManager.showAll();
-    });
-
+export async function getArticles(){
     theArticles = [];
 
-    const schemaPaths = await fetchText("docs/index.txt");
+    const schemaPaths = await fetchText(`${urlHome}docs/index.txt`);
     for(const line of schemaPaths.split("\n")){
         if(line.trim() == ""){
             break;
         }
 
-        const url = "docs/" + line.replace("/schema.js", "/");
+        const url = urlHome + "docs/" + line.replace("/schema.js", "/");
 
         let id: string;
         let authorId : string;
@@ -372,7 +353,30 @@ export async function initApp(){
 
         theArticles.push({ id, authorId, title, thumbnailUrl, schemaUrl, ai });
     }
+}
 
-    appManager.showView("main-view");
-    await getContents(theArticles);
+export async function getContents() {
+    if(theArticles.length == 0){
+        await getArticles();
+    }
+
+    const div = $div("articles");
+    for (const [idx, doc] of theArticles.entries()) {
+        makeArticleBox(div, idx, doc, appManager);
+    }
+}
+
+
+export async function initApp(){   
+    await initWebGpuSims();
+    initWebGpuSimsNavigationManager();
+
+    const allBtn = document.createElement("button");
+    allBtn.textContent = "All";
+    $("main-header-center").append(allBtn);
+    allBtn.addEventListener("click", async() => {
+        await appManager.showAll();
+    });
+
+    // appManager.showView("main-view");
 }

@@ -3,9 +3,18 @@ let toastTimer : number | undefined;
 export class MyError extends Error {
 }
 
+export let urlOrigin : string;
 export let urlBase : string;
+export let urlPathName : string;
+export let urlHome : string;
+export let urlHash : string;
 export let urlParams : Map<string, string>;
 export let thumbnailBlob : Blob | undefined;
+
+export function setUrlHome(home : string){
+    urlHome = home;
+    msg(`home:${urlHome}`);
+}
 
 export function clearThumbnailBlob(){
     thumbnailBlob = undefined;
@@ -79,14 +88,18 @@ export function hideHtml(ele: HTMLElement){
 }
 
 export function parseURL(): [string, string, Map<string, string>] {
+    msg(`url:${window.location.href}`);
     const url = document.location.href;
     const parser = new URL(url);
-    assert(parser.origin + parser.pathname + parser.search == url);
+    urlOrigin = parser.origin;
+    urlPathName = parser.pathname;
+    assert(parser.origin + parser.pathname + parser.hash + parser.search == url);
 
     const k = parser.pathname.lastIndexOf("/");
     assert(k != -1);
-    urlBase = parser.origin + parser.pathname.substring(0, k);
-    msg(`origin:${parser.origin} pathname:${parser.pathname} url-base: ${urlBase}`)
+    urlBase = urlOrigin + parser.pathname.substring(0, k);
+    urlHash = parser.hash;
+    msg(`origin:${urlOrigin} pathname:${urlPathName} hash:${urlHash} url-base: ${urlBase} `)
 
     const queryString = parser.search.substring(1);
     const queries = queryString.split("&");
@@ -97,12 +110,12 @@ export function parseURL(): [string, string, Map<string, string>] {
         urlParams.set(decodeURIComponent(key), decodeURIComponent(value));
     });
         
-    return [ parser.origin, parser.pathname, urlParams];
+    return [ urlOrigin, parser.pathname, urlParams];
 }
 
 export async function fetchText(fileURL: string) {
     if(!fileURL.startsWith("http")){
-        fileURL = `${urlBase}/${fileURL}`;
+        fileURL = `${urlHome}${fileURL}`;
         // msg(`fetch Text:${fileURL}`);
     }
 

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/TagInput.css">
     <link rel="stylesheet" href="css/editor.css">
+    <link rel="stylesheet" href="css/landing.css">
 
     <script type="importmap">
         {
@@ -19,6 +20,91 @@
 <body>
 
 <!-- 【B】ログイン後のメイン画面 -->
+<div id="landing-view">
+
+    <header class="landing-header">
+        <div class="at-left">
+            <button class="app-title-button">
+                <span class="brand-accent">GPU</span>Sims
+            </button>
+        </div>
+        <div class="at-right">
+            <button class="gallery-btn">gallery</button>
+            <button class="primary-btn">Launch App</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <div class="section-container" style="padding-top: 0; padding-bottom: 0;">
+                <h1>Build a Universe in Your Browser with <span class="text-accent">Vibe Coding</span></h1>
+                <p>Create breathtakingly beautiful simulations—from the sweeping orbits of a galaxy down to the electron clouds of a hydrogen atom—without writing a single line of code.</p>
+                <button class="primary-btn" style="font-size: 1.2rem; padding: 16px 32px;">Start Building Now</button>
+            </div>
+        </section>
+
+        <section class="section-container">
+            <h2>How It Works</h2>
+            <p>Bring your ideas to life through a simple, conversational workflow with AI:</p>
+            
+            <ol class="steps-list">
+                <li>
+                    <strong>1. Set the Stage:</strong> Provide the AI with a brief prompt outlining the app's architecture.
+                </li>
+                <li>
+                    <strong>2. Generate the Blueprint:</strong> Ask the AI to create a schema for your simulation.
+                    <div class="hint-box">Example: "Create a simulation of the electron orbitals of a hydrogen atom."</div>
+                </li>
+                <li>
+                    <strong>3. Auto-Generate the Skeleton:</strong> The app automatically translates your schema into a foundational code skeleton.
+                </li>
+                <li>
+                    <strong>4. Finalize the Logic:</strong> The AI implements the complex mathematics into the skeleton, delivering a fully functional simulation.
+                </li>
+            </ol>
+        </section>
+
+        <section class="section-container" style="padding-top: 20px;">
+            <h2>Why It Works: The Power of Separation</h2>
+            <p>This platform leverages WebGPU to deliver lightning-fast 3D animation and parallel computing directly in your browser. To make this accessible, we handle the heavy lifting: the app automatically manages all the complex WebGPU orchestration and boilerplate.</p>
+            <p>This strict separation means the AI is only responsible for creating the schema and writing the core logic. By removing the burden of GPU memory management, the AI can focus entirely on translating advanced mathematics into flawless code.</p>
+        </section>
+
+        <section class="section-container" style="padding-top: 20px;">
+            <h2>Seamless AI Collaboration</h2>
+            <div class="features-grid">
+                <div class="box box2">
+                    <h3>Iterate and Perfect</h3>
+                    <p>Translating advanced physics into code can sometimes yield errors. If the simulation doesn't compile, simply copy the error message back to the AI and say, <em>"Please fix this error."</em> The AI will adjust the math and get you back on track.</p>
+                </div>
+                <div class="box box2">
+                    <h3>Visual Debugging</h3>
+                    <p>Sometimes the code runs, but the physics just don't look right. Capture a screenshot of your simulation directly within the app and feed it back to the AI. The AI will analyze the image, verify the visual output, and correct the code.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-container" style="padding-top: 20px;">
+            <h2>A New Way to Learn Physics and Math</h2>
+            <p>Tackling dense textbooks on mathematics and physics can be a daunting task. This app transforms abstract theories into interactive, visual experiences.</p>
+            <p>Because the AI generates mathematically sophisticated code, it acts as your personal tutor. You can simply ask, <em>"Explain the mathematical background and the code for this simulation,"</em> and the AI will break it down for you. If a concept is still unclear, you can continue asking questions until it clicks.</p>
+        </section>
+
+        <section class="section-container" style="padding-top: 20px;">
+            <h2>Technical Specifications & Limitations</h2>
+            <p>While WebGPU unlocks incredibly powerful parallel processing inside the browser, it has a few architectural differences compared to full-scale numerical computing systems like CUDA:</p>
+            <ul>
+                <li style="margin-bottom: 10px;"><strong>Precision:</strong> It currently supports single-precision floating-point arithmetic (f32), rather than double-precision.</li>
+                <li style="margin-bottom: 10px;"><strong>Libraries:</strong> It cannot natively utilize traditional numerical computing libraries like LAPACK.</li>
+            </ul>
+            <p><strong>The Silver Lining:</strong> WebGPU and CUDA share fundamental principles regarding parallel thread execution and memory optimization. Mastering simulations here serves as an excellent, visual stepping stone if you decide to explore CUDA in the future.</p>
+        </section>
+    </main>
+
+    <footer class="landing-footer">
+        <p>&copy; 2026 GPUSims. All rights reserved.</p>
+    </footer>
+</div>
 <div id="main-view" class="view">
 
     <header>

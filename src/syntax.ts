@@ -279,7 +279,7 @@ export class Identifier extends BaseASTNode {
         super();
         this.name = name;
         if(name == "state"){
-            msg("");
+            // msg("");
         }
     }
 

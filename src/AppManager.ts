@@ -1,10 +1,10 @@
 import { clearShaderEditors, makeShaderEditors } from "./editor.js";
-import { Article, bootstrap, theArticles } from "./main.js";
+import { Article, bootstrap, getArticles, getContents, theArticles } from "./main.js";
 import { makeSimulationSchema } from "./parser.js";
 import { clearSchema } from "./start.js";
-import { $, $div, $img, $txt, assert, fetchText, msg, sleep, urlBase } from "./utils.js";
+import { $, $div, $img, $txt, assert, fetchText, msg, setUrlHome, sleep, urlBase, urlHash, urlHome, urlOrigin, urlPathName } from "./utils.js";
 
-export type ViewName = "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view";
+export type ViewName = "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view" | "landing-view";
 
 export let appManager : AppManager;
 export let initialPath : string;
@@ -14,34 +14,53 @@ export function setAppManager(app: AppManager){
 }
 
 export class AppManager {
+    isStaticServer: boolean;
+    landingView: HTMLDivElement;
     mainView: HTMLDivElement;
     editView: HTMLDivElement;
     wizardView: HTMLDivElement;
     views : HTMLDivElement[];
 
     constructor(){
+        this.isStaticServer = true;
+        this.landingView = $div("landing-view");
         this.mainView = $div("main-view");
         this.editView = $div("edit-view");
         this.wizardView = $div("wizard-view");
 
-        this.views = [this.mainView, this.editView, this.wizardView];
+        this.views = [ this.landingView, this.mainView, this.editView, this.wizardView];
 
         const buttons = document.getElementsByClassName("app-title-button");
         for(const button of buttons){
             (button as HTMLButtonElement).addEventListener("click", ()=>{
-                this.navigateTo("/");
+                this.clearArticle();
+                window.location.href = urlHome;
+                // this.showView("landing-view");
             });
+        }
+    }
+
+    getUrlPathName() : string {
+        if(urlHash != ""){
+            assert(urlHash.startsWith("#/"));
+            return urlHash.substring(1);
+        }
+        else{
+            
+            return "/";
         }
     }
 
     initRender(){
         initialPath = window.location.pathname;
 
+        const path = this.getUrlPathName();
+
         // 初期表示のURLもHistory APIのstateに登録しておく（最初に戻ってきた時用）
-        window.history.replaceState({ path: initialPath }, '', initialPath);
+        window.history.replaceState({ path }, '', initialPath);
         // msg(`init-history:${initialPath}`);
 
-        this.renderPage(initialPath);
+        this.renderPage(path);
     }
 
     hideAll(){
@@ -59,6 +78,14 @@ export class AppManager {
         }
     }
 
+    clearArticle(){
+        clearSchema();
+        $txt("schema-text").value = "";
+        $img("thumbnail-img").src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+        clearShaderEditors();
+    }
+
     async showArticle(article : Article){
         const schemaText = await fetchText(article.schemaUrl);
         const schema = makeSimulationSchema(schemaText);
@@ -69,7 +96,7 @@ export class AppManager {
             }
         }
 
-        $img("thumbnail-img").src = `${urlBase}/${article.thumbnailUrl}`;
+        $img("thumbnail-img").src = article.thumbnailUrl;
         msg(`thumbnail-img-src:${$img("thumbnail-img").src}`);
 
         $txt("schema-text").value = schemaText;
@@ -82,14 +109,11 @@ export class AppManager {
     // URL（パス）に応じてDOMを書き換える
     async renderPage(path: string) {
         // msg(`render-Page:${path}`);
-        if (path === '/' || path === '/home') {
-            clearSchema();
-            $txt("schema-text").value = "";
-            $img("thumbnail-img").src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
-            clearShaderEditors();
+        if (path === '/gallery') {
+            this.clearArticle();
 
             this.showView("main-view");
+            await getContents();
         } 
         else if (path.startsWith("/post/")) {
             clearSchema();
@@ -98,6 +122,9 @@ export class AppManager {
             assert(texts.length == 3);
             const id = texts[2];
             // msg(`post:${texts}`);
+            if(theArticles.length == 0){
+                await getArticles();
+            }
             const article = theArticles.find(x => x.id == id)!;
             assert(article != undefined);
             await this.showArticle(article);
@@ -106,18 +133,33 @@ export class AppManager {
             clearSchema();
             this.showView("wizard-view");
         } 
+        else if(path == "/"){
+            this.showView("landing-view");
+        }
+        else{
+            msg(`render page:[${path}]`);
+        }
+
     }
 
     // --- 2. 画面遷移の処理（履歴の追加） ---
-    navigateTo(path: string) {
+    navigateTo(view: string) {
         // 第1引数: 保存したい状態(state)
         // 第2引数: タイトル(現在はほとんどのブラウザで無視されるため空文字でOK)
         // 第3引数: 新しいURLパス
-        window.history.pushState({ path }, '', path);
+        let url: string;
+        if(this.isStaticServer){
+            url = `${urlHome}#${view}`;
+        }
+        else{
+            url = view;
+        }
+
+        window.history.pushState({ path: view }, '', url);
         // msg(`push-State:${path}`);
 
         // URLが変わったので画面を再描画する
-        this.renderPage(path);
+        this.renderPage(view);
     }
 
     async showAll(){
@@ -132,5 +174,6 @@ export class AppManager {
 
 export function initWebGpuSimsNavigationManager(){
     appManager = new AppManager();
+    setUrlHome(urlOrigin + urlPathName);
     appManager.initRender();
 }

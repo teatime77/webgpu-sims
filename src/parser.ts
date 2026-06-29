@@ -154,7 +154,7 @@ export class Parser {
             const structDecl = new StructDeclaration(structName, fields);
             elements.push(structDecl);
 
-            msg(`struct:${structDecl.toSource()}`);
+            // msg(`struct:${structDecl.toSource()}`);
         }
 
         this.consume("`");
@@ -792,7 +792,7 @@ export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
         const res = schema.resources.get(id.name);
         if(res != undefined){
             if(res instanceof UniformDef || res instanceof ReadBackDef){
-                msg(`set uniform/readback ref:${res.id}.${id.name}`);
+                // msg(`set uniform/readback ref:${res.id}.${id.name}`);
                 id.resourceRef = res;
             }
             continue;
@@ -800,7 +800,7 @@ export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
 
         const uniform = uniforms.find(x => x.obj!.name == id.name);
         if(uniform != undefined){
-            msg(`set uniform obj ref:${uniform.id} ${id.name}`);
+            // msg(`set uniform obj ref:${uniform.id} ${id.name}`);
             id.resourceRef = uniform;
             continue;
         }
@@ -809,7 +809,7 @@ export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
             const va = node.getVariables().find(x => x.name == id.name);
             if(va != undefined){
                 id.refVar = va;
-                msg(`ref:${id.name} parent:${id.parent}`);
+                // msg(`ref:${id.name} parent:${id.parent}`);
                 continue L;
             }
         }

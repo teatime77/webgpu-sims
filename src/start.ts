@@ -31,19 +31,37 @@ export function initEventHandler(){
 
     // --- 3. 「戻る」「進む」ボタンの検知 ---
     window.addEventListener('popstate', (event: PopStateEvent) => {
+        if(event.state == null){
+            return;
+        }
 
         let currentPath = event.state.path;
         assert(typeof currentPath == "string");
         // msg(`pop-state:${currentPath}`);
 
-        if(currentPath == initialPath){
-            currentPath = "/";
-        }
+        // if(currentPath == initialPath){
+        //     currentPath = "/";
+        // }
 
         // stateが存在すればそのパスを、なければ現在のURLのパスを再描画する
         // const currentPath = state?.path || window.location.pathname;
         appManager.renderPage(currentPath);
     });
+
+    const primaryBtns = Array.from(document.getElementsByClassName("primary-btn")) as HTMLButtonElement[];
+    const galleryBtns = Array.from(document.getElementsByClassName("gallery-btn")) as HTMLButtonElement[];
+
+    for(const btn of primaryBtns){
+        btn.addEventListener("click", async() => {
+             appManager.navigateTo('/wizard');
+        });
+    }
+
+    for(const btn of galleryBtns){
+        btn.addEventListener("click", async() => {
+             appManager.navigateTo('/gallery');
+        });
+    }
 
     $btn("wizard-btn").addEventListener("click", async() => {
         appManager.navigateTo('/wizard');
