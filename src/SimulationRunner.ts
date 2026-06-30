@@ -1,4 +1,4 @@
-import { msg, $div, $canvas } from './utils.js';
+import { msg, $div, $canvas, displayErrorDialog, MyError } from './utils.js';
 import { assert } from './utils.js';
 import { CallStatement, FunctionExpression } from './syntax.js';
 import { OrbitCamera } from './camera.js';
@@ -32,6 +32,26 @@ export async function initDevice(): Promise<boolean> {
     theDevice = await adapter.requestDevice();
     // Get the optimal format for screen output (usually 'bgra8unorm' etc.)
     theFormat = navigator.gpu.getPreferredCanvasFormat();
+
+    // Listen for any errors that slipped past your pushed scopes
+    theDevice.addEventListener('uncapturederror', (event: Event) => {
+        // Cast the generic event to the specific WebGPU event type
+        const gpuEvent = event as GPUUncapturedErrorEvent;
+
+
+        // You can also check the specific instance type
+        if (gpuEvent.error instanceof GPUValidationError) {
+            displayErrorDialog("GPU Validation Error", `${gpuEvent.error.message}`);
+        } 
+        else if (gpuEvent.error instanceof GPUOutOfMemoryError) {
+            displayErrorDialog("The GPU ran out of memory.", `${gpuEvent.error.message}`);
+        }
+        else{
+            displayErrorDialog("Uncaptured WebGPU Error", `${gpuEvent.error.message}`);
+        }
+
+        throw new MyError();
+    });    
 
     console.log("WebGPU Engine Initialized Successfully.");
     return true;

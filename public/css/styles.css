@@ -641,3 +641,63 @@ input[type="range"]:hover::-moz-range-thumb {
 input[type="range"]:active::-moz-range-thumb {
   background-color: var(--accent-active);
 }
+
+
+
+/* ====================================================================================
+   WEBGPU ERROR DIALOG
+   ==================================================================================== */
+.gpu-error-dlg {
+    /* Base theme integration */
+    background-color: var(--bg-element);
+    color: var(--text-main);
+    border: 2px solid; /* Critical red border */
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    /* max-width: 600px; */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    
+    /* Layout */
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    margin: auto; /* Centers the native dialog */
+}
+
+/* Overrides default native dialog behavior */
+.gpu-error-dlg[open] {
+    display: flex;
+}
+
+/* Dims and blurs the main app behind the error */
+.gpu-error-dlg::backdrop {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px); 
+}
+
+/* Header styling mimicking the main app title */
+#error-header {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+/* Terminal-like block for the actual WebGPU error message */
+.gpu-error-dlg .error-code-block {
+    background-color: var(--bg-page);
+    border: 1px solid var(--border-idle);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+    color: yellow;
+    overflow-x: auto;
+    margin: 8px 0 24px 0;
+    line-height: 1.5;
+}

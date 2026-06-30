@@ -11,6 +11,11 @@ export let urlHome : string;
 export let urlHash : string;
 export let urlParams : Map<string, string>;
 export let thumbnailBlob : Blob | undefined;
+export let errFlag : boolean = false;
+
+export function clearErr(){
+    errFlag = false;
+}
 
 export function clearThumbnailBlob(){
     thumbnailBlob = undefined;
@@ -270,4 +275,42 @@ export function captureThumbnail(): void {
 
         img.src = imageUrl;
     }, 'image/png');
+}
+
+/**
+ * Extracts the specific line of WGSL code where an error occurred
+ * and generates a visual pointer to the exact character.
+ */
+export function extractWGSLErrorContext(module: GPUShaderModule, wgslCode: string, msg: GPUCompilationMessage): string {
+    // 1. Split the raw WGSL text into an array of individual lines
+    const lines = wgslCode.split('\n');
+    
+    // WebGPU line numbers are 1-indexed, but arrays are 0-indexed
+    const lineIndex = msg.lineNum - 1;
+    
+    // Safety check in case the line number is somehow out of bounds
+    if (lineIndex < 0 || lineIndex >= lines.length) {
+        return `[Line ${msg.lineNum}] ${msg.message}`;
+    }
+
+    const exactLine = lines[lineIndex];
+    
+    // 2. Create the visual caret pointer string (e.g., "       ^")
+    // WebGPU positions are also 1-indexed. We use Math.max to prevent negative repeats.
+    const spacesToIndent = Math.max(0, msg.linePos - 1);
+    const pointerCaret = ' '.repeat(spacesToIndent) + '^';
+
+    // 3. Format it cleanly for your UI or AI to read
+    return `Error while parsing WGSL: :${msg.lineNum}:${msg.linePos} error: ${msg.message}
+    ${exactLine}
+    ${pointerCaret}
+
+ - While calling [Device].CreateShaderModule([ShaderModuleDescriptor "${module.label}"]).`
+}
+
+export function displayErrorDialog(title: string, message: string) {
+    errFlag = true;
+    $("error-header").textContent = title;
+    $div('error-message').textContent = message;
+    $dlg('error-dialog').showModal(); 
 }

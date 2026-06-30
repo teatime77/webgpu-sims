@@ -179,7 +179,19 @@
         </li>
     </ol>
 </div>
+
 <dialog id="toast-message" class="toast">Text successfully copied to clipboard!</dialog>
+
+
+<dialog id="error-dialog" class="gpu-error-dlg">
+    <p id="error-header">GPU Fatal Error</p>
+    <p>You may copy the error message, paste it into the chat, and ask the AI ​​to fix the error.</p>
+    <pre id="error-message" class="error-code-block"></pre>
+    <div>
+        <button id="copy-error-btn">Copy Error Message</button>
+        <button id="close-dialog-btn">Close</button>
+    </div>
+</dialog>
 
 <div id="edit-view">
     <header style="height: 50px;">

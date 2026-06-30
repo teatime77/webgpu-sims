@@ -1,7 +1,7 @@
 import { ResourceDef } from "./resource.js";
 import { theSchema } from "./schema.js";
 import { SimulationRunner, theDevice } from "./SimulationRunner.js";
-import { assert, MyError } from "./utils.js";
+import { assert, displayErrorDialog, extractWGSLErrorContext, msg, MyError } from "./utils.js";
 
 export type ShadingModel = 'triangle-color' | 'vertex-color' | 'vertex-color-normal' | 'scalar-grid';
 
@@ -38,6 +38,28 @@ export abstract class NodeDef {
     getNodeResources() : ResourceDef[] {
         return this.bindings.map(b => theSchema.resources.get(b.resource)!);
     }
+
+    async checkCompilation(device: GPUDevice, module: GPUShaderModule, wgslCode:string) {
+        const info = await module.getCompilationInfo();
+
+        if (info.messages.length > 0) {
+            for(const err of info.messages){
+                const errText = extractWGSLErrorContext(module, wgslCode, err);
+                if (err.type === 'error') {
+                    
+                    displayErrorDialog("GPU Shader Compile Error", errText);
+                } 
+                else if (err.type === 'warning') {
+                    displayErrorDialog("GPU Shader Compile Warning", errText);
+                }
+                else if (err.type === 'info') {
+                    displayErrorDialog("GPU Shader Compile Info", errText);
+                }
+            }
+
+            throw new MyError();
+        }
+    }
 }
 
 export class ComputePassBuilder extends NodeDef{
@@ -49,7 +71,7 @@ export class ComputePassBuilder extends NodeDef{
         Object.assign(this, data);
     }
 
-    initComputePass(device: GPUDevice, shaderCode: string, entryPoint: string = 'main') {
+    async initComputePass(device: GPUDevice, shaderCode: string, entryPoint: string = 'main') {
         this.device = device;
         
         // 1. Create shader module
@@ -57,6 +79,7 @@ export class ComputePassBuilder extends NodeDef{
             label: `Compute Module (${this.id}:${entryPoint})`,
             code: shaderCode 
         });
+        await this.checkCompilation(device, module, shaderCode);
 
         // 2. Create pipeline (auto-inferred from WGSL by layout: 'auto')
         this.pipeline = device.createComputePipeline({
@@ -185,7 +208,7 @@ export class RenderPassBuilder extends NodeDef {
         return this.canvasId ?? "main-canvas";
     }
 
-    initRenderPass(
+    async initRenderPass(
         device: GPUDevice, 
         shaderCode: string, 
         presentationFormat: GPUTextureFormat,
@@ -198,6 +221,7 @@ export class RenderPassBuilder extends NodeDef {
             label: 'Render Module',
             code: shaderCode
         });
+        await this.checkCompilation(device, module, shaderCode);
 
         // 2. Determine blend state
         let blendState: GPUBlendState | undefined = undefined;

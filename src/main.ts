@@ -2,7 +2,7 @@ import { CaptureTool } from './CaptureTool.js';
 import { getMesh, initDevice, theDevice, theRunner, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $, $btn, $canvas, $div, assert, fetchJson, fetchText, msg, MyError, parseURL, urlHash, urlHome, urlOrigin, urlPathName } from './utils.js';
+import { $, $btn, $canvas, $div, assert, clearErr, displayErrorDialog, errFlag, fetchJson, fetchText, msg, MyError, parseURL, urlHash, urlHome, urlOrigin, urlPathName } from './utils.js';
 import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
 import { AppManager, appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
@@ -122,13 +122,13 @@ export async function bootstrap(sim: SimulationSchema) {
         }
         
         if (node instanceof ComputePassBuilder) {
-            node.initComputePass(theDevice, shader, 'main');
+            await node.initComputePass(theDevice, shader, 'main');
         } 
         else if(node instanceof RenderPassBuilder){
 
             // Get topology, blendMode, depthTest from schema
             const hasDepth = node.depthTest !== false;
-            node.initRenderPass(theDevice, shader, format, { 
+            await node.initRenderPass(theDevice, shader, format, { 
                 blendMode: node.blendMode || 'normal',
                 depthFormat: hasDepth ? 'depth24plus' : undefined 
             });
@@ -158,10 +158,17 @@ export async function bootstrap(sim: SimulationSchema) {
             return;
         }
 
+        if(errFlag){
+            clearErr();
+            return;
+        }
+
         if(theSchema == undefined || ! theSchema.isReady){
             requestAnimationFrame(frame);
             return;
         }
+
+        theDevice.pushErrorScope('validation');
 
         // 1. Check if any copies from the previous frame are still pending
         const isWaitingForGPU = runner.copyStorages.some(cp => cp.busy);
@@ -231,6 +238,14 @@ export async function bootstrap(sim: SimulationSchema) {
             afterFrame();
             afterFrame = undefined;
         }
+
+        theDevice.popErrorScope().then((error: GPUError | null) =>{
+            if (error) {
+                // error will be a GPUValidationError
+                displayErrorDialog("GPU Validation Error", `${error.message}`);
+                throw new MyError();
+            }
+        });
         
         requestAnimationFrame(frame);
     }

@@ -1,5 +1,5 @@
 import { Article, bootstrap, schemaText, setAfterFrame } from "./main.js";
-import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail } from "./utils.js";
+import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail, $dlg, $div } from "./utils.js";
 // import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
 import { theSchema } from "./schema.js";
@@ -103,6 +103,15 @@ export function initEventHandler(){
 
     $btn("thumbnail-btn").addEventListener("click", ()=>{
         setAfterFrame(captureThumbnail);
+    });
+
+    $btn("copy-error-btn").addEventListener("click", async()=>{
+        await copyToClipboard($div('error-message').textContent);
+        showToast("Error message successfully copied to clipboard!", 3);
+    });
+
+    $btn('close-dialog-btn').addEventListener("click", ()=>{
+        $dlg('error-dialog').close();
     });
 
 }
