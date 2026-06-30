@@ -2,7 +2,7 @@
 // AST Node Classes
 // ============================================================================
 
-import { msg, assert, MyError, range } from "./utils.js";
+import { msg, assert, MyError, range, displayErrorDialog, getPositionInfo } from "./utils.js";
 import { CanvasDef, theDevice, theRunner } from "./SimulationRunner.js";
 import { ComputePassBuilder } from "./pipeline.js";
 import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
@@ -14,17 +14,13 @@ import { BaseASTNode, Program, StructDeclaration, VariableDeclaration, ObjectExp
 let lexer: Lexer;
 
 class SyntaxError extends MyError {
-    constructor(token : Token, message : string){
+    constructor(parser: Parser, token : Token, message : string){
         super(message);
 
-        const tokens = lexer.tokens.filter(x => x.line == token.line);        
-        const words = tokens.map(x => x.value);
-        const idx = tokens.indexOf(token);
-        if(idx != -1){
-            words.splice(idx, 0, "^");
-        }
+        const [ lineNumber, columnNumber, lineText] = getPositionInfo(parser.source, token.start);       
+        const code = `${lineText}\n${" ".repeat(columnNumber - 1)}^`;
 
-        msg(`syntax error:${message}\n${words.join(" ")}`);
+        displayErrorDialog("Schema Syntax Error", `${message}\n\nline:${lineNumber} column:${columnNumber}\n${code}`);
     }
 }
 
@@ -62,7 +58,7 @@ export class Parser {
     private consume(expectedValue?: string): Token {
         const token = this.currentToken;
         if (expectedValue && token.value !== expectedValue) {
-            throw new SyntaxError(token, `Expected '${expectedValue}' but found '${token.value}' at index ${token.start}`);
+            throw new SyntaxError(this, token, `Expected '${expectedValue}' but found '${token.value}' at index ${token.start}`);
         }
         this.advance();
         return token;
@@ -71,7 +67,7 @@ export class Parser {
     private consumeType(expectedType: TokenType): Token {
         const token = this.currentToken;
         if (token.type !== expectedType) {
-            throw new SyntaxError(token, `Expected '${expectedType}' but found '${token.value}' at index ${token.start}`);
+            throw new SyntaxError(this, token, `Expected '${expectedType}' but found '${token.value}' at index ${token.start}`);
         }
         this.advance();
         return token;
@@ -98,7 +94,7 @@ export class Parser {
                 break;
             }
             default:
-                throw new SyntaxError(this.peek(), `parse program error`);
+                throw new SyntaxError(this, this.peek(), `parse program error`);
             }
         }
         return new Program(varDecls);
@@ -167,7 +163,7 @@ export class Parser {
         
         const nameToken = this.consume();
         if (nameToken.type !== 'Identifier'){
-            throw new SyntaxError(nameToken, `Expected Identifier after const`);
+            throw new SyntaxError(this, nameToken, `Expected Identifier after const`);
         } 
 
         let typeAnnotation;
@@ -318,7 +314,7 @@ export class Parser {
         }
 
         else {
-            throw new SyntaxError(token, `Unexpected token '${token.value}' at index ${token.start}`);
+            throw new SyntaxError(this, token, `Unexpected token '${token.value}' at index ${token.start}`);
         }
 
         // Handle trailing property accesses and method calls
@@ -327,7 +323,7 @@ export class Parser {
                 this.consume('.');
                 const propToken = this.consume();
                 if (propToken.type !== 'Identifier') {
-                    throw new SyntaxError(propToken, `Expected Identifier after '.' at index ${propToken.start}`);
+                    throw new SyntaxError(this, propToken, `Expected Identifier after '.' at index ${propToken.start}`);
                 }
                 node = new MemberExpression(node, new Identifier(propToken.value));
             } else if (this.peek().value === '(') {
@@ -400,7 +396,7 @@ export class Parser {
             return new AssignmentStatement(expr, operator, right);
         }
 
-        throw new SyntaxError(this.peek(), "parse Single Statement error");
+        throw new SyntaxError(this, this.peek(), "parse Single Statement error");
     }
 
     private parseBlock() : BlockStatement {
@@ -498,7 +494,7 @@ export class Parser {
             return this.parseSingleStatement();
         }
         else{
-            throw new SyntaxError(token, "parse statement error");
+            throw new SyntaxError(this, token, "parse statement error");
         }
     }
 

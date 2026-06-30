@@ -314,3 +314,49 @@ export function displayErrorDialog(title: string, message: string) {
     $div('error-message').textContent = message;
     $dlg('error-dialog').showModal(); 
 }
+
+
+/**
+ * Extracts line information from a string based on a specific character index.
+ * * @param text - The full multi-line string.
+ * @param position - The 0-based index of the character position.
+ * @returns line number, column number, line text
+ */
+export function getPositionInfo(text: string, position: number): [number, number, string] {
+    // 1. Validate the position
+    if (position < 0 || position > text.length) {
+        throw new MyError("Position is out of bounds.");
+    }
+
+    // 2. Extract substring up to the target position
+    const textUpToPosition = text.substring(0, position);
+
+    // 3. Calculate line and column numbers
+    const linesSoFar = textUpToPosition.split('\n');
+    const lineNumber = linesSoFar.length;
+
+    // The column is the length of the last line in our substring array + 1
+    const columnNumber = linesSoFar[linesSoFar.length - 1].length + 1;
+
+    // 4. Extract the full text of the current line
+    const startOfLine = position - (columnNumber - 1);
+    let endOfLine = text.indexOf('\n', position);
+
+    // If there are no more newlines, the line ends at the end of the string
+    if (endOfLine === -1) {
+        endOfLine = text.length;
+    }
+
+    let lineText = text.substring(startOfLine, endOfLine);
+
+    // Strip trailing carriage returns (\r) to properly handle Windows (\r\n) line breaks
+    if (lineText.endsWith('\r')) {
+        lineText = lineText.slice(0, -1);
+    }
+
+    return [
+        lineNumber,
+        columnNumber,
+        lineText
+    ];
+}
