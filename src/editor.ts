@@ -253,7 +253,8 @@ export function makeShaderEditors(){
         editorDiv.className = "editor-container";
         editorDiv.id = `editor-container-${id}`;
         
-        textarea.className = "hidden-textarea";
+        textarea.dataset.nodeId = node.id
+        textarea.className = "shader-textarea";
         textarea.spellcheck= false;
         textarea.placeholder="Paste the final WGSL program codes here...";
 

@@ -1,5 +1,5 @@
 import { Article, bootstrap, schemaText, setAfterFrame } from "./main.js";
-import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail, $dlg, $div } from "./utils.js";
+import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail, $dlg, $div, logForAgent } from "./utils.js";
 // import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
 import { theSchema } from "./schema.js";
@@ -85,7 +85,9 @@ export function initEventHandler(){
                             + wgslSkeleton;
 
         await copyToClipboard(instruction);
-        showToast("Text successfully copied to clipboard!", 3);
+        const text = "Text successfully copied to clipboard!";
+        showToast(text, 3);
+        logForAgent(text);
 
         makeShaderEditors();
     });

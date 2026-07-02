@@ -749,7 +749,7 @@ export function makeSimulationSchema(jsonText: string){
         if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
             const schemaDef = ObjectExprToSchemaDef(schemaVar.init);
 
-            const schema = new SimulationSchema(theDevice, schemaDef);
+            const schema = new SimulationSchema(theDevice, schemaDef, prg);
             ResolveVariableReferences(prg, schema);
 
             return schema;

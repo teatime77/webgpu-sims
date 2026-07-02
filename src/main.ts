@@ -2,7 +2,7 @@ import { CaptureTool } from './CaptureTool.js';
 import { getMesh, initDevice, theDevice, theRunner, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $, $btn, $canvas, $div, assert, clearErr, displayErrorDialog, errFlag, fetchJson, fetchText, msg, MyError, parseURL, urlHash, urlHome, urlOrigin, urlPathName } from './utils.js';
+import { $, $btn, $canvas, $div, assert, clearErr, displayErrorDialog, errFlag, fetchJson, fetchText, logForAgent, msg, MyError, parseURL, urlHash, urlHome, urlOrigin, urlPathName } from './utils.js';
 import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
 import { AppManager, appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
@@ -376,5 +376,5 @@ export async function initApp(){
         await appManager.showAll();
     });
 
-    // appManager.showView("main-view");
+    logForAgent("GPUSims ready.");
 }

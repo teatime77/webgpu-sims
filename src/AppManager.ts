@@ -2,7 +2,7 @@ import { clearShaderEditors, makeShaderEditors } from "./editor.js";
 import { Article, bootstrap, getArticles, getContents, theArticles } from "./main.js";
 import { makeSimulationSchema } from "./parser.js";
 import { clearSchema } from "./start.js";
-import { $, $div, $img, $txt, assert, fetchText, msg, MyError, sleep, isStaticServer, urlHash, urlHome, urlOrigin, urlPathName } from "./utils.js";
+import { $, $div, $img, $txt, assert, fetchText, msg, MyError, sleep, isStaticServer, urlHash, urlHome, urlOrigin, urlPathName, logForAgent } from "./utils.js";
 
 export type ViewName = "main-view" | "edit-view" | "article-view" | "wizard-view" | "user-view" | "landing-view";
 
@@ -158,6 +158,8 @@ export class AppManager {
 
         // URLが変わったので画面を再描画する
         this.renderPage(view);
+
+        logForAgent("navigate complete.")
     }
 
     async showAll(){

@@ -245,12 +245,17 @@ export class SimulationRunner {
             sim.canvases.unshift(mainCanvasDef);
         }
 
-
         for(const canvasDef of sim.canvases){
             canvasDef.canvas = $canvas(canvasDef.id);
             canvasDef.context = this.contexts.get(canvasDef.id)!;
             assert(canvasDef.canvas != undefined && canvasDef.context != undefined);
             canvasDef.camera = new OrbitCamera(canvasDef.canvas);
+        }
+
+        const distanceVar = sim.prg.getVariables().find(x => x.name == "InitialCameraDistance");
+        if(distanceVar != undefined && distanceVar.init != undefined){
+            const distance = distanceVar.init.getNumber();
+            mainCanvasDef.camera.distance = distance;
         }
 
         const storages = sim.getStorages().filter(x => x.shadingModel == "scalar-grid");

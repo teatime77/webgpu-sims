@@ -31,6 +31,10 @@ export function msg(txt : string){
     console.log(txt);
 }
 
+export function logForAgent(txt : string){
+    msg(txt);
+}
+
 export function range(n: number) : number[]{
     return [...Array(n).keys()];
 }
@@ -312,7 +316,9 @@ export function displayErrorDialog(title: string, message: string) {
     errFlag = true;
     $("error-header").textContent = title;
     $div('error-message').textContent = message;
-    $dlg('error-dialog').showModal(); 
+    $dlg('error-dialog').showModal();
+
+    logForAgent("error occurred!")
 }
 
 

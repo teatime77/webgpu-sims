@@ -29,7 +29,12 @@ This schema strictly separates state, memory allocation (resources), pipeline ex
 Before defining the schema object, declare the simulation parameters and constants.
 
 * **`state` Object:** A plain JavaScript object holding the mutable physics parameters (e.g., `brightness`, `scale`). This object will be referenced by both the Uniform buffers and the UI components.
-* **Constants:** Define configuration constants like `NUM_PENDULUMS`, `SPHERE_DIVISION` and `gravitational constant`.
+* **Constants:** Define configuration constants like `NUM_PENDULUMS`, `SPHERE_DIVISION` and `gravitational constant`.  
+**Strict Requirement:** You **MUST** define the initial camera distance constant from the origin as `InitialCameraDistance` so that the entire 3D view is visible.  
+The fovy(Vertical field of view in radians) is $\pi / 4$.  
+The pitch is normally $\pi / 3$ , but it is $\pi / 2$ when `shadingModel` is `scalar-grid`.
+
+---
 
 ## 2. Schema Object
 
@@ -403,6 +408,7 @@ When generating this schema, ensure that:
 1. Every `resource` referenced in `shaders[].bindings` exists in the `resources` object.
 2. Every `meshRef` referenced in a storage buffer exists as a `type: "mesh"` resource.
 3. Every `name` referenced in the `uis` array exists in the `state` object.
+4. `InitialCameraDistance` is defined in the global constants.
 
 ## 3. Common WebGPU Gotchas & Best Practices
 

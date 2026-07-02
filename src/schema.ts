@@ -1,6 +1,6 @@
 import { makeArrowMesh, makeCylinderMesh, makeGeodesicPolyhedron, makeTube } from './primitive.js';
 import { assert, MyError } from './utils.js';
-import { FunctionExpression, StructDeclaration } from './syntax.js';
+import { FunctionExpression, Program, StructDeclaration } from './syntax.js';
 import { MeshDef, MeshShape, ReadBackDef, ResourceDef, StorageDef, UniformDef } from './resource.js';
 import { ComputePassBuilder, NodeDef, RenderPassBuilder } from './pipeline.js';
 import { UIDef } from './SimUI.js';
@@ -32,6 +32,7 @@ export interface ISimulationSchema {
 
 export class SimulationSchema {
     name?: string;
+    prg: Program;
     structs? : StructDeclaration[];
     resources: Map<string, ResourceDef>;
     shaders: NodeDef[];
@@ -41,10 +42,11 @@ export class SimulationSchema {
     script?: FunctionExpression;
     isReady : boolean = false;
 
-    constructor(device: GPUDevice, data: ISimulationSchema){
+    constructor(device: GPUDevice, data: ISimulationSchema, prg: Program){
         theSchema = this;
 
         this.name = data.name;
+        this.prg  = prg;
         this.structs = data.structs;
         if(this.structs != undefined){
             this.structs.forEach(x => x.setStructSize());

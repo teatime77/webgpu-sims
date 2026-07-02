@@ -1,5 +1,5 @@
 import { theRunner } from "./SimulationRunner.js";
-import { $, $btn, $inp, msg } from "./utils.js";
+import { $, $btn, $inp, logForAgent, msg } from "./utils.js";
 
 export class CaptureTool {
     private captureBtn : HTMLButtonElement;
@@ -56,7 +56,7 @@ export class CaptureTool {
                     ? `capture_${id}_${stamp}.png` 
                     : `capture_${stamp}.png`;
                 await this.captureCanvasPng(canvas, filename);
-                msg(`capture:${filename}`)
+                logForAgent(`capture:${filename}`)
             }
         } finally {
             this.setBusy(false);

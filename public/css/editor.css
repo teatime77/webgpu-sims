@@ -32,11 +32,11 @@
     overflow: hidden;
 }
 
-.hidden-textarea:hover {
+.hidden-textarea:hover, .shader-textarea:hover {
   background-color: transparent;
 }
 
-.hidden-textarea {
+.hidden-textarea, .shader-textarea {
     position: absolute;
     top: 0;
     left: 0;
@@ -64,7 +64,7 @@
     z-index: 2;
 }
 
-.hidden-textarea::selection {
+.hidden-textarea::selection, .shader-textarea::selection {
     background: rgba(86, 156, 214, 0.3);
     color: transparent;
 }
