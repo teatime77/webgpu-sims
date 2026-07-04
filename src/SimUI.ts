@@ -1,8 +1,8 @@
 import { ReadBackDef } from "./resource.js";
-import { SimulationSchema } from "./schema.js";
+import { SimulationSchema, theSchema } from "./schema.js";
 import type { SimulationRunner } from "./SimulationRunner.js";
 import { Const } from "./syntax.js";
-import { $div, MyError } from "./utils.js";
+import { $btn, $div, copyToClipboard, logForAgent, msg, MyError } from "./utils.js";
 
 export interface UIDef {
     type : "range" | "select" | "label",
@@ -15,7 +15,8 @@ export interface RangeDef extends UIDef {
     min: number, 
     max: number, 
     step: number, 
-    initial?: number
+    initial?: number,
+    slider : HTMLInputElement
 }
 
 export interface SelectDef extends UIDef {
@@ -32,32 +33,21 @@ export interface LabelDef extends UIDef {
 }
 
 export class SimUI {
-    private container: HTMLElement;
+    private container: HTMLDivElement;
 
     constructor() {
-        // Remove old UI to prevent duplicates during HMR (Hot Module Replacement)
-        const existing = document.getElementById('sim-ui-container');
-        if (existing) existing.remove();
-
-        // Floating container following V1 design
-        this.container = document.createElement('div');
-        this.container.id = 'sim-ui-container';
-        this.container.style.background = 'rgba(20, 20, 25, 0.85)';
-        // this.container.style.color = 'white';
-        this.container.style.padding = '12px';
-        this.container.style.borderRadius = '8px';
-        this.container.style.fontFamily = 'sans-serif';
-        this.container.style.border = '1px solid #444';
-        this.container.style.zIndex = '1000';
-
-
-        $div("uis-div").appendChild(this.container);
+        this.container = $div('sim-ui-container');
+        const children = Array.from(this.container.children);
+        children.filter(x => x != $btn("copy-uis-btn")).forEach(x => x.remove());
+        // this.container.innerHTML = "";
     }
 
     /**
      * Method equivalent to ui.range in V1
      */
-    addRange(label: string, min: number, max: number, step: number, initial: number, onChange: (val: number) => void) {
+    addRange(data : RangeDef, onChange: (val: number) => void) {
+        const initial = data.initial ?? data.obj.value[data.name];
+
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.alignItems = 'center';
@@ -65,21 +55,21 @@ export class SimUI {
         row.style.padding = '4px 0';
 
         const lbl = document.createElement('label');
-        lbl.textContent = label;
+        lbl.textContent = data.label;
         lbl.style.minWidth = '80px';
         lbl.style.fontSize = '13px';
 
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.min = min.toString();
-        slider.max = max.toString();
-        slider.step = step.toString();
-        slider.value = initial.toString();
-        slider.style.flex = '1';
+        data.slider = document.createElement('input');
+        data.slider.type = 'range';
+        data.slider.min = data.min.toString();
+        data.slider.max = data.max.toString();
+        data.slider.step = data.step.toString();
+        data.slider.value = initial.toString();
+        data.slider.style.flex = '1';
 
         const valDisp = document.createElement('span');
         // Calculate the number of decimal places to display from the step size (equivalent to decimalsFromStep in V1)
-        const dec = Math.max(0, -Math.floor(Math.log10(step)));
+        const dec = Math.max(0, -Math.floor(Math.log10(data.step)));
         valDisp.textContent = initial.toFixed(dec);
         valDisp.style.minWidth = '40px';
         valDisp.style.textAlign = 'right';
@@ -87,14 +77,14 @@ export class SimUI {
         valDisp.style.fontSize = '12px';
 
         // Trigger callback the moment the slider is moved (equivalent to live: true)
-        slider.addEventListener('input', () => {
-            const val = parseFloat(slider.value);
+        data.slider.addEventListener('input', () => {
+            const val = parseFloat(data.slider.value);
             valDisp.textContent = val.toFixed(dec);
             onChange(val); // Pass the value outside
         });
 
         row.appendChild(lbl);
-        lbl.appendChild(slider);
+        lbl.appendChild(data.slider);
         row.appendChild(valDisp);
         this.container.appendChild(row);
     }
@@ -170,8 +160,7 @@ export class SimUI {
             data.obj.value[data.name] = val;
         }
 
-        const initial = data.initial ?? data.obj.value[data.name];
-        this.addRange(data.label, data.min, data.max, data.step, initial, onChange);
+        this.addRange(data, onChange);
     }
 
     makeSelect(runner:SimulationRunner, data : SelectDef){
@@ -222,4 +211,39 @@ export function makeUIs(runner:SimulationRunner, schema: SimulationSchema){
             throw new Error();
         }
     }
+}
+
+export async function copyUiValues(){
+    if(theSchema.uis == undefined){
+        return;
+    }
+
+    let data : any[] = []
+    for(const ui of theSchema.uis){
+        let valueStr : string;
+
+        switch(ui.type){
+        case "range":
+            valueStr = (ui as RangeDef).slider.value;
+            break;
+        case "label":
+            valueStr = (ui as LabelDef).valueSpan.textContent;
+            break;
+        default:
+            throw new MyError();
+        }
+
+        data.push({
+            type: ui.type,
+            name : ui.name,
+            label : ui.label,
+            value : parseFloat(valueStr)
+        });
+    }
+
+    const json = JSON.stringify(data, null, 4);
+    msg(`UI:${json}`);
+    await copyToClipboard(json);
+
+    logForAgent("UI values are copied.");
 }

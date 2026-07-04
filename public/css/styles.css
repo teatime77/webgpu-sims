@@ -129,6 +129,10 @@ header > .at-right {
   justify-self: end;    /* 右端へ配置 */
 }
 
+/* ====================================================================================
+            EDIT-VIEW
+==================================================================================== */
+
 .main-canvas-grid {
     display: grid;
     grid-template-columns: 80% 20%;
@@ -139,6 +143,21 @@ header > .at-right {
     aspect-ratio: 16 / 9;
     width: 100%;
     height: auto;
+}
+
+#sim-ui-container {
+    background-color: rgba(20, 20, 25, 0.85);
+    padding: '12px';
+    font-family: 'sans-serif';
+    border-radius: '8px';
+    border: 1px solid #444;
+    z-index: 1000;
+}
+
+#copy-uis-btn {
+    padding: 0; 
+    border-style:none; 
+    background-color: transparent;
 }
 
 #thumbnail-img {

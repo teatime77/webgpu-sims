@@ -145,7 +145,10 @@ export class Parser {
             }
 
             this.consume("}");
-            this.consume(';');
+
+            if(this.peek().value == ";"){
+                this.consume(';');
+            }
 
             const structDecl = new StructDeclaration(structName, fields);
             elements.push(structDecl);
@@ -733,35 +736,29 @@ function ObjectExprToSchemaDef(schemaObj : ObjectExpression) : ISimulationSchema
 
 
 export function makeSimulationSchema(jsonText: string){
-    // try {
+    const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
+    if(k != -1){
+        jsonText = jsonText.substring(0, k);
+    }
 
-        const k = jsonText.indexOf("//# sourceMappingURL=data:application/json;");
-        if(k != -1){
-            jsonText = jsonText.substring(0, k);
-        }
+    constValues.clear();
 
-        constValues.clear();
+    const parser = new Parser(jsonText);
+    const prg = parser.parse();
 
-        const parser = new Parser(jsonText);
-        const prg = parser.parse();
+    const schemaVar = prg.varDecls.map(x => x.variable).find(x => x.name == "schema");
+    if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
+        const schemaDef = ObjectExprToSchemaDef(schemaVar.init);
 
-        const schemaVar = prg.varDecls.map(x => x.variable).find(x => x.name == "schema");
-        if(schemaVar != undefined && schemaVar.init instanceof ObjectExpression){
-            const schemaDef = ObjectExprToSchemaDef(schemaVar.init);
+        const schema = new SimulationSchema(theDevice, schemaDef, prg);
+        ResolveVariableReferences(prg, schema);
 
-            const schema = new SimulationSchema(theDevice, schemaDef, prg);
-            ResolveVariableReferences(prg, schema);
+        return schema;
+    }
+    else{
 
-            return schema;
-        }
-        else{
-
-            throw new MyError();
-        }
-
-    // } catch (e) {
-    //     throw new MyError();
-    // }
+        throw new MyError();
+    }
 }
 
 export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){

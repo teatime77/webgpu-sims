@@ -1,5 +1,5 @@
 import { Article, bootstrap, schemaText, setAfterFrame } from "./main.js";
-import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail, $dlg, $div, logForAgent } from "./utils.js";
+import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail, $dlg, $div, logForAgent, MyError, displayErrorDialog } from "./utils.js";
 // import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
 import { theSchema } from "./schema.js";
@@ -8,6 +8,7 @@ import {  makeShaderEditors, setNodeShaderCode } from "./editor.js";
 import {  } from "./index.js";
 import { appManager } from "./AppManager.js";
 import { makeSimulationSchema } from "./parser.js";
+import { copyUiValues } from "./SimUI.js";
 
 
 export function clearSchema(){
@@ -76,18 +77,25 @@ export function initEventHandler(){
                             + schemaText;
 
         await copyToClipboard(instruction);
-        showToast("Text successfully copied to clipboard!", 3);
     });
 
     $btn("create-copy-skeleton-btn").addEventListener("click", async()=>{
-        const wgslSkeleton = makeWgslSkeleton($txt("schema-text").value);
+        let wgslSkeleton : string;
+
+        try{
+
+            wgslSkeleton = makeWgslSkeleton($txt("schema-text").value);
+        }
+        catch(e){
+
+            displayErrorDialog("Create Skeleton Error", (e as MyError).message)
+            return;
+        }
+
         const instruction = "Implement WGSL functions.\n\n"
                             + wgslSkeleton;
 
         await copyToClipboard(instruction);
-        const text = "Text successfully copied to clipboard!";
-        showToast(text, 3);
-        logForAgent(text);
 
         makeShaderEditors();
     });
@@ -95,6 +103,10 @@ export function initEventHandler(){
     $btn("run-sim-btn").addEventListener("click", async ()=>{
         clearSchema();
         appManager.navigateTo("/run");
+    });
+
+    $btn("copy-uis-btn").addEventListener("click", async()=>{
+        await copyUiValues();
     });
 
     $btn("thumbnail-btn").addEventListener("click", ()=>{

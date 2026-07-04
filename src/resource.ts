@@ -8,7 +8,7 @@ import { assert, MyError } from "./utils.js";
 export type WgslFormat = 'f32' | 'u32' | 'i32' | 'vec2<f32>' | 'vec3<f32>' | 'vec4<f32>' | 'mat4x4<f32>';
 export type MeshShape = "sphere" | "tube" | "cylinder" | "arrow";
 
-function getElementSizeAlignment(format : string) : [number, number] {
+function getElementSizeAlignment(name:string, format : string) : [number, number] {
     let alignment;
     let size;
 
@@ -38,7 +38,7 @@ function getElementSizeAlignment(format : string) : [number, number] {
             }
         }
 
-        throw new MyError();
+        throw new MyError(`type:[${format}] of ${name} is unknown.`);
     }
 
     }
@@ -46,8 +46,8 @@ function getElementSizeAlignment(format : string) : [number, number] {
     return [size, alignment];
 }
 
-function getElementSize(format : string) : number {
-    const [size, _] = getElementSizeAlignment(format);
+function getElementSize(name:string, format : string) : number {
+    const [size, _] = getElementSizeAlignment(name, format);
     return size;
 }
 
@@ -106,7 +106,7 @@ export class StorageDef extends ResourceDef {
         if(this.format == undefined){
             throw new MyError();
         }
-        const elementSize = getElementSize(this.format);
+        const elementSize = getElementSize(id, this.format);
         
         const byteSize = elementSize * (this.count || 1);
 
@@ -140,7 +140,7 @@ export function makeFieldDefs(fields:FieldDef[]) : number {
 
     let offset = 0;
     for (const field of fields) {
-        const [size, alignment] = getElementSizeAlignment(field.format);
+        const [size, alignment] = getElementSizeAlignment(field.name, field.format);
 
         field.size = size;
         field.offset = Math.ceil(offset / alignment) * alignment;

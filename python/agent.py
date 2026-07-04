@@ -30,7 +30,10 @@ chat   = None
 browser_alive = True
 article_id = None
 article_dir = None
-model_name="gemini-2.5-pro"
+
+# model_name="gemini-3.1-flash-lite"
+# model_name="gemini-2.5-pro"
+model_name="gemini-3.1-pro-preview"
 
 class Agent:
     def __init__(self):
@@ -43,7 +46,7 @@ class Agent:
     def create_schema(self, prompt:str):
         print(f"Generating Schema...\n[{prompt}]")
 
-        response2 = chat.send_message(prompt)
+        response2 = chat_send_message(prompt)
         self.schema = extract_codes("typescript", response2.text)[0]
 
         write_text_file("schema.js", self.schema)
@@ -72,7 +75,7 @@ class Agent:
                 f"{self.skeleton_text}"
             )
 
-            response = chat.send_message(prompt)
+            response = chat_send_message(prompt)
             response_text = response.text
             write_text_file("wgsl_response.text", response_text)
         else:
@@ -87,10 +90,11 @@ class Agent:
     def run(self):
         if not self.image_verified:
             if 3 < time.time() - self.start_time:
-                print("capture and download start...")
-                clickBtn("capture-btn")
-                image_path = wait_for_download_complete()
-                self.verify_image(image_path)
+                ok = self.verify_readback()
+                if ok:
+                    ok = self.verify_image()
+                    if ok:
+                        self.finish()
     
     def run_simulation(self):
         clickBtn("run-sim-btn")
@@ -127,7 +131,51 @@ class Agent:
             print(f"No modified code.\n[{response_text}]")
             sys.exit()
 
-    def verify_image(self, image_path:str):
+    def has_readback(self):
+        # Step 1: Extract everything inside the 'uis: [...]' brackets
+        uis_match = re.search(r'uis\s*:\s*\[(.*?)\]', self.schema, re.DOTALL)
+        if uis_match:
+            uis_content = uis_match.group(1)
+            
+            # Step 2: Check if 'resource:' exists inside that extracted content
+            return bool(re.search(r'resource\s*:', uis_content))
+
+        return False
+
+    def verify_readback(self):
+        if not self.has_readback():
+            return True
+        
+        print("verify readback values.")
+        clickBtn("copy-uis-btn")
+        waitLog("Text successfully copied to clipboard!")
+
+        json_text = pyperclip.paste()
+
+        print("Verifying readback...")
+
+        prompt = (
+            "Verify the UI values ​​and determine whether the result is correct.\n"
+            'If the result is correct, output "THE RESULT IS CORRECT."\n'
+            "If modifications are required, output the schema OR the shader. Do not output both the schema and the shader.\n"
+            "Enclose the schema in ```typescript and ```, and the shader in ```wgsl and ```.\n"
+            "Output the entire code, not just a portion of it.\n"
+            "\n"
+            f"{json_text}"
+        )
+        response = chat_send_message(prompt)
+        print(response.text)
+        if "THE RESULT IS CORRECT" in response.text:
+            return True
+        else:
+            self.modify_codes(response.text)
+            return False
+
+    def verify_image(self):
+        print("capture and download start...")
+        clickBtn("capture-btn")
+        image_path = wait_for_download_complete()
+
         print("Verifying the image...")
 
         image = PIL.Image.open(image_path)
@@ -139,13 +187,14 @@ class Agent:
             "Enclose the schema in ```typescript and ```, and the shader in ```wgsl and ```.\n"
             "Output the entire code, not just a portion of it.\n"
         )
-        response = chat.send_message([ prompt, image ])
+        response = chat_send_message([ prompt, image ])
         print(response.text)
         if "THE RESULT IS CORRECT" in response.text:
             self.make_thumbnail(image_path)
-            self.finish()
+            return True
         else:
             self.modify_codes(response.text)
+            return False
 
     def make_thumbnail(self, image_path:str):
         img = PIL.Image.open(image_path)
@@ -196,7 +245,7 @@ class Agent:
             "Write an article in Markdown explaining the observable phenomena, mathematical background, and code for this simulation.\n"
             "For the first line of the output, write the article title after the `#` symbol."
         )
-        response = chat.send_message(prompt)
+        response = chat_send_message(prompt)
 
         write_text_file("markdown.md", response.text)
         print("markdown.md is created.")
@@ -216,7 +265,7 @@ class Agent:
             ""
             f"{error_text}"
         )
-        response = chat.send_message(prompt)
+        response = chat_send_message(prompt)
         self.modify_codes(response.text)
 
 def write_text_file(file_name:str, text:str):
@@ -231,6 +280,13 @@ def read_text_file(path):
         text = file.read()
 
         return text
+    
+def chat_send_message(prompt: str):
+    response = chat.send_message(prompt)
+    usage_metadata = response.usage_metadata
+    print(f"in: {usage_metadata.prompt_token_count} out:{usage_metadata.candidates_token_count} total:{usage_metadata.total_token_count}")
+
+    return response
 
 def create_cache():
     system_prompt = read_text_file("public/schema.md")
@@ -262,7 +318,7 @@ def create_chat_from_cache():
     now_utc = datetime.now(timezone.utc)
 
     # リストの中から「現在時刻より有効期限が未来（まだ有効）」なキャッシュだけを抽出する
-    valid_caches = [c for c in cache_list if c.expire_time > now_utc]
+    valid_caches = [c for c in cache_list if c.expire_time > now_utc and c.model == f"models/{model_name}"]
 
     if len(valid_caches) == 0:
         print("No active context caches found.")
@@ -307,6 +363,7 @@ def extract_codes(lang:str, text: str) -> list[str]:
     matches = re.findall(pattern, text, flags=re.DOTALL)
     if len(matches) != 1:
         print(f"can not extract {lang} code.:{len(matches)}")
+        write_text_file(f"extract-error-{lang}.txt", text)
         sys.exit()
     
     return matches
@@ -532,7 +589,8 @@ if __name__ == "__main__":
 
     useAI = True
     prompts = [
-        "create a schema for a simple wave simulation with topology=triangle-list and shadingModel=vertex-color-normal."
+        # "create a schema for a simple wave simulation with topology=triangle-list and shadingModel=vertex-color-normal."
+        "create a simulation schema that draws a cube and a sphere inscribed within it, plots a large number of points randomly inside the cube, and calculates the value of pi based on the ratio of points falling inside the sphere."
     ]
 
     for prompt in prompts:

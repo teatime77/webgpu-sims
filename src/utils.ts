@@ -173,7 +173,9 @@ export async function copyToClipboard(textToCopy: string): Promise<void> {
   try {
     // navigator.clipboard.writeText() takes a string and returns a Promise
     await navigator.clipboard.writeText(textToCopy);
-    msg(`Text successfully copied to clipboard!\n`);
+    const ok_msg = "Text successfully copied to clipboard!";
+    showToast(ok_msg, 2);
+    logForAgent(ok_msg);
     
     // Optional: You could trigger a UI notification (toast) here
   } catch (error) {
@@ -255,7 +257,7 @@ export function captureThumbnail(): void {
     tempCanvas.height = canvas.height;
     const ctx = tempCanvas.getContext('2d');
     if(ctx == null){
-        throw new MyError();
+        throw new MyError("Can not get Canvas Rendering Context2D");
     }
 
     // 3. Draw the WebGPU canvas onto the 2D canvas immediately

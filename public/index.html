@@ -180,8 +180,7 @@
     </ol>
 </div>
 
-<dialog id="toast-message" class="toast">Text successfully copied to clipboard!</dialog>
-
+<dialog id="toast-message" class="toast"></dialog>
 
 <dialog id="error-dialog" class="gpu-error-dlg">
     <p id="error-header">GPU Fatal Error</p>
@@ -211,6 +210,11 @@
             <canvas id="main-canvas" width="1280" height="720"></canvas>
             <div>
                 <div id="uis-div"></div>
+                    <div id="sim-ui-container">
+                        <button id="copy-uis-btn" title="Copy UI values to clipboard">
+                            <img src="img/copy.png"/>
+                        </button>
+                    </div>
                 <p></p>
                 <button id="thumbnail-btn" class="at-right">thumbnail</button><br />
                 <img id="thumbnail-img" />
