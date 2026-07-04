@@ -1,4 +1,4 @@
-import { clearShaderEditors, makeShaderEditors } from "./editor.js";
+import { clearShaderEditors, makeShaderEditors, setNodeShaderCode } from "./editor.js";
 import { Article, bootstrap, getArticles, getContents, theArticles } from "./main.js";
 import { makeSimulationSchema } from "./parser.js";
 import { clearSchema } from "./start.js";
@@ -131,6 +131,15 @@ export class AppManager {
             clearSchema();
             this.showView("wizard-view");
         } 
+        else if(path == "/run"){
+            this.showView("edit-view");
+
+            const jsonText = $txt("schema-text").value;
+
+            const schema = makeSimulationSchema(jsonText);
+            setNodeShaderCode();
+            await bootstrap(schema);
+        }
         else if(path == "/"){
             this.showView("landing-view");
         }

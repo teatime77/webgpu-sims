@@ -94,13 +94,7 @@ export function initEventHandler(){
 
     $btn("run-sim-btn").addEventListener("click", async ()=>{
         clearSchema();
-        appManager.showView("edit-view");
-
-        const jsonText = $txt("schema-text").value;
-
-        const schema = makeSimulationSchema(jsonText);
-        setNodeShaderCode();
-        await bootstrap(schema);
+        appManager.navigateTo("/run");
     });
 
     $btn("thumbnail-btn").addEventListener("click", ()=>{

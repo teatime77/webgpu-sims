@@ -1,7 +1,7 @@
 .vscode
 .agents
 public/js
-python
 public/test
 tmp
 public/docs
+python/html.py
