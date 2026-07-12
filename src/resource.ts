@@ -104,7 +104,7 @@ export class StorageDef extends ResourceDef {
         
         // Calculate byte size of a single element from WGSL format
         if(this.format == undefined){
-            throw new MyError();
+            throw new MyError(`format of resource[${this.id}] is undefined.`);
         }
         const elementSize = getElementSize(id, this.format);
         
@@ -189,7 +189,7 @@ export class UniformDef extends ResourceDef {
     /** Equivalent to updateVariables in V1: construct binary from JS object and transfer at once */
     writeUniformBuffer() {
         if(this.obj == undefined){
-            throw new MyError();
+            throw new MyError(`target object of the uniform variable[${this.id}] is undefined.`);
         }
 
         const arrayBuffer = new ArrayBuffer(this.totalSize);

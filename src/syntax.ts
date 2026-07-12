@@ -1,4 +1,4 @@
-import { msg, assert, MyError, range } from "./utils.js";
+import { msg, assert, MyError, range, getTypeName } from "./utils.js";
 import { CanvasDef, PassCommand, theDevice, theRunner } from "./SimulationRunner.js";
 import { ComputePassBuilder } from "./pipeline.js";
 import { LabelDef, RangeDef, SelectDef, UIDef } from "./SimUI.js";
@@ -28,6 +28,10 @@ export abstract class BaseASTNode {
 
     // Generates code back from the AST
     abstract toSource(): string;
+
+    get typename() : string {
+        return this.constructor.name;
+    }
 
     private setParent(parent : Expression | Statement | null = null){
         this.parent = parent;
@@ -84,7 +88,7 @@ export abstract class BaseASTNode {
     }
 
     getValue() : ValueType {
-        throw new MyError();
+        throw new MyError(`get-value is not implemented for ${this.constructor.name}`);
     }
 
     toObject() : any {
@@ -113,7 +117,7 @@ export class Program extends BaseASTNode {
     }
 
     toSource(): string {
-        throw new MyError();
+        throw new MyError(`to-source is not implemented for Program`);
     }
 }
 
@@ -169,7 +173,7 @@ export class Variable extends BaseASTNode {
 
     getValue() : ValueType {
         if(this.value == undefined){
-            throw new MyError();
+            throw new MyError(`value of Variable[${this.name}] is undefined.`);
         }
 
         if(this.value instanceof Expression){
@@ -370,7 +374,7 @@ export class BinaryExpression extends Expression {
         case ">" : return n1 >  n2; 
         case "<=": return n1 <= n2; 
         case ">=": return n1 >= n2; 
-        default: throw new MyError();
+        default: throw new MyError(`Unknown operator [${this.operator}]`);
         }
     }
 }
@@ -602,7 +606,7 @@ export class CallStatement extends Statement {
             return term.getString();
         }
         else{
-            throw new MyError();
+            throw new MyError(`Can not get the name of ${term.constructor.name} in Call-Statement`);
         }
     }
 
@@ -646,7 +650,7 @@ export class CallStatement extends Statement {
                         // msg(`copy:${this.srcStorage.id} => ${this.dstStorage.id}`);
                     }
                     else{
-                        throw new MyError();
+                        throw new MyError(`number of arguments of copy is not 2:[${this.callExpr.arguments.length}]`);
                     }
                 }
 
@@ -655,7 +659,7 @@ export class CallStatement extends Statement {
             }
         }
 
-        throw new MyError();
+        throw new MyError(`Unknown callee type:${this.callExpr.callee.constructor.name}`);
     }
 
     async copyBuffers(device : GPUDevice){
@@ -707,7 +711,7 @@ export class AssignmentStatement extends Statement {
             this.lvalue = lvalue;
         }
         else{
-            throw new MyError();
+            throw new MyError(`lvalue is illegal:${lvalue.constructor.name}`);
         }
 
         this.operator = operator;
@@ -769,7 +773,7 @@ export class MemberExpression extends Expression {
             this.object = object;
         }
         else{
-            throw new MyError();
+            throw new MyError(`illegal object type[${object.typename}] of Member-Expression.`);
         }
         this.property = property;
 
@@ -786,17 +790,18 @@ export class MemberExpression extends Expression {
             return id.refVar.value;
         }
 
-        throw new MyError();
+        throw new MyError(`${this.object.name} of ${this.object.name}.${this.property.name} is not object variable.`);
     }
 
     setValue(val : Expression){
         assert(this.getValue() != undefined);
 
         if(this.object.resourceRef instanceof UniformDef){
-            if(this.object.resourceRef.obj == undefined){
-                throw new MyError();
+            const uni = this.object.resourceRef;
+            if(uni.obj == undefined){
+                throw new MyError(`object of uniform variable[${uni.id}] is undefined.`);
             }
-            this.object.resourceRef.obj.value[this.property.name] = val.getNumber();
+            uni.obj.value[this.property.name] = val.getNumber();
         }
         else{
 
@@ -808,9 +813,17 @@ export class MemberExpression extends Expression {
     getValue() : ValueType {
         let value : any;
 
-        if(this.object.resourceRef instanceof UniformDef){
+        if(this.object.name == "Math"){
+            if(this.property.name == "PI"){
+                return Math.PI;
+            }
+            else{
+                throw new MyError(`Math.${this.property.name} is not implemented.`);
+            }
+        }
+        else if(this.object.resourceRef instanceof UniformDef){
             if(this.object.resourceRef.obj == undefined){
-                throw new MyError();
+                throw new MyError(`object of uniform variable[${this.object.resourceRef.id}] is undefined.`);
             }
             value = this.object.resourceRef.obj.value[this.property.name];
         }
@@ -826,7 +839,7 @@ export class MemberExpression extends Expression {
             return value;
         }
         
-        throw new MyError();
+        throw new MyError(`can not get the value of ${this.object.name}.${this.property.name}`);
     }
 }
 
@@ -874,6 +887,6 @@ export class CallExpression extends Expression {
             }
         }
 
-        throw new MyError();
+        throw new MyError(`illegal calle[${getTypeName(this.callee)}]`);
     }
 }

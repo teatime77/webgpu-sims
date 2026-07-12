@@ -23,6 +23,7 @@
 <body>
 
 <!-- 【B】ログイン後のメイン画面 -->
+<!-- 【B】ログイン後のメイン画面 -->
 <div id="landing-view">
 
     <header class="landing-header">
@@ -86,6 +87,22 @@
                 </div>
             </div>
         </section>
+
+        <!-- NEW SECTION: Automated AI Agent Pipeline -->
+        <section class="section-container" style="padding-top: 20px;">
+            <h2>Automated AI Agent Pipeline</h2>
+            <p>For fully autonomous development, the platform includes a Python agent (<code>agent.py</code>) that leverages Selenium and the Gemini API to orchestrate the entire creation process from start to finish:</p>
+            <ul>
+                <li style="margin-bottom: 10px;"><strong>System Initialization:</strong> Automatically provides the foundational system prompt to the AI to establish architectural rules.</li>
+                <li style="margin-bottom: 10px;"><strong>Schema Generation:</strong> Instructs the AI to generate the declarative simulation schema based on a single prompt.</li>
+                <li style="margin-bottom: 10px;"><strong>Code Implementation:</strong> Creates the WGSL skeleton based on the AI-generated schema and tasks the AI with implementing the core mathematical logic.</li>
+                <li style="margin-bottom: 10px;"><strong>Execution:</strong> Compiles and runs the simulation seamlessly in the browser.</li>
+                <li style="margin-bottom: 10px;"><strong>Data Verification:</strong> Extracts readback buffer values and feeds them back to the AI to verify mathematical correctness.</li>
+                <li style="margin-bottom: 10px;"><strong>Visual Verification:</strong> Captures an image of the canvas and provides it to the AI for visual debugging and confirmation.</li>
+                <li style="margin-bottom: 10px;"><strong>Iterative Correction:</strong> Automatically prompts the AI to modify the code and re-runs the simulation until the visual and mathematical outputs are flawless.</li>
+            </ul>
+        </section>
+        <!-- END NEW SECTION -->
 
         <section class="section-container" style="padding-top: 20px;">
             <h2>A New Way to Learn Physics and Math</h2>

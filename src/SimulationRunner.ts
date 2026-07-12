@@ -1,4 +1,4 @@
-import { msg, $div, $canvas, displayErrorDialog, MyError } from './utils.js';
+import { msg, $div, $canvas, MyError } from './utils.js';
 import { assert } from './utils.js';
 import { CallStatement, FunctionExpression } from './syntax.js';
 import { OrbitCamera } from './camera.js';
@@ -41,16 +41,14 @@ export async function initDevice(): Promise<boolean> {
 
         // You can also check the specific instance type
         if (gpuEvent.error instanceof GPUValidationError) {
-            displayErrorDialog("GPU Validation Error", `${gpuEvent.error.message}`);
+            throw new MyError(`${gpuEvent.error.message}`, "GPU Validation Error");
         } 
         else if (gpuEvent.error instanceof GPUOutOfMemoryError) {
-            displayErrorDialog("The GPU ran out of memory.", `${gpuEvent.error.message}`);
+            throw new MyError(`${gpuEvent.error.message}`, "The GPU ran out of memory.");
         }
         else{
-            displayErrorDialog("Uncaptured WebGPU Error", `${gpuEvent.error.message}`);
+            throw new MyError(`${gpuEvent.error.message}`, "Uncaptured WebGPU Error");
         }
-
-        throw new MyError();
     });    
 
     console.log("WebGPU Engine Initialized Successfully.");
@@ -151,7 +149,7 @@ export class SimulationRunner {
     getContext(canvasId: string): GPUCanvasContext {
         const context = this.contexts.get(canvasId);
         if (!context) {
-            throw new Error(`Canvas '${canvasId}' is not registered.`);
+            throw new MyError(`Canvas '${canvasId}' is not registered.`);
         }
         return context;
     }
@@ -160,7 +158,7 @@ export class SimulationRunner {
     getDepthView(canvasId: string): GPUTextureView {
         const view = this.depthViews.get(canvasId);
         if (!view) {
-            throw new Error(`The depth view for canvas '${canvasId}' is not registered.`);
+            throw new MyError(`The depth view for canvas '${canvasId}' is not registered.`);
         }
         return view;
     }
@@ -191,7 +189,9 @@ export class SimulationRunner {
 
     getStorageBuffer(id: string, historyLevel: number = 0): GPUBuffer {
         const res = theSchema.resources.get(id);
-        if (!res) throw new Error(`Storage resource [${id}] not found`);
+        if (!res){
+            throw new MyError(`Storage resource [${id}] not found`);            
+        }
         return res.getBuffer(historyLevel);
     }
 

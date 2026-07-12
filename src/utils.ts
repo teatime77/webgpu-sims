@@ -1,6 +1,15 @@
 let toastTimer : number | undefined;
 
 export class MyError extends Error {
+    constructor(text : string, title?:string){
+        super(text);
+        if(title == undefined){
+            title = "Error occured!";
+        }
+
+        displayErrorDialog(title, text);
+        msg(`stack:${this.stack}`);
+    }
 }
 
 export let isStaticServer: boolean;
@@ -13,6 +22,27 @@ export let urlParams : Map<string, string>;
 export let thumbnailBlob : Blob | undefined;
 export let errFlag : boolean = false;
 
+export function getTypeName(obj: any): string {
+    // 1. Check for undefined
+    if (obj === undefined) {
+        return "undefined";
+    }
+    else if (obj == null) {
+        return "null";
+    }
+
+    else if (typeof obj === "object" && obj.constructor && obj.constructor !== Object) {
+        // 2. Check for class instances
+        // Must be an object, not null, have a constructor, and not be a plain Object
+        return obj.constructor.name;
+    }
+    else {
+        // 3. Otherwise return "any" (plain objects, primitives, null, etc.)
+        return "any";
+
+    }
+}
+
 export function clearErr(){
     errFlag = false;
 }
@@ -21,9 +51,9 @@ export function clearThumbnailBlob(){
     thumbnailBlob = undefined;
 }
 
-export function assert(ok : boolean){
+export function assert(ok : boolean, text:string = ""){
     if(!ok){
-        throw new MyError();
+        throw new MyError(text);
     }
 }
 
@@ -266,7 +296,7 @@ export function captureThumbnail(): void {
     // 4. Capture the image from the 2D canvas
     tempCanvas.toBlob((blob) => {
         if(blob == null){
-            throw new MyError();
+            throw new MyError("Can not make blob while capturing thumbnail.");
         }
         thumbnailBlob = blob;
 

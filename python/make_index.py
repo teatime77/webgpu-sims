@@ -1,9 +1,20 @@
 from pathlib import Path
+import os
+from contextlib import contextmanager
 
-# Define the directory to search and the target file name
-search_dir = Path('.')
+@contextmanager
+def pushd(new_dir):
+    previous_dir = os.getcwd()
+    os.chdir(new_dir)
+    try:
+        yield
+    finally:
+        os.chdir(previous_dir)
 
-paths = [str(file_path).replace("\\", "/") + "\n" for file_path in search_dir.rglob('schema.js')]
+with pushd('./public/docs'):
+    search_dir = Path(".")
 
-with open("index.txt", "w", encoding="utf-8") as file:
-    file.writelines(paths)
+    paths = [str(file_path).replace("\\", "/") + "\n" for file_path in search_dir.rglob('schema.js')]
+
+    with open("index.txt", "w", encoding="utf-8") as file:
+        file.writelines(paths)

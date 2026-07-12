@@ -2,7 +2,7 @@
 // ============================================================================
 // 2. Lexical Analyzer (Tokenizer)
 
-import { assert } from "./utils.js";
+import { assert, MyError } from "./utils.js";
 
 // ============================================================================
 export type TokenType = 'Keyword' | 'Identifier' | 'Number' | 'String' | 'Punctuator' | 'EOF';
@@ -122,7 +122,7 @@ export class Lexer {
             return { type: 'Identifier', value: idStr, start, end: this.pos, line:this.linePos };
         }
 
-        throw new Error(`Unexpected character '${char}' at index ${this.pos}`);
+        throw new MyError(`Unexpected character '${char}' at index ${this.pos}`);
     }
 
     public nextToken() : Token {

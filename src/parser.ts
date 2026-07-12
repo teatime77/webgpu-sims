@@ -551,7 +551,7 @@ function readResource(resourceObj:ObjectExpression) {
             data[key] = value.getString();
             break;
         default:
-            throw new MyError();
+            throw new MyError(`Unknown resource property:${key}`);
         }
     }
 
@@ -597,7 +597,7 @@ function readShaders(shaders:ArrayExpression){
                 shader.bindings = readBindings(value as ArrayExpression);
                 break;
             default:
-                throw new MyError();
+                throw new MyError(`Unknown shader property:${key}`);
             }
         }
 
@@ -619,7 +619,7 @@ function readOption(obj : ObjectExpression){
             data[key] = value.getString();
             break;
         default:
-            throw new MyError();
+            throw new MyError(`Unknown option property:${key}`);
         }
     }
 
@@ -658,7 +658,7 @@ function readUIs(obj : ObjectExpression) : UIDef {
             break;
         }
         default:
-            throw new MyError();
+            throw new MyError(`Unknown UI property:${key}`);
         }
     }
 
@@ -666,7 +666,7 @@ function readUIs(obj : ObjectExpression) : UIDef {
     case "range" : return data as RangeDef;
     case "select": return data as SelectDef;
     case "label": return data as LabelDef;
-    default      : throw new MyError();
+    default      : throw new MyError(`Unkown UI type:${data.type}`);
     }
 }
 
@@ -684,7 +684,7 @@ function readCanvases(obj : ObjectExpression) : CanvasDef {
             data[key] = value.getNumber();
             break;
         default:
-            throw new MyError();
+            throw new MyError(`Unknown canvas property:${key}`);
         }
     }
 
@@ -705,7 +705,7 @@ function ObjectExprToSchemaDef(schemaObj : ObjectExpression) : ISimulationSchema
                 schema[key] = value.elements;
             }
             else{
-                throw new MyError();
+                throw new MyError(`structs is not array:${value.constructor.name}`);
             }
             break;
         case "resources":
@@ -757,7 +757,7 @@ export function makeSimulationSchema(jsonText: string){
     }
     else{
 
-        throw new MyError();
+        throw new MyError(`schema is not defined.`);
     }
 }
 
@@ -807,6 +807,6 @@ export function ResolveVariableReferences(prg:Program, schema:SimulationSchema){
             }
         }
 
-        throw new MyError();
+        throw new MyError(`Can not resolve variable references:${id.name}`);
     }
 }

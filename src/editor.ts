@@ -213,35 +213,43 @@ export function makeShaderEditors(){
         idSpan.className = "editor-header-span";
 
         p.append(idSpan);
-        for(const s of ["－", "🗗", "🗖"]){
+        
+        const editorDiv = document.createElement("div");
+        const textarea = document.createElement("textarea");
+        const canvas = document.createElement("canvas");
+
+        for(const s of [ "❌", "－", "🗗", "🗖"]){
             const btn = document.createElement("button");
             btn.className = "testarea-size";
             btn.innerHTML = `<span>${s}</span>`;
 
             switch(s){
+            case "❌": btn.title = "Clear"; break;
             case "－": btn.title = "Collapse"; break;
             case "🗗": btn.title = "Default" ; break;
             case "🗖": btn.title = "Expand" ; break;
             }
 
             btn.addEventListener("click", (ev:PointerEvent)=>{
-                let height = "400px";
-
-                switch(s){
-                case "－": height =   "5px"; break;
-                case "🗗": height = "400px"; break;
-                case "🗖": height = "800px"; break;
+                if(s == "❌"){
+                    textarea.value = "";
                 }
+                else{
 
-                $(`editor-container-${id}`).style.height = height;
+                    let height = "400px";
+
+                    switch(s){
+                    case "－": height =   "5px"; break;
+                    case "🗗": height = "400px"; break;
+                    case "🗖": height = "800px"; break;
+                    }
+
+                    $(`editor-container-${id}`).style.height = height;
+                }
             });
 
             p.append(btn);
         }
-        
-        const editorDiv = document.createElement("div");
-        const textarea = document.createElement("textarea");
-        const canvas = document.createElement("canvas");
 
         if(node.nodeShaderCode == undefined){
             textarea.value = "";
@@ -278,12 +286,12 @@ export function setNodeShaderCode(){
     for(const node of theSchema.computeNodes()){
         const nodeDiv = nodeDivs.find(x => x.dataset.nodeId == node.id)
         if(nodeDiv == undefined){
-            throw new MyError();
+            throw new MyError(`DIV is not defined for the shader:${node.id}`);
         }
 
         const textareas = Array.from(nodeDiv.getElementsByTagName("textarea")) ;
         if(textareas.length != 1){
-            throw new MyError();
+            throw new MyError(`TEXTAREA is not defined for the shader:${node.id}`);
         }
 
         node.nodeShaderCode = textareas[0].value;

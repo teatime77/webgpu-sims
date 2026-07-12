@@ -2,7 +2,7 @@ import { CaptureTool } from './CaptureTool.js';
 import { getMesh, initDevice, theDevice, theRunner, writeUniformArray } from './SimulationRunner.js';
 import { SimulationRunner } from './SimulationRunner.js';
 import { makeUIs } from './SimUI.js';
-import { $, $btn, $canvas, $div, assert, clearErr, displayErrorDialog, errFlag, fetchJson, fetchText, logForAgent, msg, MyError, parseURL, urlHash, urlHome, urlOrigin, urlPathName } from './utils.js';
+import { $, $btn, $canvas, $div, assert, clearErr, errFlag, fetchJson, fetchText, logForAgent, msg, MyError, parseURL, urlHash, urlHome, urlOrigin, urlPathName } from './utils.js';
 import { initEventHandler } from './start.js';
 import { initSyntaxHighlightEditor } from './editor.js';
 import { AppManager, appManager, initWebGpuSimsNavigationManager } from './AppManager.js';
@@ -76,7 +76,7 @@ export async function bootstrap(sim: SimulationSchema) {
                     fileName = "arrow_render.wgsl"; 
                     node.topology = 'triangle-list';
                     break;
-                default: throw new MyError();
+                default: throw new MyError(`Unknown mesh shape:${mesh.shape}`);
                 }
             }
             else if(node.topology != undefined){
@@ -103,22 +103,22 @@ export async function bootstrap(sim: SimulationSchema) {
                         fileName = "triangle/scalar_grid_render.wgsl"; 
                         break;
                     default:
-                        throw new MyError();
+                        throw new MyError(`Unknown shading model:${node.shadingModel}`);
                     }
                     break;
                 default:
-                    throw new MyError();
+                    throw new MyError(`Unknown topology:${node.topology}`);
                 }
             }
             else{
-                throw new MyError();
+                throw new MyError(`mesh and topology are not defined for render shader:${node.id}`);
             }
 
             const shaderUrl = `wgsl/${fileName}`;
             shader = await fetchText(shaderUrl);
         }
         else{
-            throw new MyError();
+            throw new MyError(`Unknown shader type:${node.type}`);
         }
         
         if (node instanceof ComputePassBuilder) {
@@ -221,7 +221,7 @@ export async function bootstrap(sim: SimulationSchema) {
             const rendersforCanvas = renders.filter(x => x.getCanvasId() == canvasDef.id);
             for(const render of rendersforCanvas){
                 if(render.vertexCount == undefined){
-                    throw new MyError();
+                    throw new MyError(`render vertex count is undefined:${render.id}`);
                 }
 
                 const shouldClear = !clearedCanvases.has(canvasDef.id);
@@ -242,8 +242,7 @@ export async function bootstrap(sim: SimulationSchema) {
         theDevice.popErrorScope().then((error: GPUError | null) =>{
             if (error) {
                 // error will be a GPUValidationError
-                displayErrorDialog("GPU Validation Error", `${error.message}`);
-                throw new MyError();
+                throw new MyError(`${error.message}`, "GPU Validation Error");
             }
         });
         

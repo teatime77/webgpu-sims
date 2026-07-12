@@ -16,6 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
 from google import genai
 from google.genai import types
+from google.genai import errors # Add this import
 
 class State(Enum):
     NON = 0
@@ -44,7 +45,8 @@ class Agent:
         self.image_verified = False
 
     def create_schema(self, prompt:str):
-        print(f"Generating Schema...\n[{prompt}]")
+        print(f"Generating Schema...")
+        write_text_file("prompt.txt", prompt)
 
         response2 = chat_send_message(prompt)
         self.schema = extract_codes("typescript", response2.text)[0]
@@ -280,9 +282,39 @@ def read_text_file(path):
         text = file.read()
 
         return text
+
+def chat_send_message(prompt):
+    global chat, client
     
-def chat_send_message(prompt: str):
-    response = chat.send_message(prompt)
+    try:
+        response = chat.send_message(prompt)
+    except errors.ClientError as e:
+        # Check if the error is specifically a 403 Cache Expired error
+        if e.code == 403 and "CachedContent" in e.message:
+            print("\n[Warning] Cache expired! Generating a new cache and resuming chat...")
+            
+            # 1. Save the existing conversation history
+            current_history = chat.get_history()
+            
+            # 2. Create a fresh cache
+            new_cache = create_cache()
+            
+            # 3. Rebuild the global chat object using the new cache AND the old history
+            chat = client.chats.create(
+                model=model_name,
+                history=current_history,
+                config=types.GenerateContentConfig(
+                    cached_content=new_cache.name,
+                )
+            )
+            
+            # 4. Retry the exact same prompt
+            print("Retrying message...")
+            response = chat.send_message(prompt)
+        else:
+            # Re-raise the exception if it's a different API error (like rate limiting)
+            raise e
+
     usage_metadata = response.usage_metadata
     print(f"in: {usage_metadata.prompt_token_count} out:{usage_metadata.candidates_token_count} total:{usage_metadata.total_token_count}")
 
@@ -361,8 +393,8 @@ def extract_codes(lang:str, text: str) -> list[str]:
     
     # re.DOTALL allows the dot (.) to match newline characters as well
     matches = re.findall(pattern, text, flags=re.DOTALL)
-    if len(matches) != 1:
-        print(f"can not extract {lang} code.:{len(matches)}")
+    if len(matches) == 0:
+        print(f"can not extract {lang} code.")
         write_text_file(f"extract-error-{lang}.txt", text)
         sys.exit()
     
@@ -534,8 +566,8 @@ def set_shader_codes(shader_codes:list[str]):
 
         shader_code = find_shader_code_by_nodeId(shader_codes, nodeId)
         if shader_code is None:
-            print(f"Can not find shader code")
-            sys.exit()
+            print(f"Can not find shader code.${nodeId}")
+            continue
 
         driver.execute_script("arguments[0].value = arguments[1];", textarea, shader_code)
         write_text_file(f"{nodeId}.wgsl", shader_code)
@@ -588,9 +620,56 @@ if __name__ == "__main__":
     startChrome()
 
     useAI = True
+
+    p = """Please generate a `SimulationSchema` for a 2D Grid-Based Eulerian Fluid Dynamics simulation (Stable Fluids).
+
+**1. Physics and Algorithmic Overview**
+
+* **Grid Size:** Define a 2D grid of 256 x 256 (`NUM_CELLS = 65536`).
+* **Algorithm:** Implement a grid-based fluid solver using the standard steps: Advection (Semi-Lagrangian), Divergence Calculation, Pressure Solve (Jacobi Iteration), and Gradient Subtraction (Projection).
+* **Source Injection:** A moving source that continuously injects velocity (swirling or moving in a Lissajous curve based on `time`) and dye into the center of the grid.
+
+**2. State and UI Parameters**
+
+* The global state must include: `time` (0.0), `dt` (0.016), `iterations` (20), `velocityDissipation` (0.99), `dyeDissipation` (0.98), and `forceMultiplier` (5.0).
+* Generate UI range sliders for `iterations` (1 to 50), `velocityDissipation` (0.9 to 1.0), `dyeDissipation` (0.9 to 1.0), and `forceMultiplier` (1.0 to 10.0).
+
+**3. Resources**
+
+* `Params`: Uniform buffer for the state.
+* `Velocity`: Storage buffer (`vec2<f32>`) holding the X/Y velocity field.
+* `Divergence`: Storage buffer (`f32`) holding the divergence of the velocity field.
+* `Pressure`: Storage buffer (`f32`) holding the computed pressure.
+* `Pressure_New`: Storage buffer (`f32`) used as the write-target during Jacobi iterations.
+* `Dye`: Storage buffer (`f32`) holding the fluid color/density. **Crucial:** Include `topology: "triangle-list"` and `shadingModel: "scalar-grid"` on this resource so the framework renders it directly as a 2D fluid visualization.
+
+**4. Shader Pipeline (Chronological)**
+Define the following compute shaders (`workgroupSize: 64`):
+
+* `inject_source_comp`: Adds velocity and dye into the grids based on a time-varying position.
+* `advect_comp`: Uses semi-Lagrangian backtracing to advect both the `Velocity` and `Dye` fields. Bounds checking is required to prevent sampling outside the grid.
+* `divergence_comp`: Computes the divergence of the `Velocity` field.
+* `jacobi_comp`: Performs one iteration of the Poisson pressure equation. Reads from `Pressure` and `Divergence`, writes to `Pressure_New`.
+* `copy_pressure_comp`: Copies `Pressure_New` back to `Pressure`.
+* `project_comp`: Subtracts the gradient of the `Pressure` field from the `Velocity` field to ensure zero divergence (incompressibility).
+
+**5. Script Orchestration**
+Write a custom `script` function to orchestrate the pipeline. It must execute exactly in this order:
+
+1. `execute('inject_source_comp');`
+2. `execute('advect_comp');`
+3. `execute('divergence_comp');`
+4. A loop using `for (const i of range(state.iterations))` that executes `jacobi_comp` followed by `copy_pressure_comp` to solve the pressure field iteratively.
+5. `execute('project_comp');`
+
+**Output Constraints:**
+Adhere to the Human-AI collaboration workflow. Generate **ONLY** the TypeScript `SimulationSchema` inside a ```typescript block. Do not write any WGSL yet. Wait for me to provide the auto-generated WGSL skeleton.
+"""
+
     prompts = [
         # "create a schema for a simple wave simulation with topology=triangle-list and shadingModel=vertex-color-normal."
-        "create a simulation schema that draws a cube and a sphere inscribed within it, plots a large number of points randomly inside the cube, and calculates the value of pi based on the ratio of points falling inside the sphere."
+        # "create a simulation schema that draws a cube and a sphere inscribed within it, plots a large number of points randomly inside the cube, and calculates the value of pi based on the ratio of points falling inside the sphere."
+        f"{p}"
     ]
 
     for prompt in prompts:

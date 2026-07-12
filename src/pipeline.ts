@@ -1,7 +1,7 @@
 import { ResourceDef } from "./resource.js";
 import { theSchema } from "./schema.js";
 import { SimulationRunner, theDevice } from "./SimulationRunner.js";
-import { assert, displayErrorDialog, extractWGSLErrorContext, msg, MyError } from "./utils.js";
+import { assert, extractWGSLErrorContext, msg, MyError } from "./utils.js";
 
 export type ShadingModel = 'triangle-color' | 'vertex-color' | 'vertex-color-normal' | 'scalar-grid';
 
@@ -47,17 +47,17 @@ export abstract class NodeDef {
                 const errText = extractWGSLErrorContext(module, wgslCode, err);
                 if (err.type === 'error') {
                     
-                    displayErrorDialog("GPU Shader Compile Error", errText);
+                    throw new MyError(errText, "GPU Shader Compile Error");
                 } 
                 else if (err.type === 'warning') {
-                    displayErrorDialog("GPU Shader Compile Warning", errText);
+                    throw new MyError(errText, "GPU Shader Compile Warning");
                 }
                 else if (err.type === 'info') {
-                    displayErrorDialog("GPU Shader Compile Info", errText);
+                    throw new MyError(errText, "GPU Shader Compile Info");
                 }
             }
 
-            throw new MyError();
+            assert(false);
         }
     }
 }
@@ -95,7 +95,7 @@ export class ComputePassBuilder extends NodeDef{
      */
     dispatch(runner : SimulationRunner, overrides?: Record<string, string>) {
         if(runner.currentCommandEncoder == null){
-            throw new MyError();
+            throw new MyError(`GPU Command Encoder is null.`);
         }
 
         if(runner.changedUniforms.size != 0){
@@ -160,7 +160,7 @@ export class ComputePassBuilder extends NodeDef{
         let z:number;
 
         if(this.workgroupCount == undefined){
-            throw new MyError();
+            throw new MyError(`workgroup count of the compute shader is undefined:${this.id}`);
         }
 
         if(typeof this.workgroupCount == "number"){
@@ -173,7 +173,7 @@ export class ComputePassBuilder extends NodeDef{
             [x, y, z] = this.workgroupCount;
         }
         else{
-            throw new MyError();
+            throw new MyError(`Type of workgroup Count of the compute shader[${this.id}] is illegal:${this.workgroupCount}`);
         }
 
         // Dispatch workgroups

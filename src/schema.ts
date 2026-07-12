@@ -16,7 +16,7 @@ function getShapeStride(shape: MeshShape) : number {
     case "cylinder":
     case "arrow" :
         return 12;
-    default:       throw new MyError();
+    default:       throw new MyError(`Unknown mesh shape:${shape}`);
     }
 }
 
@@ -72,7 +72,7 @@ export class SimulationSchema {
                     def.data = makeArrowMesh({});
                     break;
                 default:
-                    throw new Error();
+                    throw new MyError(`Mesh shape[${def.shape}] of resource:[${id}] id unknown.`);
                 }
 
                 this.resources.set(id, def);
@@ -90,7 +90,7 @@ export class SimulationSchema {
                 this.resources.set(id, def);
             }
             else{
-                throw new MyError();
+                throw new MyError(`type:[${val.type}] of the resource:${id} is unknown.`);
             }
         }
 
@@ -113,7 +113,7 @@ export class SimulationSchema {
                 return new RenderPassBuilder(x);
             }
             else{
-                throw new MyError();
+                throw new MyError(`Type[${x.type}] of the shader[${x.id}] is unknown.`);
             }
         });
 
@@ -144,7 +144,7 @@ export class SimulationSchema {
         const topologyReses = Array.from(this.resources.values()).filter(x => x instanceof StorageDef && x.topology != undefined) as StorageDef[];
         for(const res of topologyReses){
             if(res.count == undefined){
-                throw new MyError();
+                throw new MyError(`count of the resource:${res.id} with topology[${res.topology}] is undefined.`);
             }
 
             let vertexCount = 1;
@@ -183,13 +183,13 @@ export class SimulationSchema {
                     break;                    
 
                 default:
-                    throw new MyError();
+                    throw new MyError(`shading model[${res.shadingModel}] of the resource[${res.id}] is unknown.`);
                 }
                 break;
             }
 
             default:
-                throw new MyError();
+                throw new MyError(`topology[${res.topology}] of the resource[${res.id}] is unknown.`);
             }
 
             const renderDef = {

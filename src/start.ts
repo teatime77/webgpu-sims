@@ -88,7 +88,7 @@ export function initEventHandler(){
         }
         catch(e){
 
-            displayErrorDialog("Create Skeleton Error", (e as MyError).message)
+            displayErrorDialog("Create Skeleton Error", (e as MyError).message);
             return;
         }
 
@@ -101,8 +101,16 @@ export function initEventHandler(){
     });
 
     $btn("run-sim-btn").addEventListener("click", async ()=>{
-        clearSchema();
-        appManager.navigateTo("/run");
+        try{
+
+            clearSchema();
+            appManager.navigateTo("/run");
+        }
+        catch(e){
+
+            displayErrorDialog("Run Simulation Error", (e as MyError).message);
+            return;
+        }
     });
 
     $btn("copy-uis-btn").addEventListener("click", async()=>{

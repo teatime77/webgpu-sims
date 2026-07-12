@@ -1,5 +1,5 @@
 import { theRunner } from "./SimulationRunner.js";
-import { $, $btn, $inp, logForAgent, msg } from "./utils.js";
+import { $, $btn, $inp, logForAgent, msg, MyError } from "./utils.js";
 
 export class CaptureTool {
     private captureBtn : HTMLButtonElement;
@@ -27,7 +27,7 @@ export class CaptureTool {
         return new Promise<void>((resolve, reject) => {
             canvas.toBlob(blob => {
                 if (!blob) {
-                    reject(new Error("Failed to capture canvas image."));
+                    reject(new MyError("Failed to capture canvas image."));
                     return;
                 }
                 const url = URL.createObjectURL(blob);

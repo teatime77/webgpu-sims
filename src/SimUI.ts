@@ -181,7 +181,7 @@ export class SimUI {
 
         const readback = schema.resources.get(data.resourceId);
         if(!(readback instanceof ReadBackDef)){
-            throw new MyError();
+            throw new MyError(`resource id[${data.resourceId}] of label[${data.name}] is illegal.`);
         }
 
         readback.labels.set(data.name, data);
@@ -208,7 +208,7 @@ export function makeUIs(runner:SimulationRunner, schema: SimulationSchema){
             break;
 
         default:
-            throw new Error();
+            throw new MyError(`type[${ui.type}] of UI[${ui.name}] is unknown.`);
         }
     }
 }
@@ -230,7 +230,7 @@ export async function copyUiValues(){
             valueStr = (ui as LabelDef).valueSpan.textContent;
             break;
         default:
-            throw new MyError();
+            throw new MyError(`type[${ui.type}] of UI[${ui.name}] is unknown.`);
         }
 
         data.push({

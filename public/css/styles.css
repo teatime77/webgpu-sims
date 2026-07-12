@@ -213,36 +213,44 @@ details .content {
 
 /* <<<<<================================================== accordion */
 
-
 #article-view {
-    grid-template-rows: auto auto auto 1fr; 
+    /* FIXED: Matches exactly 3 direct children (header, controls, editor wrapper) */
+    grid-template-rows: auto auto 1fr; 
     
-    /* 以下を追記・修正 */
-    position: fixed;      /* 画面に対して位置を固定（bodyのスクロールを無視） */
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;         /* 画面幅いっぱい */
-    height: 100vh;        /* 画面高さいっぱい */
-    z-index: 100;         /* 他の画面より最前面に表示させる */
-    
-    /* ※重要※ 背景を塗りつぶさないと裏の画面が透けてしまいます */
-    /* background-color: var(--bg-page, #121212);  */
- 
-    padding: 20px; /* 画面の端（上下左右）からの余白 */
-    gap: 16px;     /* 各行（ヘッダー、タイトル、タグ、エディタ領域）の間の余白 */
-    box-sizing: border-box; /* 画面からはみ出さないための必須設定 */
+    width: 100vw;
+    height: 100vh;
+    z-index: 100;
+    background-color: var(--bg-page, #121212); /* Don't forget to uncomment this so it doesn't overlap! */
+    padding: 20px;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+/* Flexbox wrapper targeting the 3rd child directly */
+#article-view > div:last-of-type {
+    display: flex;         
+    height: 100%;
+    min-height: 0;         
 }
 
 #markdown-editor {
+    flex: 1;               
     height: 100%;
-    max-width: none; /* 横幅800pxの制限を解除して画面半分に広げる場合 */
+    min-height: 0;         
+    max-width: none;       
 }
 
 #markdown-preview {
+    flex: 1;               
     height: 100%;
+    min-height: 0;         
     overflow-y: auto;
     margin-left: 20px;
 }
+
 
 #sub-canvases {
     display: none;
