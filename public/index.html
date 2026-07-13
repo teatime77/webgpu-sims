@@ -32,23 +32,36 @@
                 <span class="brand-accent">GPU</span>Sims
             </button>
         </div>
-        <div class="at-right">
-            <button class="gallery-btn">gallery</button>
-            <button id="launch-app-btn" class="primary-btn">Launch App</button>
-        </div>
     </header>
 
     <main>
         <section class="hero-section">
             <div class="section-container" style="padding-top: 0; padding-bottom: 0;">
                 <h1>Build a Universe in Your Browser with <span class="text-accent">Vibe Coding</span></h1>
-                <p>Create breathtakingly beautiful simulations—from the sweeping orbits of a galaxy down to the electron clouds of a hydrogen atom—without writing a single line of code.</p>
-                <button class="primary-btn" style="font-size: 1.2rem; padding: 16px 32px;">Start Building Now</button>
+                <p>Turn an idea into an interactive WebGPU simulation. Work step by step with AI, or let the Python agent generate, run, check, debug, and document the simulation automatically.</p>
+                <p>
+                    <button class="gallery-btn" style="font-size: 1.2rem; font-weight: bold;; padding: 16px 32px;">Gallery</button>
+                    <button id="launch-app-btn" class="primary-btn" style="margin-left: 50px; font-size: 1.2rem; padding: 16px 32px;">Start Building Now</button>
+                </p>
             </div>
         </section>
 
         <section class="section-container">
-            <h2>How It Works</h2>
+            <h2>Choose Your Workflow</h2>
+            <div class="features-grid">
+                <div class="box box2">
+                    <h3>Guided AI Workflow</h3>
+                    <p>Create the schema and WGSL code through a conversational workflow. You remain in control at every step and can inspect, edit, and learn from the generated code.</p>
+                </div>
+                <div class="box box2">
+                    <h3>Automated Python Agent</h3>
+                    <p>Start with one simulation prompt. The local agent coordinates the AI, browser, and app to build the simulation, correct errors, check the results, and generate an explanatory article.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-container" style="padding-top: 20px;">
+            <h2>Guided Workflow</h2>
             <p>Bring your ideas to life through a simple, conversational workflow with AI:</p>
             
             <ol class="steps-list">
@@ -88,26 +101,40 @@
             </div>
         </section>
 
-        <!-- NEW SECTION: Automated AI Agent Pipeline -->
         <section class="section-container" style="padding-top: 20px;">
-            <h2>Automated AI Agent Pipeline</h2>
-            <p>For fully autonomous development, the platform includes a Python agent (<code>agent.py</code>) that leverages Selenium and the Gemini API to orchestrate the entire creation process from start to finish:</p>
-            <ul>
-                <li style="margin-bottom: 10px;"><strong>System Initialization:</strong> Automatically provides the foundational system prompt to the AI to establish architectural rules.</li>
-                <li style="margin-bottom: 10px;"><strong>Schema Generation:</strong> Instructs the AI to generate the declarative simulation schema based on a single prompt.</li>
-                <li style="margin-bottom: 10px;"><strong>Code Implementation:</strong> Creates the WGSL skeleton based on the AI-generated schema and tasks the AI with implementing the core mathematical logic.</li>
-                <li style="margin-bottom: 10px;"><strong>Execution:</strong> Compiles and runs the simulation seamlessly in the browser.</li>
-                <li style="margin-bottom: 10px;"><strong>Data Verification:</strong> Extracts readback buffer values and feeds them back to the AI to verify mathematical correctness.</li>
-                <li style="margin-bottom: 10px;"><strong>Visual Verification:</strong> Captures an image of the canvas and provides it to the AI for visual debugging and confirmation.</li>
-                <li style="margin-bottom: 10px;"><strong>Iterative Correction:</strong> Automatically prompts the AI to modify the code and re-runs the simulation until the visual and mathematical outputs are flawless.</li>
-            </ul>
+            <h2>From One Prompt to an AI-Checked Simulation and Article</h2>
+            <p>The local Python agent automates the complete development cycle by coordinating the AI API, Selenium, Chrome, and GPUSims. It is designed for advanced users who have configured Python, the required API credentials, and the app's local development environment.</p>
+
+            <ol class="steps-list">
+                <li>
+                    <strong>1. Generate the simulation schema:</strong> The agent sends your simulation request together with the GPUSims architecture rules and saves the generated schema.
+                </li>
+                <li>
+                    <strong>2. Build and implement the shaders:</strong> GPUSims converts the schema into WGSL skeletons, and the AI fills in the mathematical and physical logic.
+                </li>
+                <li>
+                    <strong>3. Run the simulation automatically:</strong> Selenium enters the generated code into the app, compiles the WebGPU pipeline, and launches the simulation in Chrome.
+                </li>
+                <li>
+                    <strong>4. Detect and repair errors:</strong> Compilation and runtime errors are returned to the AI. Revised schema or shader code is applied, and the simulation is run again.
+                </li>
+                <li>
+                    <strong>5. Verify numerical and visual results:</strong> The agent checks GPU readback values when available, captures the rendered canvas, and asks the AI to evaluate both the mathematics and the image. Corrections are repeated when necessary.
+                </li>
+                <li>
+                    <strong>6. Generate the learning materials:</strong> After the automated checks pass, the AI writes a Markdown article explaining the observable phenomena, mathematical background, and implementation. The agent also creates the thumbnail and article metadata.
+                </li>
+            </ol>
+
+            <div class="hint-box">
+                The automated workflow produces a complete simulation package: schema, WGSL shaders, captured image, thumbnail, explanatory Markdown article, and article metadata.
+            </div>
         </section>
-        <!-- END NEW SECTION -->
 
         <section class="section-container" style="padding-top: 20px;">
             <h2>A New Way to Learn Physics and Math</h2>
-            <p>Tackling dense textbooks on mathematics and physics can be a daunting task. This app transforms abstract theories into interactive, visual experiences.</p>
-            <p>Because the AI generates mathematically sophisticated code, it acts as your personal tutor. You can simply ask, <em>"Explain the mathematical background and the code for this simulation,"</em> and the AI will break it down for you. If a concept is still unclear, you can continue asking questions until it clicks.</p>
+            <p>Tackling dense textbooks on mathematics and physics can be daunting. GPUSims turns abstract theories into interactive, visual experiences that you can inspect and experiment with.</p>
+            <p>Each automated project can include an explanatory article covering the observable phenomena, mathematical background, and generated code. In the guided workflow, you can also continue asking the AI questions until each concept and implementation detail becomes clear.</p>
         </section>
 
         <section class="section-container" style="padding-top: 20px;">
@@ -135,9 +162,9 @@
         </div>
 
         <span id="main-header-center" class="at-center">
-            <input type="search" id="headerSearch" name="search" placeholder="Search by title or keywords…" size="30">
+            <input type="search" id="headerSearch" name="search" placeholder="Search by title or keywords…" size="30" style="display: none;">
 
-            <button id="wizard-btn" disabled>Wizard</button>
+            <button id="wizard-btn" disabled>Start Building Now</button>
         </span>
     </header>
 
@@ -155,6 +182,9 @@
         </div>
 
         <span class="at-center" style="font-size: 24px;">Vibe Coding Workflow</span>
+
+
+
     </header>
 
     <ol class="wizard-steps">
@@ -216,24 +246,27 @@
                 <span class="brand-accent">GPU</span>Sims
             </button>
         </span>
-        <span class="at-right">
-            <button id="wizard2-btn">Wizard</button>
-            <button id="download-btn">Download</button>
+        <span class="at-right" style="display: flex; flex-direction: row; gap:20px">
+            <button id="wizard2-btn">Edit Code</button>
+            <button id="download-btn" style="display: none;">Download</button>
+
+
+
         </span>
 
     </header>
     <main>
         <div class="main-canvas-grid">
             <canvas id="main-canvas" width="1280" height="720"></canvas>
-            <div>
+            <div style="display: flex; flex-direction: column; gap:20px">
                 <div id="uis-div"></div>
-                    <div id="sim-ui-container">
-                        <button id="copy-uis-btn" title="Copy UI values to clipboard">
-                            <img src="img/copy.png"/>
-                        </button>
-                    </div>
-                <p></p>
-                <button id="thumbnail-btn" class="at-right">thumbnail</button><br />
+                <div id="sim-ui-container">
+                    <button id="copy-uis-btn" title="Copy UI values to clipboard">
+                        <img src="img/copy.png"/>
+                    </button>
+                </div>
+                <button id="capture-btn">Capture Image</button>
+                <button id="thumbnail-btn" class="at-right">Thumbnail</button>
                 <img id="thumbnail-img" />
             </div>
         </div>
@@ -241,21 +274,54 @@
         <div id="sub-canvases"></div>
         <div>
             <span id="capture-panel" class="at-left">
-                <button id="capture-btn">Capture</button>
-                <button id="burst-btn">Burst xN</button>
-                <label for="capture-count">N:
-                    <input id="capture-count" type="number" min="1" max="200" step="1" value="10" />
-                </label>
+                <span style="display: none;">
+                    <button id="burst-btn">Burst xN</button>
+                    <label for="capture-count">N:
+                        <input id="capture-count" type="number" min="1" max="200" step="1" value="10" />
+                    </label>
 
-                <label>interval:
-                    <input id="capture-interval" type="number" min="10" max="5000" step="10" value="100" />
-                </label>
+                    <label>interval:
+                        <input id="capture-interval" type="number" min="10" max="5000" step="10" value="100" />
+                    </label>
+                </span>
             </span>
         </div>
         <div id="markdown-article"></div>
     </main>
 </div>
 
+        </span>
+    </header>
+    <div style="display: grid; grid-template-columns: 40px 1fr; row-gap: 5px; align-items: center;">
+        <label for="title" >title:</label>
+        <input id="title" type="text" placeholder="Title" />
+
+        <label for="tag-input-field" >tags:</label>
+        <div id="tag-input-wrapper">
+            <div id="tag-input-pills">
+                <input type="text" id="tag-input-field" placeholder="Add a tag..." />
+            </div>
+            <ul id="tag-input-dropdown"></ul>
+        </div>
+
+        <label for="ai-inp" >AI:</label>
+        <div id="ai-div">
+            <input id="ai-inp" type="text" list="ai-options" placeholder="Select or type a model..." />
+            <datalist id="ai-options"></datalist>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; min-height: 0;">
+        <div id="markdown-editor" class="editor-container">
+            <textarea id="markdown-text" class="hidden-textarea" spellcheck="false"></textarea>
+            <canvas class="render-canvas" width="800" height="800"></canvas>
+        </div>
+        <div id="markdown-preview"></div>
+    </div>
+</div>
+
+<script type="module" src="/src/main.ts"> </script>
+<!-- <<< CMS <<< -->
 
 <script type="module">
     import { initApp } from './js/main.js';

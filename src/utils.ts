@@ -114,6 +114,10 @@ export function $canvas(id : string) : HTMLCanvasElement {
     return $(id) as HTMLCanvasElement;
 }
 
+export function $class(className : string) : HTMLElement[] {
+    return Array.from(document.getElementsByClassName(className)) as HTMLElement[];
+}
+
 export function showHtml(ele: HTMLElement){
     ele.style.display = "inline-block";    
 }
