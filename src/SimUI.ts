@@ -23,6 +23,7 @@ export interface SelectDef extends UIDef {
     options: {value: number, text: string}[], 
     initial?: number,
     reset? : boolean
+    select: HTMLSelectElement;
 }
 
 export interface LabelDef extends UIDef {
@@ -153,6 +154,8 @@ export class SimUI {
         row.appendChild(lbl);
         row.appendChild(select);
         this.container.appendChild(row);
+
+        return select;
     }
 
     makeRange(data : RangeDef){
@@ -173,7 +176,7 @@ export class SimUI {
         }
 
         const initial = data.initial ?? data.obj.value[data.name];
-        this.addSelect(data.label, data.options, initial, onChange);
+        data.select = this.addSelect(data.label, data.options, initial, onChange);
     }
 
     makeLabel(schema: SimulationSchema, data : LabelDef){
@@ -228,6 +231,9 @@ export async function copyUiValues(){
             break;
         case "label":
             valueStr = (ui as LabelDef).valueSpan.textContent;
+            break;
+        case "select":
+            valueStr = (ui as SelectDef).select.value;
             break;
         default:
             throw new MyError(`type[${ui.type}] of UI[${ui.name}] is unknown.`);

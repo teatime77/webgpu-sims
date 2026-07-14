@@ -15,12 +15,11 @@ let lexer: Lexer;
 
 class SyntaxError extends MyError {
     constructor(parser: Parser, token : Token, message : string){
-        super(message);
-
         const [ lineNumber, columnNumber, lineText] = getPositionInfo(parser.source, token.start);       
         const code = `${lineText}\n${" ".repeat(columnNumber - 1)}^`;
 
-        displayErrorDialog("Schema Syntax Error", `${message}\n\nline:${lineNumber} column:${columnNumber}\n${code}`);
+        const text = `${message}\n\nline:${lineNumber} column:${columnNumber}\n${code}`;
+        super(text, "Schema Syntax Error");
     }
 }
 
