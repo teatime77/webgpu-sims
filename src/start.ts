@@ -1,13 +1,10 @@
-import { Article, bootstrap, schemaText, setAfterFrame } from "./main.js";
-import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail, $dlg, $div, logForAgent, MyError, displayErrorDialog } from "./utils.js";
-// import { initArticle, makeArticleData, makeContentText, updatePreview } from "./article";
+import { bootstrap, schemaText, setAfterFrame } from "./main.js";
+import { msg, assert, $btn, $txt, copyToClipboard, showToast, captureThumbnail, $dlg, $div, MyError, displayErrorDialog } from "./utils.js";
 import { makeWgslSkeleton } from "./generate_skeleton.js";
 import { theSchema } from "./schema.js";
 import { theRunner } from "./SimulationRunner.js";
-import {  makeShaderEditors, setNodeShaderCode } from "./editor.js";
-import {  } from "./index.js";
+import {  makeShaderEditors } from "./editor.js";
 import { appManager } from "./AppManager.js";
-import { makeSimulationSchema } from "./parser.js";
 import { copyUiValues } from "./SimUI.js";
 
 
@@ -100,11 +97,24 @@ export function initEventHandler(){
         makeShaderEditors();
     });
 
-    $btn("run-sim-btn").addEventListener("click", async ()=>{
+    $btn("run-sim-btn").addEventListener("click", ()=>{
         try{
 
             clearSchema();
             appManager.navigateTo("/run");
+        }
+        catch(e){
+
+            displayErrorDialog("Run Simulation Error", (e as MyError).message);
+            return;
+        }
+    });
+
+    $btn("restart-btn").addEventListener("click", ()=>{
+        try{
+
+            clearSchema();
+            appManager.renderPage("/run");
         }
         catch(e){
 
