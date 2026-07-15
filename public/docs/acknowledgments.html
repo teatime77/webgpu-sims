@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GPUSims license, third-party open-source notices, and Firebase service acknowledgments.">
+    <meta name="theme-color" content="#121212">
+    <title>GPUSims — Acknowledgments and Licenses</title>
+    <link rel="stylesheet" href="../css/site.css">
+    <link rel="stylesheet" href="../css/content.css">
+</head>
+<body class="site-page">
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="site-brand" href="../index.html"><span class="brand-accent">GPU</span>Sims</a>
+            <nav class="site-nav"><a class="optional-nav" href="manual.html">Manual</a>
+                <a class="optional-nav" href="vision.html">Vision</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="content-hero"><div class="content-hero-inner"><p class="eyebrow">Credits and legal notices</p><h1>Acknowledgments</h1><p>GPUSims is built with open-source software and Google Firebase services. This page records the principal technologies and their licensing status.</p></div></section>
+        <article class="content-main">
+            <section>
+                <p class="eyebrow">GPUSims</p>
+                <h2>Application license</h2>
+                <p>The GPUSims source code is released under the MIT License. The license permits use, copying, modification, distribution, sublicensing, and sale, subject to preservation of the copyright and license notice.</p>
+                <details class="license-text"><summary>Read the GPUSims MIT License</summary><pre>MIT License
+
+Copyright (c) 2026 GPUSims
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre></details>
+            </section>
+
+            <section>
+                <p class="eyebrow">Cloud services</p>
+                <h2>Firebase</h2>
+                <p>GPUSims uses services provided by Google Firebase. Firebase is a hosted service platform and is governed by Google's applicable Firebase and Google Cloud terms; it is not presented here as an MIT-licensed dependency of GPUSims.</p>
+                <div class="license-list">
+                    <article class="license-entry"><div class="license-entry-header"><h3>Cloud Firestore</h3><span class="license-badge">Google service</span></div><p>Stores and synchronizes application data such as published simulation and article metadata.</p><p><a href="https://firebase.google.com/docs/firestore">Official documentation</a></p></article>
+                    <article class="license-entry"><div class="license-entry-header"><h3>Cloud Storage for Firebase</h3><span class="license-badge">Google service</span></div><p>Stores user-generated files and media assets used by the application.</p><p><a href="https://firebase.google.com/docs/storage">Official documentation</a></p></article>
+                    <article class="license-entry"><div class="license-entry-header"><h3>Firebase Hosting</h3><span class="license-badge">Google service</span></div><p>Hosts and serves the deployed GPUSims web application.</p><p><a href="https://firebase.google.com/docs/hosting">Official documentation</a></p></article>
+                    <article class="license-entry"><div class="license-entry-header"><h3>Firebase Authentication</h3><span class="license-badge">Google service</span></div><p>Provides the sign-in mechanism used for publishing and account-related features.</p><p><a href="https://firebase.google.com/products/auth">Official product page</a></p></article>
+                </div>
+                <p>See the <a href="https://firebase.google.com/terms">Firebase Terms of Service</a> and <a href="https://firebase.google.com/support/privacy">Firebase privacy and security information</a> for current service terms.</p>
+            </section>
+
+            <section>
+                <p class="eyebrow">Open-source software</p>
+                <h2>Primary third-party libraries</h2>
+                <p>The following list is a human-readable summary. Copyright notices and complete license texts distributed with each library remain authoritative.</p>
+                <div class="license-list">
+                    <article class="license-entry"><div class="license-entry-header"><h3>Vite</h3><span class="license-badge">MIT License</span></div><p>Frontend build tooling and development server.</p><p><a href="https://vite.dev/">Project website</a> · <a href="https://github.com/vitejs/vite/blob/main/LICENSE">License</a></p></article>
+                    <article class="license-entry"><div class="license-entry-header"><h3>gl-matrix</h3><span class="license-badge">MIT License</span></div><p>High-performance vector and matrix operations used by the graphics code.</p><p><a href="https://github.com/toji/gl-matrix">Project repository</a> · <a href="https://github.com/toji/gl-matrix/blob/master/LICENSE.md">License</a></p></article>
+                    <article class="license-entry"><div class="license-entry-header"><h3>KaTeX</h3><span class="license-badge">MIT License</span></div><p>Fast mathematical typesetting for simulation articles and documentation.</p><p><a href="https://katex.org/">Project website</a> · <a href="https://github.com/KaTeX/KaTeX/blob/main/LICENSE">License</a></p></article>
+                    <article class="license-entry"><div class="license-entry-header"><h3>JSZip</h3><span class="license-badge">MIT or GPLv3</span></div><p>Creates, reads, and edits ZIP archives in JavaScript. GPUSims uses JSZip under the MIT license option.</p><p><a href="https://stuk.github.io/jszip/">Project website</a> · <a href="https://github.com/Stuk/jszip/blob/main/LICENSE.markdown">License</a></p></article>
+                </div>
+            </section>
+
+            <section>
+                <p class="eyebrow">Maintenance note</p>
+                <h2>Keep notices synchronized with the build</h2>
+                <p>Dependency versions and transitive packages can change. Review the package lock file before each release and retain all required copyright and license notices in source and binary distributions.</p>
+                <div class="notice"><strong>Recommended:</strong> generate a machine-readable or Markdown license manifest during the Vite production build, then link that exact manifest from this page.</div>
+            </section>
+        </article>
+    </main>
+    <footer class="site-footer"><div class="site-footer-inner"><span>&copy; 2026 GPUSims. Released under the MIT License.</span><nav class="site-footer-links"><a href="../index.html">GPUSims</a><a href="manual.html">Manual</a><a href="vision.html">Vision</a></nav></div></footer>
+</body>
+</html>

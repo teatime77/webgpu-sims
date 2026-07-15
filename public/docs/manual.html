@@ -3,1432 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="How GPUSims uses AI and WebGPU to create, run, debug, and explain interactive mathematics and physics simulations in the browser.">
+    <meta name="description" content="Task-oriented instructions for creating, running, debugging, and understanding GPUSims simulations.">
     <meta name="theme-color" content="#121212">
-    <title>GPUSims - User Manual</title>
-    <style>
-        :root {
-            color-scheme: dark;
-            --bg-page: #121212;
-            --bg-page-soft: #171719;
-            --bg-element: #27272a;
-            --bg-element-hover: #3f3f46;
-            --text-main: #e4e4e7;
-            --text-muted: #b4b4bd;
-            --text-faint: #8f8f99;
-            --border-idle: #3f3f46;
-            --border-hover: #52525b;
-            --accent-base: #3730a3;
-            --accent-hover: #312e81;
-            --accent-active: #1e1b4b;
-            --accent-focus: #4338ca;
-            --accent-bright: #818cf8;
-            --accent-soft: #a5b4fc;
-            --content-width: 1120px;
-            --article-width: 790px;
-            --header-height: 72px;
-        }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-            scroll-padding-top: calc(var(--header-height) + 26px);
-        }
-
-        body {
-            margin: 0;
-            background:
-                radial-gradient(circle at 14% 5%, rgba(67, 56, 202, 0.13), transparent 25rem),
-                var(--bg-page);
-            color: var(--text-main);
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            font-size: 17px;
-            line-height: 1.76;
-            text-rendering: optimizeLegibility;
-        }
-
-        a {
-            color: #a5b4fc;
-            text-decoration-thickness: 1px;
-            text-underline-offset: 0.2em;
-        }
-
-        a:hover {
-            color: #c7d2fe;
-        }
-
-        img {
-            max-width: 100%;
-        }
-
-        button, a {
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        :focus-visible {
-            outline: 3px solid rgba(129, 140, 248, 0.58);
-            outline-offset: 3px;
-        }
-
-        .site-header {
-            position: sticky;
-            z-index: 50;
-            top: 0;
-            min-height: var(--header-height);
-            border-bottom: 1px solid rgba(63, 63, 70, 0.88);
-            background-color: rgba(18, 18, 18, 0.9);
-            backdrop-filter: blur(18px);
-        }
-
-        .header-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: min(var(--content-width), calc(100% - 40px));
-            min-height: var(--header-height);
-            margin: 0 auto;
-            gap: 20px;
-        }
-
-        .brand {
-            display: inline-flex;
-            align-items: center;
-            border: 2px solid transparent;
-            border-radius: 16px;
-            padding: 8px 12px;
-            color: var(--text-main);
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            line-height: 1;
-            text-decoration: none;
-            transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .brand:hover {
-            border-color: var(--accent-focus);
-            background-color: var(--bg-element);
-            box-shadow: 0 0 12px rgba(67, 56, 202, 0.4);
-            color: #fff;
-        }
-
-        .brand-accent {
-            color: var(--accent-focus);
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header-link {
-            display: inline-flex;
-            min-height: 42px;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border-idle);
-            border-radius: 999px;
-            padding: 8px 16px;
-            background-color: rgba(39, 39, 42, 0.72);
-            color: var(--text-main);
-            font-size: 0.92rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-        }
-
-        .header-link:hover {
-            border-color: var(--accent-bright);
-            background-color: var(--bg-element-hover);
-            color: #fff;
-            transform: translateY(-1px);
-        }
-
-        .article-hero {
-            position: relative;
-            overflow: hidden;
-            border-bottom: 1px solid var(--border-idle);
-            background:
-                radial-gradient(circle at 18% 12%, rgba(67, 56, 202, 0.32), transparent 34%),
-                radial-gradient(circle at 84% 70%, rgba(14, 116, 144, 0.18), transparent 30%),
-                linear-gradient(180deg, #202024 0%, var(--bg-page) 88%);
-        }
-
-        .article-hero::before {
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-            background-size: 44px 44px;
-            content: "";
-            mask-image: linear-gradient(to bottom, black, transparent 88%);
-            pointer-events: none;
-        }
-
-        .hero-inner {
-            position: relative;
-            z-index: 1;
-            width: min(980px, calc(100% - 40px));
-            margin: 0 auto;
-            padding: 100px 0 88px;
-            text-align: center;
-        }
-
-        .eyebrow {
-            margin: 0 0 14px;
-            color: var(--accent-soft);
-            font-size: 0.78rem;
-            font-weight: 800;
-            letter-spacing: 0.14em;
-            line-height: 1.4;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            max-width: 940px;
-            margin: 0 auto;
-            color: #fff;
-            font-size: clamp(2.65rem, 7vw, 5.2rem);
-            line-height: 1.03;
-            letter-spacing: -0.055em;
-        }
-
-        .text-accent {
-            color: var(--accent-bright);
-        }
-
-        .hero-lead {
-            max-width: 790px;
-            margin: 26px auto 0;
-            color: #d4d4d8;
-            font-size: clamp(1.08rem, 2vw, 1.34rem);
-            line-height: 1.7;
-        }
-
-        .hero-meta {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 10px 18px;
-            margin-top: 28px;
-            color: #a1a1aa;
-            font-size: 0.93rem;
-        }
-
-        .hero-meta span {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .hero-meta span::before {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: var(--accent-bright);
-            content: "";
-        }
-
-        .hero-actions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 14px;
-            margin-top: 34px;
-        }
-
-        .primary-button,
-        .secondary-button {
-            display: inline-flex;
-            min-height: 52px;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            padding: 13px 26px;
-            font-size: 1rem;
-            font-weight: 750;
-            text-decoration: none;
-            transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .primary-button {
-            border: 1px solid #6366f1;
-            background-color: #4f46e5;
-            box-shadow: 0 12px 30px rgba(79, 70, 229, 0.28);
-            color: #fff;
-        }
-
-        .primary-button:hover {
-            background-color: #6366f1;
-            box-shadow: 0 14px 36px rgba(79, 70, 229, 0.38);
-            color: #fff;
-            transform: translateY(-2px);
-        }
-
-        .secondary-button {
-            border: 1px solid #52525b;
-            background-color: rgba(39, 39, 42, 0.76);
-            color: var(--text-main);
-        }
-
-        .secondary-button:hover {
-            border-color: var(--accent-bright);
-            background-color: var(--bg-element-hover);
-            color: #fff;
-            transform: translateY(-2px);
-        }
-
-        .media-frame {
-            width: fit-content;
-            max-width: 100%;
-            margin: 0 auto;
-            overflow: hidden;
-            border: 1px solid var(--border-idle);
-            border-radius: 20px;
-            background: #050505;
-            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
-        }
-
-        .media-frame img {
-            display: block;
-            width: auto;
-            height: auto;
-        }
-
-        .page-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, var(--article-width)) minmax(0, 1fr);
-            width: min(1400px, calc(100% - 40px));
-            margin: 0 auto;
-            padding: 70px 0 110px;
-            gap: 38px;
-        }
-
-        .toc-column {
-            min-width: 0;
-        }
-
-        .toc {
-            position: sticky;
-            top: calc(var(--header-height) + 28px);
-            max-height: calc(100vh - var(--header-height) - 56px);
-            overflow-y: auto;
-            border: 1px solid var(--border-idle);
-            border-radius: 16px;
-            padding: 20px;
-            background-color: rgba(30, 30, 33, 0.82);
-        }
-
-        .toc-title {
-            margin: 0 0 12px;
-            color: #fff;
-            font-size: 0.82rem;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .toc ol {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .toc a {
-            display: block;
-            border-left: 2px solid transparent;
-            padding: 5px 0 5px 12px;
-            color: #a1a1aa;
-            font-size: 0.84rem;
-            line-height: 1.45;
-            text-decoration: none;
-            transition: border-color 0.15s ease, color 0.15s ease;
-        }
-
-        .toc a:hover,
-        .toc a.active {
-            border-left-color: var(--accent-bright);
-            color: #e0e7ff;
-        }
-
-        .toc .toc-sub a {
-            padding-left: 24px;
-            font-size: 0.79rem;
-        }
-
-        .article-content {
-            min-width: 0;
-        }
-
-        .article-content section {
-            margin: 0 0 72px;
-        }
-
-        .article-content h2 {
-            margin: 0 0 22px;
-            color: #fff;
-            font-size: clamp(1.9rem, 4vw, 2.65rem);
-            line-height: 1.18;
-            letter-spacing: -0.035em;
-        }
-
-        .article-content h3 {
-            margin: 46px 0 14px;
-            color: #fff;
-            font-size: clamp(1.35rem, 2.5vw, 1.7rem);
-            line-height: 1.3;
-            letter-spacing: -0.02em;
-        }
-
-        .article-content h4 {
-            margin: 34px 0 12px;
-            color: #f4f4f5;
-            font-size: 1.15rem;
-        }
-
-        .article-content p {
-            margin: 0 0 20px;
-            color: #c7c7d0;
-        }
-
-        .article-content strong {
-            color: #f4f4f5;
-        }
-
-        .article-content ul,
-        .article-content ol {
-            margin: 18px 0 24px;
-            padding-left: 1.45rem;
-            color: #c7c7d0;
-        }
-
-        .article-content li {
-            margin: 8px 0;
-            padding-left: 0.2rem;
-        }
-
-        .article-content li::marker {
-            color: var(--accent-bright);
-            font-weight: 800;
-        }
-
-        .section-kicker {
-            margin: 0 0 10px !important;
-            color: var(--accent-soft) !important;
-            font-size: 0.78rem;
-            font-weight: 800;
-            letter-spacing: 0.13em;
-            text-transform: uppercase;
-        }
-
-        .lead-paragraph {
-            color: #dedee3 !important;
-            font-size: 1.12rem;
-        }
-
-        .figure {
-            margin: 34px 0;
-        }
-
-        .figure .media-frame {
-            border-radius: 16px;
-            box-shadow: 0 20px 56px rgba(0, 0, 0, 0.28);
-        }
-
-        .figure figcaption {
-            margin-top: 11px;
-            color: #8f8f99;
-            font-size: 0.84rem;
-            line-height: 1.55;
-            text-align: center;
-        }
-
-        code {
-            border: 1px solid var(--border-idle);
-            border-radius: 6px;
-            padding: 0.12em 0.38em;
-            background-color: rgba(0, 0, 0, 0.28);
-            color: #c7d2fe;
-            font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
-            font-size: 0.92em;
-        }
-
-        .code-block {
-            position: relative;
-            overflow: hidden;
-            margin: 26px 0 32px;
-            border: 1px solid var(--border-idle);
-            border-radius: 14px;
-            background-color: #0b0b0d;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-        }
-
-        .code-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            min-height: 43px;
-            border-bottom: 1px solid var(--border-idle);
-            padding: 7px 10px 7px 16px;
-            background-color: rgba(39, 39, 42, 0.72);
-            color: #a1a1aa;
-            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        .copy-code {
-            border: 1px solid var(--border-hover);
-            border-radius: 999px;
-            padding: 5px 10px;
-            background: transparent;
-            color: #d4d4d8;
-            font: inherit;
-            font-size: 0.72rem;
-            cursor: pointer;
-        }
-
-        .copy-code:hover {
-            border-color: var(--accent-bright);
-            background-color: rgba(99, 102, 241, 0.12);
-            color: #fff;
-        }
-
-        pre {
-            margin: 0;
-            overflow-x: auto;
-            padding: 20px;
-            color: #e4e4e7;
-            font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
-            font-size: 0.84rem;
-            line-height: 1.62;
-            tab-size: 4;
-        }
-
-        pre code {
-            border: 0;
-            border-radius: 0;
-            padding: 0;
-            background: transparent;
-            color: inherit;
-            font-size: inherit;
-        }
-
-        .callout {
-            margin: 30px 0;
-            border-left: 4px solid #6366f1;
-            border-radius: 0 14px 14px 0;
-            padding: 22px 24px;
-            background-color: rgba(67, 56, 202, 0.13);
-        }
-
-        .callout.warning {
-            border-left-color: #f59e0b;
-            background-color: rgba(120, 53, 15, 0.12);
-        }
-
-        .callout-title {
-            display: block;
-            margin-bottom: 7px;
-            color: #fff;
-            font-weight: 800;
-        }
-
-        .callout p:last-child {
-            margin-bottom: 0;
-        }
-
-        .steps {
-            display: grid;
-            gap: 16px;
-            margin: 30px 0;
-            padding: 0 !important;
-            list-style: none;
-            counter-reset: article-step;
-        }
-
-        .steps > li {
-            position: relative;
-            margin: 0;
-            border: 1px solid var(--border-idle);
-            border-radius: 16px;
-            padding: 22px 22px 22px 78px;
-            background: linear-gradient(145deg, rgba(39, 39, 42, 0.95), rgba(29, 29, 32, 0.95));
-            counter-increment: article-step;
-        }
-
-        .steps > li::before {
-            position: absolute;
-            top: 22px;
-            left: 22px;
-            display: grid;
-            width: 38px;
-            height: 38px;
-            place-items: center;
-            border: 1px solid rgba(129, 140, 248, 0.45);
-            border-radius: 50%;
-            background-color: rgba(67, 56, 202, 0.16);
-            color: var(--accent-soft);
-            content: counter(article-step, decimal-leading-zero);
-            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-            font-size: 0.78rem;
-            font-weight: 800;
-        }
-
-        .steps strong {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 1.04rem;
-        }
-
-        .steps p:last-child {
-            margin-bottom: 0;
-        }
-
-        .cycle {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0;
-            margin: 32px 0;
-            padding: 0 !important;
-            list-style: none;
-        }
-
-        .cycle li {
-            position: relative;
-            min-width: 0;
-            margin: 0;
-            border: 1px solid var(--border-idle);
-            border-right: 0;
-            padding: 22px 16px;
-            background-color: rgba(39, 39, 42, 0.76);
-            color: #e4e4e7;
-            font-size: 0.9rem;
-            font-weight: 750;
-            text-align: center;
-        }
-
-        .cycle li:first-child {
-            border-radius: 14px 0 0 14px;
-        }
-
-        .cycle li:last-child {
-            border-right: 1px solid var(--border-idle);
-            border-radius: 0 14px 14px 0;
-        }
-
-        .cycle li:not(:last-child)::after {
-            position: absolute;
-            z-index: 2;
-            top: 50%;
-            right: -11px;
-            width: 20px;
-            height: 20px;
-            border-top: 1px solid #6366f1;
-            border-right: 1px solid #6366f1;
-            background-color: #27272a;
-            content: "";
-            transform: translateY(-50%) rotate(45deg);
-        }
-
-        .model-list {
-            display: grid;
-            gap: 12px;
-            margin: 26px 0;
-        }
-
-        .model-row {
-            display: grid;
-            grid-template-columns: minmax(160px, 0.32fr) minmax(0, 0.68fr);
-            gap: 18px;
-            border: 1px solid var(--border-idle);
-            border-radius: 14px;
-            padding: 18px 20px;
-            background-color: rgba(39, 39, 42, 0.72);
-        }
-
-        .model-row dt {
-            color: #fff;
-            font-weight: 800;
-        }
-
-        .model-row dd {
-            margin: 0;
-            color: #b4b4bd;
-        }
-
-        .right-column {
-            min-width: 0;
-        }
-
-        .aside-card {
-            position: sticky;
-            top: calc(var(--header-height) + 28px);
-            border: 1px solid rgba(99, 102, 241, 0.48);
-            border-radius: 16px;
-            padding: 22px;
-            background:
-                linear-gradient(145deg, rgba(67, 56, 202, 0.15), rgba(39, 39, 42, 0.88));
-        }
-
-        .aside-card h2 {
-            margin: 0 0 12px;
-            color: #fff;
-            font-size: 1.15rem;
-            line-height: 1.3;
-        }
-
-        .aside-card p {
-            margin: 0 0 16px;
-            color: #aaaab3;
-            font-size: 0.88rem;
-            line-height: 1.65;
-        }
-
-        .aside-card .primary-button {
-            width: 100%;
-            min-height: 46px;
-            padding: 10px 16px;
-            font-size: 0.88rem;
-        }
-
-        .article-footer {
-            border-top: 1px solid var(--border-idle);
-            background:
-                radial-gradient(circle at 50% 120%, rgba(79, 70, 229, 0.34), transparent 47%),
-                #171719;
-        }
-
-        .footer-inner {
-            width: min(760px, calc(100% - 40px));
-            margin: 0 auto;
-            padding: 82px 0 44px;
-            text-align: center;
-        }
-
-        .footer-inner h2 {
-            margin: 0;
-            color: #fff;
-            font-size: clamp(2rem, 5vw, 3.1rem);
-            line-height: 1.15;
-            letter-spacing: -0.04em;
-        }
-
-        .footer-inner p {
-            margin: 20px auto 0;
-            color: var(--text-muted);
-        }
-
-        .copyright {
-            margin-top: 76px !important;
-            color: #777781 !important;
-            font-size: 0.86rem;
-        }
-
-        .back-to-top {
-            position: fixed;
-            z-index: 40;
-            right: 20px;
-            bottom: 20px;
-            display: grid;
-            width: 46px;
-            height: 46px;
-            place-items: center;
-            border: 1px solid var(--border-hover);
-            border-radius: 50%;
-            background-color: rgba(39, 39, 42, 0.9);
-            color: #fff;
-            font-size: 1.1rem;
-            text-decoration: none;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(8px);
-            transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
-        }
-
-        .back-to-top.visible {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-
-        .back-to-top:hover {
-            background-color: var(--accent-base);
-            color: #fff;
-        }
-
-        @media (max-width: 1160px) {
-            .page-grid {
-                grid-template-columns: 220px minmax(0, var(--article-width));
-                justify-content: center;
-            }
-
-            .right-column {
-                display: none;
-            }
-        }
-
-        @media (max-width: 900px) {
-            .page-grid {
-                display: block;
-                width: min(var(--article-width), calc(100% - 32px));
-                padding-top: 48px;
-            }
-
-            .toc-column {
-                margin-bottom: 42px;
-            }
-
-            .toc {
-                position: static;
-                max-height: none;
-            }
-
-            .toc ol {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 3px 18px;
-            }
-
-            .cycle {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 12px;
-            }
-
-            .cycle li,
-            .cycle li:first-child,
-            .cycle li:last-child {
-                border: 1px solid var(--border-idle);
-                border-radius: 12px;
-            }
-
-            .cycle li::after {
-                display: none;
-            }
-        }
-
-        @media (max-width: 680px) {
-            :root {
-                --header-height: 64px;
-            }
-
-            body {
-                font-size: 16px;
-            }
-
-            .header-inner {
-                width: calc(100% - 24px);
-            }
-
-            .brand {
-                padding: 7px 6px;
-                font-size: 21px;
-            }
-
-            .header-link.secondary-nav {
-                display: none;
-            }
-
-            .header-link {
-                min-height: 38px;
-                padding: 7px 12px;
-                font-size: 0.82rem;
-            }
-
-            .hero-inner {
-                width: calc(100% - 28px);
-                padding: 78px 0 66px;
-            }
-
-            h1 {
-                font-size: clamp(2.45rem, 13vw, 4rem);
-            }
-
-            .hero-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .media-frame,
-            .figure .media-frame {
-                border-radius: 12px;
-            }
-
-            .page-grid {
-                width: calc(100% - 28px);
-                padding-bottom: 80px;
-            }
-
-            .toc ol {
-                display: flex;
-            }
-
-            .article-content section {
-                margin-bottom: 58px;
-            }
-
-            .steps > li {
-                padding: 72px 20px 22px;
-            }
-
-            .steps > li::before {
-                top: 18px;
-                left: 20px;
-            }
-
-            .cycle {
-                grid-template-columns: 1fr;
-            }
-
-            .model-row {
-                grid-template-columns: 1fr;
-                gap: 5px;
-            }
-
-            pre {
-                padding: 17px;
-                font-size: 0.78rem;
-            }
-
-            .callout {
-                padding: 20px;
-            }
-
-            .back-to-top {
-                right: 14px;
-                bottom: 14px;
-            }
-        }
-
-        @media print {
-            :root {
-                color-scheme: light;
-            }
-
-            body {
-                background: #fff;
-                color: #222;
-                font-size: 11pt;
-            }
-
-            .site-header,
-            .toc-column,
-            .right-column,
-            .back-to-top,
-            .hero-actions,
-            .copy-code {
-                display: none !important;
-            }
-
-            .article-hero,
-            .article-footer {
-                border: 0;
-                background: #fff;
-            }
-
-            .hero-inner {
-                padding: 36px 0 20px;
-            }
-
-            h1,
-            .article-content h2,
-            .article-content h3,
-            .footer-inner h2 {
-                color: #111;
-            }
-
-            .hero-lead,
-            .article-content p,
-            .article-content ul,
-            .article-content ol,
-            .model-row dd,
-            .footer-inner p {
-                color: #333;
-            }
-
-            .page-grid {
-                display: block;
-                width: 100%;
-                padding: 20px 0;
-            }
-
-            .article-content {
-                width: 100%;
-            }
-
-            .code-block,
-            .callout,
-            .steps > li,
-            .model-row {
-                break-inside: avoid;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            html {
-                scroll-behavior: auto;
-            }
-
-            *, *::before, *::after {
-                scroll-behavior: auto !important;
-                transition-duration: 0.01ms !important;
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-            }
-        }
-    </style>
+    <title>GPUSims User Manual</title>
+    <link rel="stylesheet" href="../css/site.css">
+    <link rel="stylesheet" href="../css/manual.css">
 </head>
-<body id="top">
+<body class="site-page" id="top">
     <header class="site-header">
-        <div class="header-inner">
-            <a class="brand" href="https://gpusims.com/" aria-label="GPUSims home">
-                <span class="brand-accent">GPU</span>Sims
-            </a>
+        <div class="site-header-inner">
+            <a class="site-brand" href="../index.html"><span class="brand-accent">GPU</span>Sims</a>
+            <nav class="site-nav" aria-label="Documentation navigation">
+                <a class="optional-nav" href="vision.html">Vision</a>
+                <a class="optional-nav" href="acknowledgments.html">Acknowledgments</a>
+            </nav>
         </div>
     </header>
 
     <main>
-        <header class="article-hero">
-            <div class="hero-inner">
-                <p class="eyebrow">AI + WebGPU for mathematical exploration</p>
-                <h1>WebGPU User Manual</h1>
-                <p class="hero-lead">
-                    GPUSims separates WebGPU infrastructure from mathematical logic, allowing AI to create, run, debug, and explain interactive simulations directly in the browser.
-                </p>
-                <div class="hero-meta" aria-label="Article information">
-                    <span>Technical overview</span>
-                    <span>Browser-based GPU computing</span>
-                    <span>AI-assisted workflow</span>
-                </div>
+        <section class="docs-hero">
+            <div class="docs-hero-inner">
+                <p class="eyebrow">Documentation</p>
+                <h1>GPUSims User Manual</h1>
+                <p class="docs-lead">Create, run, debug, and understand an AI-generated WebGPU simulation.</p>
+                <div class="docs-meta"><span>Task-oriented guide</span><span>Browser-based workflow</span><span>Updated July 2026</span></div>
             </div>
-        </header>
+        </section>
 
-        <div class="page-grid">
-            <aside class="toc-column" aria-label="Table of contents">
-                <nav class="toc">
-                    <p class="toc-title">Contents</p>
-                    <ol>
-                        <li><a href="#introduction">Introduction</a></li>
-                        <li><a href="#application">The application</a></li>
-                        <li><a href="#how-it-works">How it works</a></li>
-                        <li class="toc-sub"><a href="#schema">The schema</a></li>
-                        <li class="toc-sub"><a href="#shader-skeleton">Shader skeleton</a></li>
-                        <li><a href="#why-it-works">Why this approach works</a></li>
-                        <li><a href="#workflow">Workflow</a></li>
-                        <li><a href="#validation">Errors and verification</a></li>
-                        <li><a href="#explanatory-article">AI-generated explanations</a></li>
-                        <li><a href="#agents">Why not use an agent?</a></li>
-                        <li><a href="#learning">Learning physics visually</a></li>
-                        <li><a href="#ai-learning">Can AI learn through simulation?</a></li>
-                        <li><a href="#model-differences">Differences between AI models</a></li>
-                        <li><a href="#limitations">WebGPU limitations</a></li>
-                        <li><a href="#conclusion">Conclusion</a></li>
-                    </ol>
+        <div class="docs-layout">
+            <aside aria-label="Table of contents">
+                <nav class="docs-toc">
+                    <h2>On this page</h2>
+                    <div class="docs-toc-groups">
+                        <div class="docs-toc-group">
+                            <p class="docs-toc-group-title">Getting started</p>
+                            <ul>
+                                <li><a href="#quick-start">Quick start</a></li>
+                                <li><a href="#interface">Application interface</a></li>
+                                <li><a href="#controls">Run and control</a></li>
+                            </ul>
+                        </div>
+                        <div class="docs-toc-group">
+                            <p class="docs-toc-group-title">Building</p>
+                            <ul>
+                                <li><a href="#architecture">How the pipeline works</a></li>
+                                <li><a href="#schema">Schema</a></li>
+                                <li><a href="#shader-skeleton">WGSL skeleton</a></li>
+                            </ul>
+                        </div>
+                        <div class="docs-toc-group">
+                            <p class="docs-toc-group-title">Debugging</p>
+                            <ul>
+                                <li><a href="#errors">Fix errors</a></li>
+                                <li><a href="#numerical-verification">Inspect values</a></li>
+                                <li><a href="#visual-verification">Inspect images</a></li>
+                            </ul>
+                        </div>
+                        <div class="docs-toc-group">
+                            <p class="docs-toc-group-title">Advanced</p>
+                            <ul>
+                                <li><a href="#article">Explanatory article</a></li>
+                                <li><a href="#automation">Automation</a></li>
+                                <li><a href="#limitations">Limitations</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </nav>
             </aside>
 
-            <article class="article-content">
-                <section id="introduction">
-                    <p class="section-kicker">Introduction</p>
-                    <h2>Making advanced simulation more accessible</h2>
-                    <p class="lead-paragraph">
-                        WebGPU, the successor to WebGL, greatly expands the browser’s support for GPGPU—general-purpose computation on graphics processing units.
-                    </p>
-                    <p>
-                        Using these capabilities, I developed an application that makes it easy to create mathematical and physical simulations with the help of AI.
-                    </p>
-                    <p>
-                        AI can generate code for complex simulations covering subjects ranging from electromagnetism, fluid dynamics, and quantum mechanics to particle physics. It can even reproduce profound physical ideas—such as the Higgs mechanism, in which spontaneous symmetry breaking gives mass to gauge bosons—inside a tiny 32 × 32 two-dimensional universe.
-                    </p>
-                    <div class="callout">
-                        <span class="callout-title">The central idea</span>
-                        <p>With vibe coding, even people without advanced programming or physics expertise can experiment with sophisticated simulations.</p>
+            <article class="docs-content">
+                <section id="quick-start">
+                    <p class="section-kicker">Getting started</p>
+                    <h2>Create your first simulation</h2>
+                    <p class="lead-paragraph">The guided workflow alternates between GPUSims and an AI chat. GPUSims supplies the architecture; the AI supplies the schema and shader logic.</p>
+                    <figure class="figure">
+                        <div class="media-frame"><img src="../img/workflow.png" alt="Workflow between the user and an AI assistant" loading="eager"></div>
+                        <figcaption>The user remains in control of every generation, paste, and execution step.</figcaption>
+                    </figure>
+                    <ol class="steps">
+                        <li><strong>Copy the AI system prompt</strong><p>Click <strong>Copy AI System Prompt</strong> in GPUSims and paste it into the AI chat. This teaches the model the schema format, resource layouts, shader bindings, and output rules.</p></li>
+                        <li><strong>Request a simulation schema</strong><p>Describe the physical or mathematical system you want. A simple request is enough to begin.</p></li>
+                        <li><strong>Generate the WGSL skeleton</strong><p>Paste the schema into GPUSims, generate the skeleton, and give that skeleton to the AI for implementation.</p></li>
+                        <li><strong>Run the simulation</strong><p>Paste the completed WGSL code into GPUSims and click <strong>Run Simulation</strong>.</p></li>
+                    </ol>
+                    <div class="code-block"><div class="code-header"><span>Example schema request</span><button class="copy-code" type="button">Copy</button></div><pre><code>Create a schema for an N-body simulation.</code></pre></div>
+                    <div class="quick-note">
+                        <div><strong>No sign-in required</strong><span>You can browse and create simulations without signing in.</span></div>
+                        <div><strong>Sign-in for publishing</strong><span>Publishing a simulation requires Google sign-in.</span></div>
+                        <div><strong>Use a WebGPU browser</strong><span>A recent browser and compatible GPU are required.</span></div>
                     </div>
                 </section>
 
-                <section id="application">
-                    <p class="section-kicker">The application</p>
-                    <h2>A browser-based environment for AI-generated simulations</h2>
-                    <p>
-                        GPUSims is a web application available at <a href="https://gpusims.com/">gpusims.com</a>.
-                    </p>
+                <section id="interface">
+                    <p class="section-kicker">Application interface</p>
+                    <h2>Choose an example or start building</h2>
+                    <p>Open <a href="https://gpusims.com/">gpusims.com</a>. Use <strong>Browse Gallery</strong> to browse published work, or <strong>Start Building</strong> to open the guided workflow.</p>
                     <figure class="figure">
-                        <div class="media-frame">
-                            <img src="../img/app.png" alt="The GPUSims landing page" loading="lazy">
-                        </div>
-                        <figcaption>The GPUSims landing page.</figcaption>
+                        <div class="media-frame"><img src="../img/app.png" alt="GPUSims landing page" loading="lazy"></div>
+                        <figcaption>The public landing page emphasizes the gallery, guided builder, and manual.</figcaption>
                     </figure>
-                    <p>
-                        Click <strong>Explore Simulations</strong> to browse existing simulations. Click <strong>Start Building Now</strong> to begin creating your own.
-                    </p>
-                    <p>
-                        You can use the application without signing in. Publishing a simulation, however, requires you to sign in with a Google account.
-                    </p>
+                    <div class="interface-grid">
+                        <article class="interface-card"><h3>Browse Gallery</h3><p>Browse published simulations and open their interactive views and explanatory articles.</p></article>
+                        <article class="interface-card"><h3>Start Building</h3><p>Open the step-by-step interface for schema generation, WGSL implementation, and execution.</p></article>
+                        <article class="interface-card"><h3>Edit Code</h3><p>Return to the schema and shader editors when a simulation needs correction.</p></article>
+                        <article class="interface-card"><h3>Edit Article</h3><p>Write or revise the Markdown article associated with the simulation.</p></article>
+                    </div>
                 </section>
 
-                <section id="how-it-works">
+                <section id="architecture">
                     <p class="section-kicker">Architecture</p>
                     <h2>How the simulation pipeline works</h2>
-                    <p>
-                        GPUSims divides the development process into a declarative schema, an application-generated WGSL skeleton, AI-generated simulation logic, and browser-based execution.
-                    </p>
+                    <p>GPUSims strictly separates the declarative simulation blueprint from the procedural GPU execution flow.</p>
+                    <ol class="pipeline" aria-label="GPUSims pipeline"><li>Schema</li><li>WGSL skeleton</li><li>Shader logic</li><li>Execution</li></ol>
+                    <div class="callout"><span class="callout-title">Separation of responsibilities</span><p>The app manages WebGPU resources, pipelines, rendering, and boilerplate. AI focuses on translating mathematics and physics into executable simulation logic.</p></div>
 
-                    <h3 id="schema">1. The schema</h3>
-                    <p>
-                        The application uses JSON-like data called a <code>schema</code> to declare GPU resources, shaders, user-interface controls, and other elements of a simulation.
-                    </p>
-                    <p>
-                        The following is a simple schema example. Because the schema is generated by AI, users do not need to understand every detail.
-                    </p>
-                    <div class="code-block">
-                        <div class="code-header"><span>TypeScript · Simulation schema</span><button class="copy-code" type="button">Copy</button></div>
-                        <pre><code>const schema: SimulationSchema = {
+                    <h3 id="schema">1. The schema declares the blueprint</h3>
+                    <p>The JSON-like TypeScript schema declares uniforms, storage buffers, meshes, shader passes, UI controls, optional readback structures, canvases, and script execution.</p>
+                    <div class="code-block"><div class="code-header"><span>TypeScript · shortened schema</span><button class="copy-code" type="button">Copy</button></div><pre><code>const schema: SimulationSchema = {
     name: "Cumulative Monte Carlo Pi Estimation",
     resources: {
-        Params: {
-            type: 'uniform', obj: state
-        },
-        Points: {
-            type: 'storage', format: 'f32', topology: 'point-list'
-        },
+        Params: { type: "uniform", obj: state },
+        Points: { type: "storage", format: "f32", topology: "point-list" },
     },
+    shaders: [{
+        id: "generate_and_count",
+        type: "compute",
+        workgroupSize: 64,
+        workgroupCount: dispatchX,
+        bindings: [
+            { resource: "Params", varName: "params" },
+            { resource: "Points", access: "read_write" },
+        ],
+    }],
+};</code></pre></div>
 
-    shaders: [
-        {
-            id: 'generate_and_count',
-            type: 'compute',
-            workgroupSize: WORKGROUP_SIZE, workgroupCount: DISPATCH_X,
-            bindings: [
-                { resource: 'Params', varName: 'params' },
-                { resource: 'Points', access: 'read_write' },
-            ]
-        },
-    ],
-};</code></pre>
-                    </div>
-
-                    <h3 id="shader-skeleton">2. The shader skeleton</h3>
-                    <p>
-                        The application generates a shader-code skeleton from the schema created by the AI. In WebGPU, programs that run on the GPU are written in WGSL, a language with syntax somewhat similar to Rust.
-                    </p>
-                    <p>
-                        In this example, the application generates the buffer declarations and the header of the <code>main</code> function. The shader implementation is also written and debugged by AI, so users do not necessarily need to understand the WGSL code.
-                    </p>
-                    <div class="code-block">
-                        <div class="code-header"><span>WGSL · Generated skeleton</span><button class="copy-code" type="button">Copy</button></div>
-                        <pre><code>@group(0) @binding(0) var&lt;uniform&gt; params: ParamsStruct;
+                    <h3 id="shader-skeleton">2. GPUSims generates the WGSL structure</h3>
+                    <p>The app converts resource and shader declarations into matching WGSL structs, bindings, and entry points. Do not edit the generated declarations when asking the AI to implement the shader.</p>
+                    <div class="code-block"><div class="code-header"><span>WGSL · generated skeleton</span><button class="copy-code" type="button">Copy</button></div><pre><code>@group(0) @binding(0) var&lt;uniform&gt; params: ParamsStruct;
 @group(0) @binding(1) var&lt;storage, read_write&gt; Points: array&lt;f32&gt;;
-@group(0) @binding(2) var&lt;storage, read_write&gt; WorkgroupSums: array&lt;f32&gt;;
 
 @compute @workgroup_size(64, 1, 1)
 fn main(@builtin(global_invocation_id) id: vec3&lt;u32&gt;) {
-    // TODO: Write compute logic for generate_and_count
-}</code></pre>
-                    </div>
+    // The AI implements the mathematical logic here.
+}</code></pre></div>
 
-                    <h3>3. Implementing the shader</h3>
-                    <p>
-                        The generated skeleton is sent back to the AI, which implements the mathematical and physical logic inside the <code>main</code> function.
-                    </p>
+                    <h3>3. The AI implements the mathematics</h3>
+                    <p>The AI fills the designated compute, vertex, or fragment entry point without changing the app-generated bindings and layout.</p>
 
-                    <h3>4. Running the simulation</h3>
-                    <p>
-                        The application combines the schema with the completed shader and runs the simulation.
-                    </p>
+                    <h3>4. GPUSims compiles and executes</h3>
+                    <p>The browser creates the WebGPU pipelines, executes the passes, renders storage-buffer output, and displays UI controls and readback values.</p>
+                </section>
+
+                <section id="controls">
+                    <p class="section-kicker">Execution</p>
+                    <h2>Run and control the simulation</h2>
                     <figure class="figure">
-                        <div class="media-frame">
-                            <img src="../img/run.png" alt="A simulation running inside GPUSims" loading="lazy">
-                        </div>
-                        <figcaption>A simulation running in the browser.</figcaption>
+                        <div class="media-frame"><img src="../img/run.png" alt="A wave simulation running inside GPUSims" loading="lazy"></div>
+                        <figcaption>A simulation view with code, article, capture, thumbnail, and parameter controls.</figcaption>
                     </figure>
                     <ul>
-                        <li>Drag with the left mouse button to rotate the 3D view.</li>
-                        <li>Drag with the right mouse button to move the viewpoint.</li>
+                        <li>Drag with the <strong>left mouse button</strong> to rotate a 3D view.</li>
+                        <li>Drag with the <strong>right mouse button</strong> to move the viewpoint.</li>
+                        <li>Use the sliders and selectors to change uniform parameters while the simulation runs.</li>
+                        <li>Use <strong>Capture Image</strong> to preserve the current view for inspection.</li>
+                        <li>Use <strong>Thumbnail</strong> to choose the image shown in the gallery.</li>
                     </ul>
                 </section>
 
-                <section id="why-it-works">
-                    <p class="section-kicker">Design principle</p>
-                    <h2>Why this approach works</h2>
-                    <p>
-                        WebGPU is a powerful but highly complex API. Asking an AI to generate every part of a complete WebGPU program places a heavy burden on the model.
-                    </p>
-                    <p>
-                        GPUSims handles the repetitive and error-prone WebGPU setup. The AI can therefore concentrate on the parts where it provides the most value:
-                    </p>
-                    <ul>
-                        <li>Formulating the mathematical model</li>
-                        <li>Translating equations into GPU code</li>
-                        <li>Checking numerical and visual results</li>
-                        <li>Diagnosing and correcting errors</li>
-                    </ul>
-                    <div class="callout">
-                        <span class="callout-title">Separation of responsibilities</span>
-                        <p>The app manages WebGPU resources, pipelines, rendering, and boilerplate. AI focuses on translating mathematics and physics into executable simulation logic.</p>
-                    </div>
+                <section id="errors">
+                    <p class="section-kicker">Debugging</p>
+                    <h2>Fix schema and WGSL errors</h2>
+                    <p>If parsing, compilation, validation, or execution fails, GPUSims displays an error that can be returned to the AI.</p>
+                    <figure class="figure"><div class="media-frame"><img src="../img/err.png" alt="GPUSims error dialog" loading="lazy"></div><figcaption>Copy the complete message rather than paraphrasing it.</figcaption></figure>
+                    <div class="code-block"><div class="code-header"><span>Error-correction prompt</span><button class="copy-code" type="button">Copy</button></div><pre><code>Fix this error.
+
+Expected ':' but found '.' at index 319</code></pre></div>
+                    <p>Paste the revised full schema or full shader back into the appropriate editor. Do not combine both in one response when using the automated extraction workflow.</p>
                 </section>
 
-                <section id="workflow">
-                    <p class="section-kicker">Guided process</p>
-                    <h2>The complete workflow</h2>
-                    <p>
-                        The overall process for creating and running a simulation is shown below.
-                    </p>
-                    <figure class="figure">
-                        <div class="media-frame">
-                            <img src="../img/workflow.png" alt="Workflow diagram for creating a GPUSims simulation with AI" loading="lazy">
-                        </div>
-                        <figcaption>The interactive workflow between the user, GPUSims, and the AI assistant.</figcaption>
-                    </figure>
-
-                    <ol class="steps">
-                        <li>
-                            <strong>Give the system prompt to the AI</strong>
-                            <p>Click <strong>Copy AI System Prompt</strong> in GPUSims. Paste the copied prompt into the AI chat so that the model understands the schema format, resource layouts, shader bindings, and output rules.</p>
-                        </li>
-                        <li>
-                            <strong>Ask the AI to create a schema</strong>
-                            <p>Describe the simulation you want. For advanced scientific topics, an English prompt may work better because much of the relevant technical literature and source code is written in English.</p>
-                        </li>
-                        <li>
-                            <strong>Generate the WGSL skeleton</strong>
-                            <p>Paste the AI-generated schema into GPUSims and click <strong>Copy WGSL Skeleton</strong>. Then paste the skeleton into the AI chat and ask the model to implement it.</p>
-                        </li>
-                        <li>
-                            <strong>Run the simulation</strong>
-                            <p>Paste the completed WGSL code into GPUSims and click <strong>Run Simulation</strong>.</p>
-                        </li>
-                    </ol>
-
-                    <p>A typical schema request is extremely simple:</p>
-                    <div class="code-block">
-                        <div class="code-header"><span>Prompt</span><button class="copy-code" type="button">Copy</button></div>
-                        <pre><code>Create a schema for an N-body simulation.</code></pre>
-                    </div>
+                <section id="numerical-verification">
+                    <p class="section-kicker">Verification</p>
+                    <h2>Inspect numerical readback values</h2>
+                    <p>A simulation that compiles may still be mathematically wrong. Use readback labels to expose important counters, residuals, energies, constraints, or error estimates.</p>
+                    <figure class="figure"><div class="media-frame"><img src="../img/ui.png" alt="Simulation controls and numerical readback values" loading="lazy"></div><figcaption>Parameters and calculated values can be copied into the AI chat for evaluation.</figcaption></figure>
+                    <div class="code-block"><div class="code-header"><span>Numerical-verification prompt</span><button class="copy-code" type="button">Copy</button></div><pre><code>Do these parameter values and calculation results look mathematically
+and physically reasonable? Explain any suspicious values.</code></pre></div>
+                    <p>For complex algorithms, ask the AI to add an additional debug canvas or extra readback values for intermediate stages.</p>
                 </section>
 
-                <section id="validation">
-                    <p class="section-kicker">Debugging and verification</p>
-                    <h2>Running successfully is not the same as being correct</h2>
-
-                    <h3>Error handling</h3>
-                    <p>
-                        If the schema or shader contains an error, the application displays an error screen.
-                    </p>
-                    <figure class="figure">
-                        <div class="media-frame">
-                            <img src="../img/err.png" alt="A WebGPU error message displayed by GPUSims" loading="lazy">
-                        </div>
-                        <figcaption>GPUSims displays compilation and runtime errors that can be sent back to the AI.</figcaption>
-                    </figure>
-                    <p>
-                        Click <strong>Copy Error Message</strong>, paste the error into the AI chat, and ask the model to fix it.
-                    </p>
-                    <div class="code-block">
-                        <div class="code-header"><span>Error-correction prompt</span><button class="copy-code" type="button">Copy</button></div>
-                        <pre><code>Fix this error.
-
-Expected ':' but found '.' at index 319</code></pre>
-                    </div>
-                    <p>
-                        The AI examines the error, identifies its likely cause, and returns a corrected schema or shader. Paste the revised code back into GPUSims and continue the workflow.
-                    </p>
-
-                    <h3>Verifying numerical results</h3>
-                    <p>
-                        Even when a simulation appears to run correctly, I recommend asking the AI to verify its output. A visually impressive animation is not necessarily a physically correct simulation.
-                    </p>
-                    <figure class="figure">
-                        <div class="media-frame">
-                            <img src="../img/ui.png" alt="Numerical parameters and calculation results in GPUSims" loading="lazy">
-                        </div>
-                        <figcaption>Simulation parameters and readback values can be copied for inspection.</figcaption>
-                    </figure>
-                    <p>
-                        The upper-right corner of the simulation screen displays parameter values and calculated results. 
-                        Click the copy icon<img src="../img/copy.png" style="vertical-align: middle;"/>to copy those values, paste them into the AI chat, and ask whether they are mathematically and physically reasonable.
-                    </p>
-
-                    <h3>Verifying the 3D visualization</h3>
-                    <p>
-                        Click <strong>Capture</strong> to save the current simulation view as an image. Upload that image to the AI and ask:
-                    </p>
-                    <div class="code-block">
-                        <div class="code-header"><span>Visual-verification prompt</span><button class="copy-code" type="button">Copy</button></div>
-                        <pre><code>Is this correct?</code></pre>
-                    </div>
-                    <p>
-                        It is surprisingly common to be delighted by a beautiful 3D animation, only for the AI to point out that it is physically incorrect. When this happens, the AI can investigate the likely cause and generate a revised schema or shader.
-                    </p>
-                    <div class="callout warning">
-                        <span class="callout-title">Important limitation</span>
-                        <p>AI-assisted verification is useful for iteration, but it is not formal scientific validation. Complex or high-stakes models still require knowledgeable human review.</p>
-                    </div>
-
-                    <h3>Using an additional debug canvas</h3>
-                    <p>
-                        For a complex simulation, displaying intermediate results on an additional canvas can make debugging much easier. For example:
-                    </p>
-                    <div class="code-block">
-                        <div class="code-header"><span>Debug-canvas prompt</span><button class="copy-code" type="button">Copy</button></div>
-                        <pre><code>Please create a schema that allows intermediate calculation results
-to be output to an additional canvas.</code></pre>
-                    </div>
-                    <p>
-                        The AI can then generate a schema containing the configuration for a separate debugging canvas. Incidentally, I often use Google Translate when converting my own prompts into English.
-                    </p>
+                <section id="visual-verification">
+                    <p class="section-kicker">Verification</p>
+                    <h2>Inspect the rendered result</h2>
+                    <p>Capture the current canvas, upload it to the AI, and provide the intended phenomenon and current parameter values.</p>
+                    <div class="code-block"><div class="code-header"><span>Visual-verification prompt</span><button class="copy-code" type="button">Copy</button></div><pre><code>Is this image consistent with the intended physical model?
+Identify visual evidence of numerical or implementation errors.</code></pre></div>
+                    <div class="callout warning"><span class="callout-title">AI review is not formal validation</span><p>AI-assisted checks are useful for iteration, but complex, safety-critical, or publishable scientific models require knowledgeable human review and independent tests.</p></div>
                 </section>
 
-                <section id="explanatory-article">
+                <section id="article">
                     <p class="section-kicker">Understanding the result</p>
-                    <h2>Ask the AI to write an explanatory article</h2>
-                    <p>
-                        Even after a simulation is running correctly, I often do not understand what is happening internally. In that case, I ask the AI to write an explanatory article:
-                    </p>
-                    <div class="code-block">
-                        <div class="code-header"><span>Article-generation prompt</span><button class="copy-code" type="button">Copy</button></div>
-                        <pre><code>Please write an article explaining the phenomena observable in this
-simulation, the underlying mathematics, and the code implementation.</code></pre>
-                    </div>
-                    <p>
-                        To be honest, I often still do not fully understand the first explanation. However, I can repeatedly ask more detailed questions about the parts I find difficult. By continuing this process, I can gradually develop at least a basic understanding of the theory and implementation.
-                    </p>
+                    <h2>Generate an explanatory article</h2>
+                    <p>After the model is working, ask the AI to connect the visual result to the underlying mathematics and implementation.</p>
+                    <div class="code-block"><div class="code-header"><span>Article-generation prompt</span><button class="copy-code" type="button">Copy</button></div><pre><code>Please write an article explaining the phenomena observable in this
+simulation, the underlying mathematics, the numerical method, and the
+WGSL implementation.</code></pre></div>
+                    <p>Treat the first article as a starting point. Continue asking about unfamiliar equations, assumptions, numerical approximations, and unexpected behavior.</p>
                 </section>
 
-                <section id="agents">
-                    <p class="section-kicker">Automation</p>
-                    <h2>Is the human actually doing anything? Why not use an agent?</h2>
-                    <p>
-                        Apart from the initial request to create the schema, the user mainly performs simple actions: copying and pasting code, copying error messages, clicking buttons, and uploading screenshots for verification.
-                    </p>
-                    <p>
-                        I have confirmed that this process can be automated. A Python program can use <code>Selenium</code> to operate the browser application and an official AI API to conduct the conversation. An agent can therefore automate the following cycle:
-                    </p>
-                    <ul>
-                        <li>Create the schema and shader</li>
-                        <li>Run the simulation</li>
-                        <li>Detect compilation and runtime errors</li>
-                        <li>Debug the generated code</li>
-                        <li>Inspect numerical values and captured images</li>
-                        <li>Generate an explanatory article and metadata</li>
-                    </ul>
-                    <p>
-                        In my tests, the <code>gemini-3.1-pro-preview</code> model available through my current Gemini subscription could automate only relatively simple simulations successfully.
-                    </p>
-                    <div class="callout warning">
-                        <span class="callout-title">Use official APIs for automation</span>
-                        <p>Many AI services prohibit using browser-automation tools such as Selenium to enter prompts directly into their web-based chat interfaces. Automated systems should generally use an official API instead.</p>
-                    </div>
-                    <p>
-                        I plan to publish code for automatically creating and running simulations with an AI agent in the near future.
-                    </p>
-                </section>
-
-                <section id="learning">
-                    <p class="section-kicker">Education</p>
-                    <h2>Learning mathematics and physics through simulation</h2>
-                    <p>
-                        Traditionally, learning mathematics and physics has meant struggling through difficult textbooks. Yet 3D animations of electromagnetism, fluid mechanics, quantum mechanics, and other subjects can be extraordinarily beautiful.
-                    </p>
-                    <p>
-                        Until recently, directly experiencing the beauty of advanced mathematical and physical theories was largely limited to highly gifted students, researchers, and specialists. AI-generated 3D simulations may make these worlds accessible to almost anyone.
-                    </p>
-                    <p>
-                        I hope GPUSims encourages more people to become interested in mathematics and physics.
-                    </p>
-                </section>
-
-                <section id="ai-learning">
-                    <p class="section-kicker">Future concept</p>
-                    <h2>Can AI learn through simulation?</h2>
-                    <p>
-                        This section describes a future idea rather than a completed feature.
-                    </p>
-                    <p>
-                        Current large language models learn sophisticated patterns of reasoning from enormous collections of text. However, they do not possess direct physical experience. They may construct a linguistic “world model,” but they often lack an intuitive understanding of how physical systems behave.
-                    </p>
-                    <p>
-                        In GPUSims, an AI can propose a model, generate and run a simulation, observe images and numerical data, verify the output, modify the implementation, and repeat the experiment.
-                    </p>
-                    <ol class="cycle" aria-label="AI simulation learning cycle">
-                        <li>Hypothesis</li>
-                        <li>Execution</li>
-                        <li>Observation</li>
-                        <li>Correction</li>
-                    </ol>
-                    <p>
-                        I am interested in whether repeating this active exploratory loop could help an AI construct a more grounded world model based on physical laws rather than language alone.
-                    </p>
-                </section>
-
-                <section id="model-differences">
-                    <p class="section-kicker">Personal observations</p>
-                    <h2>Differences between AI models</h2>
-                    <p>
-                        The following assessments reflect only my personal experience and the particular simulations I tested.
-                    </p>
-                    <dl class="model-list">
-                        <div class="model-row">
-                            <dt>gemini-3.1-pro-preview</dt>
-                            <dd>Suitable only for very simple simulations in my automated tests.</dd>
-                        </div>
-                        <div class="model-row">
-                            <dt>Gemini 3.1 Pro</dt>
-                            <dd>Reasonably capable for many simulations.</dd>
-                        </div>
-                        <div class="model-row">
-                            <dt>GPT 5.6 Sol</dt>
-                            <dd>Possibly a little more capable than Gemini 3.1 Pro in the cases I tried.</dd>
-                        </div>
-                        <div class="model-row">
-                            <dt>Opus 4.8</dt>
-                            <dd>The strongest of the models I tested, although it sometimes spends more time reasoning and consumes more tokens than necessary. Because it is usage-based, I do not use it regularly.</dd>
-                        </div>
-                    </dl>
-                    <p>
-                        The plan I use costs about $20 per month. Creating these simulations with free AI models is considerably more difficult.
-                    </p>
-                    <p>
-                        Debugging also becomes faster when the user understands at least part of the simulation and can give specific instructions—for example, asking the AI to display intermediate calculation results.
-                    </p>
+                <section id="automation">
+                    <p class="section-kicker">Advanced workflow</p>
+                    <h2>Automate the cycle with an agent</h2>
+                    <p>A local program can coordinate an official AI API, browser automation, and GPUSims to generate code, run simulations, return errors, inspect values and images, and create an article.</p>
+                    <ul><li>Generate the schema and shader.</li><li>Enter the code and run the application.</li><li>Return compilation and runtime errors for correction.</li><li>Inspect numerical readback and screenshots.</li><li>Create a thumbnail, metadata, and explanatory article.</li></ul>
+                    <div class="callout warning"><span class="callout-title">Use official AI APIs</span><p>Do not assume that automating a provider's consumer chat website is permitted. Review the provider's current terms and use an official API for automated workflows.</p></div>
                 </section>
 
                 <section id="limitations">
                     <p class="section-kicker">Technical scope</p>
-                    <h2>Limitations of WebGPU</h2>
-                    <p>Numerical computation with WebGPU has several important limitations:</p>
+                    <h2>WebGPU strengths and limitations</h2>
                     <ul>
-                        <li>Standard WebGPU does not support 64-bit double-precision floating-point arithmetic.</li>
-                        <li>Established numerical libraries such as LAPACK cannot be used directly.</li>
+                        <li>WebGPU provides parallel computation and modern GPU rendering directly in supported browsers.</li>
+                        <li>GPUSims simulations generally use 32-bit floating-point values rather than scientific-computing double precision.</li>
+                        <li>Traditional numerical libraries such as LAPACK are not directly available inside WGSL.</li>
+                        <li>GPU algorithms must be designed around workgroups, buffers, memory bandwidth, and parallel execution.</li>
                     </ul>
-                    <p>
-                        Nevertheless, WebGPU and CUDA share many fundamental concepts related to parallel computation and memory optimization. 
-                        Experience with GPU numerical computation in GPUSims may therefore provide useful preparation for learning CUDA in the future.
-                    </p>
-                </section>
-
-                <section id="conclusion">
-                    <p class="section-kicker">Conclusion</p>
-                    <h2>A new way to explore mathematical worlds</h2>
-                    <p>
-                        GPUSims is an experiment in making advanced simulation more approachable. 
-                        The application handles the machinery of browser-based GPU computation while AI concentrates on modeling, implementation, debugging, and explanation.
-                    </p>
+                    <p>These constraints make GPUSims best suited to learning, experimentation, visualization, and prototyping—not as a substitute for independently validated scientific software.</p>
+                    <p>For the broader educational and AI-research motivation, <a href="vision.html">read the Project Vision</a>.</p>
                 </section>
             </article>
         </div>
     </main>
+
+    <footer class="site-footer"><div class="site-footer-inner"><span>&copy; 2026 GPUSims. Released under the MIT License.</span><nav class="site-footer-links"><a href="../index.html">GPUSims</a><a href="vision.html">Vision</a><a href="acknowledgments.html">Acknowledgments</a></nav></div></footer>
+    <a class="back-to-top" href="#top" aria-label="Back to top">↑</a>
+
+    <script>
+        const copyButtons = document.querySelectorAll(".copy-code");
+        copyButtons.forEach((button) => {
+            button.addEventListener("click", async () => {
+                const code = button.closest(".code-block")?.querySelector("code")?.textContent ?? "";
+                try {
+                    await navigator.clipboard.writeText(code);
+                    const previous = button.textContent;
+                    button.textContent = "Copied";
+                    setTimeout(() => { button.textContent = previous; }, 1200);
+                } catch {
+                    button.textContent = "Copy failed";
+                }
+            });
+        });
+
+        const tocLinks = [...document.querySelectorAll(".docs-toc a")];
+        const sectionMap = tocLinks
+            .map((link) => [document.querySelector(link.getAttribute("href")), link])
+            .filter(([section]) => section);
+        const observer = new IntersectionObserver((entries) => {
+            const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+            if (!visible) return;
+            tocLinks.forEach((link) => link.classList.remove("active"));
+            sectionMap.find(([section]) => section === visible.target)?.[1].classList.add("active");
+        }, { rootMargin: "-20% 0px -68% 0px", threshold: 0 });
+        sectionMap.forEach(([section]) => observer.observe(section));
+
+        const backToTop = document.querySelector(".back-to-top");
+        addEventListener("scroll", () => backToTop.classList.toggle("visible", scrollY > 700), { passive: true });
+    </script>
 </body>
 </html>

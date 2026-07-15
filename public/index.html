@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPUSims - Math and Physics Simulations with AI</title>
+    <meta name="description" content="Create interactive mathematics and physics simulations in the browser with AI and WebGPU.">
+    <meta name="theme-color" content="#121212">
+    <title>GPUSims — AI and WebGPU Math & Physics Simulations</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"/>
 
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/TagInput.css">
     <link rel="stylesheet" href="css/editor.css">
+    <link rel="stylesheet" href="css/site.css">
     <link rel="stylesheet" href="css/landing.css">
     <link rel="stylesheet" href="css/markdown.css">
 
@@ -25,12 +28,17 @@
 <!-- 【B】ログイン後のメイン画面 -->
 <!-- 【B】ログイン後のメイン画面 -->
 <div id="landing-view">
-
-    <header class="landing-header">
-        <div class="at-left">
-            <button class="app-title-button" aria-label="GPUSims home">
+    <header class="site-header landing-header">
+        <div class="site-header-inner">
+            <button class="site-brand app-title-button" type="button" aria-label="GPUSims home">
                 <span class="brand-accent">GPU</span>Sims
             </button>
+            <nav class="site-nav" aria-label="Landing page navigation">
+                <button class="gallery-btn optional-nav" type="button">Gallery</button>
+                <a class="optional-nav" href="./docs/manual.html">Manual</a>
+                <a class="optional-nav" href="./docs/vision.html">Vision</a>
+                <button id="launch-app-btn" class="landing-nav-start primary-btn" type="button">Start Building</button>
+            </nav>
         </div>
     </header>
 
@@ -42,229 +50,133 @@
                 <p class="hero-lead">
                     Describe a phenomenon—from orbital mechanics and electromagnetism to fluid dynamics and quantum physics—and turn it into an interactive GPU simulation in your browser.
                 </p>
-                <p class="hero-support">
-                    GPUSims handles WebGPU resources, pipelines, rendering, and boilerplate so that AI can concentrate on the mathematical model and simulation logic.
-                </p>
-                <p></p>
-                <img src="./img/all.png" alt="A collection of mathematical and physical simulations created with GPUSims" loading="eager">
                 <div class="hero-actions">
-                    <button class="gallery-btn secondary-btn">Explore Simulations</button>
-                    <button id="launch-app-btn" class="primary-btn">Start Building Now</button>
-                    <a href="./docs/manual.html"><button class="secondary-btn">Read User Manual</button></a>
+                    <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
+                    <button class="site-button primary primary-btn" type="button" data-launch-app>Start Building</button>
+                    <a class="site-button text" href="./docs/manual.html">Read the Manual</a>
                 </div>
                 <div class="hero-prompt" aria-label="Example simulation prompt">
                     <span>Try a prompt:</span>
                     <code>Create a schema for an N-body simulation.</code>
                 </div>
             </div>
+            <figure class="hero-media">
+                <div class="media-frame">
+                    <img src="./img/all.png" alt="A gallery of mathematics and physics simulations created with GPUSims" loading="eager">
+                </div>
+                <figcaption>A selection of browser-based simulations created with the GPUSims workflow.</figcaption>
+            </figure>
         </section>
 
-        <section class="section-container intro-section">
+        <section class="section-container" aria-labelledby="how-it-works-title">
             <div class="section-heading">
                 <p class="eyebrow">From an idea to a running model</p>
-                <h2>Make advanced simulations more approachable</h2>
+                <h2 id="how-it-works-title">A structured workflow for AI-generated simulations</h2>
             </div>
             <p class="section-intro">
-                AI can generate simulation code for fields such as classical mechanics, electromagnetism, fluid dynamics, statistical physics, and quantum mechanics. GPUSims provides the structure that helps the AI produce code that can actually be compiled, executed, inspected, and improved.
+                GPUSims handles WebGPU resources, bindings, pipelines, and rendering so the AI can focus on the mathematical model and shader logic.
             </p>
-            <div class="capability-grid">
-                <article class="landing-card">
-                    <span class="card-number">01</span>
-                    <h3>Describe the phenomenon</h3>
-                    <p>Begin with a natural-language request for the physical system, controls, and visual result you want to explore.</p>
-                </article>
-                <article class="landing-card">
-                    <span class="card-number">02</span>
-                    <h3>Generate the simulation</h3>
-                    <p>AI creates a declarative schema and implements the mathematical logic inside an app-generated WGSL skeleton.</p>
-                </article>
-                <article class="landing-card">
-                    <span class="card-number">03</span>
-                    <h3>Run, inspect, and learn</h3>
-                    <p>Execute the simulation, examine numerical and visual output, correct problems, and generate an explanatory article.</p>
-                </article>
-            </div>
-        </section>
-
-        <section class="section-container architecture-section">
-            <div class="section-heading">
-                <p class="eyebrow">Why the architecture works</p>
-                <h2>Separate WebGPU orchestration from simulation logic</h2>
-            </div>
-            <p class="section-intro">
-                WebGPU setup is powerful but complex. Instead of asking AI to build every buffer, binding, pipeline, and renderer from scratch, GPUSims divides the work into four clear stages.
-            </p>
-
-            <ol class="pipeline-grid">
+            <ol class="process-grid">
                 <li>
-                    <span class="pipeline-label">Schema</span>
-                    <h3>Declare the blueprint</h3>
-                    <p>AI defines GPU resources, shader passes, user controls, and execution order in a JSON-like schema.</p>
+                    <span class="process-number">01 · Describe</span>
+                    <h3>State the phenomenon</h3>
+                    <p>Explain the system, controls, and visual behavior you want to explore.</p>
                 </li>
                 <li>
-                    <span class="pipeline-label">Skeleton</span>
-                    <h3>Generate safe WGSL structure</h3>
-                    <p>GPUSims converts the schema into shader skeletons with matching structs, bindings, and entry points.</p>
+                    <span class="process-number">02 · Generate</span>
+                    <h3>Create a safe blueprint</h3>
+                    <p>AI writes a declarative schema; GPUSims turns it into a matching WGSL skeleton.</p>
                 </li>
                 <li>
-                    <span class="pipeline-label">Logic</span>
-                    <h3>Implement the mathematics</h3>
-                    <p>AI fills in the core equations and algorithms without having to recreate the surrounding WebGPU infrastructure.</p>
+                    <span class="process-number">03 · Run</span>
+                    <h3>Execute in the browser</h3>
+                    <p>Paste the implemented shader, compile it, and run the GPU simulation interactively.</p>
                 </li>
                 <li>
-                    <span class="pipeline-label">Execution</span>
-                    <h3>Run in the browser</h3>
-                    <p>GPUSims compiles the shaders, executes the GPU pipeline, renders the result, and exposes controls and readback values.</p>
+                    <span class="process-number">04 · Explore</span>
+                    <h3>Inspect and improve</h3>
+                    <p>Use errors, numerical readback, and captured images to refine the model.</p>
                 </li>
             </ol>
-
-            <div class="architecture-callout">
-                <strong>The key idea:</strong>
-                <span>The app manages the machinery. AI focuses on translating mathematics and physics into executable shader logic.</span>
-            </div>
+            <p class="section-link"><a class="site-button text" href="./docs/manual.html#quick-start">See the complete guided workflow →</a></p>
         </section>
 
-        <section class="section-container workflows-section">
-            <div class="section-heading">
-                <p class="eyebrow">Two ways to build</p>
-                <h2>Stay in control or automate the whole pipeline</h2>
-            </div>
-
-            <div class="workflow-grid">
-                <article class="workflow-card">
-                    <div class="workflow-card-header">
-                        <span class="workflow-badge">Interactive</span>
-                        <h3>Guided AI Workflow</h3>
-                    </div>
-                    <p>Move step by step between GPUSims and your AI chat. This workflow is transparent, editable, and especially useful for learning.</p>
-                    <ol>
-                        <li>Copy the GPUSims system prompt into the AI chat.</li>
-                        <li>Ask the AI to generate a simulation schema.</li>
-                        <li>Paste the schema into GPUSims and generate the WGSL skeleton.</li>
-                        <li>Ask the AI to implement the skeleton, then run the simulation.</li>
-                    </ol>
-                </article>
-
-                <article class="workflow-card featured-workflow">
-                    <div class="workflow-card-header">
-                        <span class="workflow-badge">Advanced · Local</span>
-                        <h3>Automated Python Agent</h3>
-                    </div>
-                    <p>Start with one prompt. A local Python agent coordinates the AI API, Selenium, Chrome, and GPUSims to complete the development cycle.</p>
-                    <ol>
-                        <li>Generate the schema and WGSL implementation.</li>
-                        <li>Enter the code and launch the simulation automatically.</li>
-                        <li>Return compilation or runtime errors to the AI for correction.</li>
-                        <li>Inspect numerical readback values and captured images.</li>
-                        <li>Create a thumbnail, metadata, and explanatory Markdown article.</li>
-                    </ol>
-                    <p class="workflow-note">Requires a configured local Python environment, browser automation, and AI API credentials.</p>
-                </article>
-            </div>
-        </section>
-
-        <section class="section-container validation-section">
-            <div class="section-heading">
-                <p class="eyebrow">Execution is only the beginning</p>
-                <h2>Debug code and question the result</h2>
-            </div>
-            <div class="features-grid">
-                <article class="landing-card feature-card">
-                    <h3>Code-error correction</h3>
-                    <p>If a schema or shader fails, copy the reported error to the AI. It can revise the schema or WGSL code and continue the iteration.</p>
-                    <code>Fix this error.</code>
-                </article>
-                <article class="landing-card feature-card">
-                    <h3>Numerical inspection</h3>
-                    <p>Readback values can be returned from GPU memory and examined to catch mistakes that are not obvious from the animation alone.</p>
-                </article>
-                <article class="landing-card feature-card">
-                    <h3>Visual inspection</h3>
-                    <p>Capture the rendered canvas and ask the AI to evaluate whether the visible behavior is consistent with the intended model.</p>
-                    <code>Is this result physically plausible?</code>
-                </article>
-            </div>
-            <p class="validation-note">
-                AI-assisted checks are useful for iteration, but they are not formal scientific verification. Complex or high-stakes models still require knowledgeable human review.
-            </p>
-        </section>
-
-        <section class="learning-section">
-            <div class="section-container learning-layout">
-                <div>
-                    <p class="eyebrow">A visual path into difficult subjects</p>
-                    <h2>Learn through simulation, explanation, and questions</h2>
-                    <p>
-                        Abstract equations become easier to approach when you can observe and manipulate their behavior. After a simulation is complete, AI can write an article explaining the visible phenomenon, mathematical background, and code implementation.
-                    </p>
-                    <p>
-                        The article is a starting point rather than the end: continue asking questions about any equation, algorithm, or unexpected result until the model becomes understandable.
-                    </p>
+        <section class="difference-section">
+            <div class="section-container">
+                <div class="section-heading">
+                    <p class="eyebrow">Why GPUSims is different</p>
+                    <h2>More than one-shot code generation</h2>
                 </div>
-                <div class="article-preview" aria-label="Generated article contents">
-                    <p class="article-preview-title">Generated learning article</p>
-                    <ul>
-                        <li>Observable phenomena</li>
-                        <li>Mathematical background</li>
-                        <li>Numerical method</li>
-                        <li>WGSL implementation</li>
-                        <li>Questions for further exploration</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <section class="section-container feedback-section">
-            <div class="feedback-panel">
-                <div>
-                    <p class="eyebrow">A virtual laboratory for AI</p>
-                    <h2>Generate, execute, observe, and correct</h2>
-                </div>
-                <p>
-                    GPUSims gives AI more than a text-only coding task. The simulation produces compilation messages, numerical values, and images that can be fed back into an iterative loop of hypothesis, execution, observation, and correction.
+                <p class="section-intro">
+                    The application gives AI a controlled architecture and gives users observable evidence for debugging and learning.
                 </p>
+                <div class="difference-grid">
+                    <article class="difference-card">
+                        <span class="card-icon" aria-hidden="true">{ }</span>
+                        <h3>Structured generation</h3>
+                        <p>A schema and generated skeleton keep resource layouts, shader bindings, and rendering modes synchronized.</p>
+                    </article>
+                    <article class="difference-card">
+                        <span class="card-icon" aria-hidden="true">↻</span>
+                        <h3>Observable debugging</h3>
+                        <p>Compilation messages, numerical results, and captured images support an iterative correction loop.</p>
+                    </article>
+                    <article class="difference-card">
+                        <span class="card-icon" aria-hidden="true">∑</span>
+                        <h3>Explanation and learning</h3>
+                        <p>After a simulation runs, AI can explain the visible phenomena, mathematics, numerical method, and WGSL implementation.</p>
+                    </article>
+                </div>
             </div>
         </section>
 
-        <section class="section-container limitations-section">
-            <div class="section-heading">
-                <p class="eyebrow">Technical scope</p>
-                <h2>WebGPU strengths and limitations</h2>
+        <section class="section-container showcase-layout" aria-labelledby="showcase-title">
+            <div class="showcase-copy">
+                <p class="eyebrow">A visual laboratory in your browser</p>
+                <h2 id="showcase-title">Build, observe, question, and revise</h2>
+                <p>
+                    GPUSims supports interactive graphics and GPU computation across many areas of mathematics and physics. Start from an existing example or create a new model from a natural-language request.
+                </p>
+                <ul class="showcase-points">
+                    <li>Explore published simulations before writing any code.</li>
+                    <li>Adjust parameters and inspect numerical readback values.</li>
+                    <li>Capture the rendering and ask the AI whether the result is plausible.</li>
+                </ul>
+                <div class="showcase-actions">
+                    <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
+                    <a class="site-button text" href="./docs/vision.html">Read the Project Vision →</a>
+                </div>
             </div>
-            <div class="limitations-grid">
-                <article>
-                    <h3>Designed for browser-based GPU computing</h3>
-                    <p>WebGPU enables parallel computation and high-performance visualization without requiring a native desktop application.</p>
-                </article>
-                <article>
-                    <h3>Primarily single precision</h3>
-                    <p>Simulations generally use 32-bit floating-point values (<code>f32</code>), not the 64-bit precision common in scientific computing.</p>
-                </article>
-                <article>
-                    <h3>No traditional numerical libraries</h3>
-                    <p>Libraries such as LAPACK are not available directly, so required algorithms must be implemented for the GPU architecture.</p>
-                </article>
-                <article>
-                    <h3>A bridge toward CUDA concepts</h3>
-                    <p>The same foundations—parallel execution, workgroups, buffers, and memory access—provide useful preparation for more advanced GPU computing.</p>
-                </article>
-            </div>
+            <figure class="showcase-figure">
+                <div class="media-frame">
+                    <img src="./img/workflow.png" alt="Workflow between a GPUSims user and an AI assistant" loading="lazy">
+                </div>
+                <figcaption>The guided workflow keeps the user in control of each generation and execution step.</figcaption>
+            </figure>
         </section>
 
         <section class="final-cta-section">
-            <div class="section-container final-cta-content">
+            <div class="section-container final-cta">
                 <p class="eyebrow">Begin with one idea</p>
                 <h2>What physical world would you like to build?</h2>
                 <p>Start with a familiar system, inspect what the AI creates, and use the simulation as a path into deeper mathematics and physics.</p>
                 <div class="hero-actions">
-                    <button class="gallery-btn secondary-btn">Explore the Gallery</button>
+                    <button class="site-button primary primary-btn" type="button" data-launch-app>Start Building</button>
+                    <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="landing-footer">
-        <p>&copy; 2026 GPUSims. All rights reserved.</p>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>&copy; 2026 GPUSims. Released under the MIT License.</span>
+            <nav class="site-footer-links" aria-label="Footer navigation">
+                <a href="./docs/manual.html">Manual</a>
+                <a href="./docs/vision.html">Vision</a>
+                <a href="./docs/acknowledgments.html">Acknowledgments</a>
+            </nav>
+        </div>
     </footer>
 </div>
 
@@ -280,7 +192,7 @@
         <span id="main-header-center" class="at-center">
             <input type="search" id="headerSearch" name="search" placeholder="Search by title or keywords…" size="30" style="display: none;">
 
-            <button id="wizard-btn" disabled>Start Building Now</button>
+            <button id="wizard-btn" class="primary-btn" disabled>Start Building</button>
         </span>
     </header>
 

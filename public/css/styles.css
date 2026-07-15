@@ -479,11 +479,14 @@ details .content {
 
   /* Backgrounds */
   --bg-page: #121212;
+  --bg-page-soft: #171719;
   --bg-element: #27272a;
   --bg-element-hover: #3f3f46;
   
   /* Text */
   --text-main: #e4e4e7;
+  --text-muted: #b4b4bd;
+  --text-faint: #8f8f99;
   
   /* Borders */
   --border-idle: #3f3f46;
@@ -493,7 +496,14 @@ details .content {
   --accent-base: #3730a3;   
   --accent-hover: #312e81;  
   --accent-active: #1e1b4b; 
-  --accent-focus: #4338ca;  
+  --accent-focus: #4338ca;
+  --accent-bright: #818cf8;
+  --accent-soft: #a5b4fc;
+
+  /* Shared public-site dimensions */
+  --site-content-width: 1120px;
+  --site-article-width: 790px;
+  --site-header-height: 72px;
 }
 
 /* Base page background */

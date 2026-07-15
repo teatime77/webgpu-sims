@@ -61,14 +61,6 @@ export function initEventHandler(){
         });
     }
 
-    $btn("wizard-btn").addEventListener("click", async() => {
-        appManager.navigateTo('/wizard');
-    });
-
-    $btn("wizard2-btn").addEventListener("click", async() => {
-        appManager.navigateTo('/wizard');
-    });
-
     $btn("copy-rulebook-btn").addEventListener("click", async()=>{
         const instruction = "Read WebGPU Simulation Architecture Overview.\n\n" 
                             + schemaText;

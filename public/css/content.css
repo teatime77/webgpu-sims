@@ -1,0 +1,45 @@
+/* ========================================================
+   GPUSIMS ABOUT / ACKNOWLEDGMENTS PAGES
+   ======================================================== */
+
+.content-hero {
+    border-bottom: 1px solid var(--border-idle);
+    background:
+        radial-gradient(circle at 18% 5%, rgba(67,56,202,.28), transparent 35%),
+        linear-gradient(180deg, #202024 0%, var(--bg-page) 90%);
+}
+.content-hero-inner { width: min(880px, calc(100% - 40px)); margin: 0 auto; padding: 78px 0 64px; }
+.content-hero h1 { margin: 0; color: #fff; font-size: clamp(2.55rem, 7vw, 4.8rem); line-height: 1.03; letter-spacing: -.052em; }
+.content-hero p:not(.eyebrow) { max-width: 760px; margin: 22px 0 0; color: #d4d4d8; font-size: clamp(1.05rem,2vw,1.24rem); }
+.content-main { width: min(820px, calc(100% - 40px)); margin: 0 auto; padding: 66px 0 100px; }
+.content-main section { margin-bottom: 66px; }
+.content-main h2 { margin: 0 0 18px; color: #fff; font-size: clamp(1.8rem,4vw,2.5rem); line-height: 1.18; letter-spacing: -.035em; }
+.content-main h3 { margin: 32px 0 10px; color: #fff; font-size: 1.28rem; }
+.content-main p, .content-main li { color: #c7c7d0; }
+.content-main p { margin: 0 0 18px; }
+.content-main ul { padding-left: 1.35rem; }
+.content-main li { margin: 8px 0; }
+.content-main li::marker { color: var(--accent-bright); }
+.content-card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 28px; }
+.content-card { min-width: 0; border: 1px solid var(--border-idle); border-radius: 16px; padding: 23px; background: rgba(39,39,42,.76); }
+.content-card h3 { margin-top: 0; }
+.content-card p:last-child { margin-bottom: 0; }
+.cycle { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin: 28px 0; padding: 0; list-style: none; }
+.cycle li { border: 1px solid var(--border-idle); border-radius: 13px; padding: 18px 10px; background: rgba(39,39,42,.74); color: #fff; font-weight: 750; text-align: center; }
+.notice { margin: 26px 0; border-left: 4px solid #6366f1; border-radius: 0 13px 13px 0; padding: 20px 22px; background: rgba(67,56,202,.13); }
+.license-list { display: grid; gap: 14px; margin-top: 28px; }
+.license-entry { border: 1px solid var(--border-idle); border-radius: 16px; padding: 22px; background: rgba(39,39,42,.75); }
+.license-entry-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px; }
+.license-entry h3 { margin: 0; }
+.license-badge { border: 1px solid rgba(129,140,248,.45); border-radius: 999px; padding: 4px 9px; color: var(--accent-soft); font-size: .75rem; font-weight: 800; }
+.license-entry p { margin: 12px 0 0; }
+.license-entry a { overflow-wrap: anywhere; }
+details.license-text { margin-top: 18px; border-top: 1px solid var(--border-idle); padding-top: 15px; }
+details.license-text summary { color: var(--accent-soft); font-weight: 750; cursor: pointer; }
+details.license-text pre { margin: 15px 0 0; overflow-x: auto; border: 1px solid var(--border-idle); border-radius: 12px; padding: 17px; background: #0b0b0d; color: #d4d4d8; font: .78rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; }
+@media (max-width: 680px) {
+    .content-hero-inner, .content-main { width: calc(100% - 28px); }
+    .content-hero-inner { padding: 58px 0 48px; }
+    .content-card-grid { grid-template-columns: 1fr; }
+    .cycle { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
