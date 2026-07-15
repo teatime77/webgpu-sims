@@ -11,7 +11,7 @@ def pushd(new_dir):
     finally:
         os.chdir(previous_dir)
 
-with pushd('./public/docs'):
+with pushd('./public/data'):
     search_dir = Path(".")
 
     paths = [str(file_path).replace("\\", "/") + "\n" for file_path in search_dir.rglob('schema.js')]

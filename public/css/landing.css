@@ -72,13 +72,15 @@
 
 #landing-view button.secondary-btn {
     border: 1px solid #52525b;
-    background-color: rgba(39, 39, 42, 0.76);
+    background-color: #4f46e5;
+    /* background-color: rgba(39, 39, 42, 0.76); */
     color: var(--text-main);
 }
 
 #landing-view button.secondary-btn:hover {
     border-color: #818cf8;
-    background-color: #3f3f46;
+    background-color: #4f46e5;
+    /* background-color: #3f3f46; */
     transform: translateY(-2px);
 }
 

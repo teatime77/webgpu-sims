@@ -614,7 +614,7 @@ if __name__ == "__main__":
     article_id = sys.argv[1]
     print("article id", article_id)
 
-    article_dir = f"public/docs/ai/{article_id}"
+    article_dir = f"public/data/ai/{article_id}"
     Path(article_dir).mkdir(parents=True, exist_ok=True)
 
     startChrome()

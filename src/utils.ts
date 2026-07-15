@@ -135,6 +135,9 @@ export function parseURL(is_static_server : boolean): [string, string, Map<strin
     urlOrigin = parser.origin;
     urlPathName = parser.pathname;
     assert(parser.origin + parser.pathname + parser.hash + parser.search == url);
+    if(urlPathName.endsWith("/index.html")){
+        urlPathName = urlPathName.replace("/index.html", "/");
+    }
 
     const k = parser.pathname.lastIndexOf("/");
     assert(k != -1);

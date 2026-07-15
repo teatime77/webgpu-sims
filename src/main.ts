@@ -328,13 +328,13 @@ export function makeArticleBox(div: HTMLDivElement, idx : number, doc : Abstract
 export async function getArticles(){
     theArticles = [];
 
-    const schemaPaths = await fetchText(`${urlHome}docs/index.txt`);
+    const schemaPaths = await fetchText(`${urlHome}data/index.txt`);
     for(const line of schemaPaths.split("\n")){
         if(line.trim() == ""){
             break;
         }
 
-        const url = urlHome + "docs/" + line.replace("/schema.js", "/");
+        const url = urlHome + "data/" + line.replace("/schema.js", "/");
 
         const article = await fetchJson(url + "article.json");
         const id       = article.id;
@@ -343,7 +343,7 @@ export async function getArticles(){
         const ai       = article.ai;
 
         // msg(`name:[${authorId}][${title}]`)
-        const schemaUrl = `docs/${line}`;
+        const schemaUrl = `data/${line}`;
 
         const thumbnailUrl = url + "thumbnail.png";   
         msg(`thumbnail-Url:${thumbnailUrl}`);
