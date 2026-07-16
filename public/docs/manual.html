@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Task-oriented instructions for creating, running, debugging, and understanding GPUSims simulations.">
+    <meta name="description" content="Task-oriented instructions for creating, testing, debugging, and understanding simulations with GPUSims and an AI assistant.">
     <meta name="theme-color" content="#121212">
     <title>GPUSims User Manual</title>
     <link rel="stylesheet" href="../css/site.css">
@@ -25,7 +25,7 @@
             <div class="docs-hero-inner">
                 <p class="eyebrow">Documentation</p>
                 <h1>GPUSims User Manual</h1>
-                <p class="docs-lead">Create, run, debug, and understand an AI-generated WebGPU simulation.</p>
+                <p class="docs-lead">Create, test, debug, and understand a WebGPU simulation through a structured conversation with an AI assistant.</p>
                 <div class="docs-meta"><span>Task-oriented guide</span><span>Browser-based workflow</span><span>Updated July 2026</span></div>
             </div>
         </section>
@@ -75,15 +75,15 @@
                 <section id="quick-start">
                     <p class="section-kicker">Getting started</p>
                     <h2>Create your first simulation</h2>
-                    <p class="lead-paragraph">The guided workflow alternates between GPUSims and an AI chat. GPUSims supplies the architecture; the AI supplies the schema and shader logic.</p>
+                    <p class="lead-paragraph">The guided workflow alternates between GPUSims and an AI chat. GPUSims supplies the architecture; the AI proposes the schema and shader logic, while the user evaluates the result and directs further investigation.</p>
                     <figure class="figure">
                         <div class="media-frame"><img src="../img/workflow.png" alt="Workflow between the user and an AI assistant" loading="eager"></div>
                         <figcaption>The user remains in control of every generation, paste, and execution step.</figcaption>
                     </figure>
                     <ol class="steps">
-                        <li><strong>Copy the AI system prompt</strong><p>Click <strong>Copy AI System Prompt</strong> in GPUSims and paste it into the AI chat. This teaches the model the schema format, resource layouts, shader bindings, and output rules.</p></li>
-                        <li><strong>Request a simulation schema</strong><p>Describe the physical or mathematical system you want. A simple request is enough to begin.</p></li>
-                        <li><strong>Generate the WGSL skeleton</strong><p>Paste the schema into GPUSims, generate the skeleton, and give that skeleton to the AI for implementation.</p></li>
+                        <li><strong>Copy the AI system prompt</strong><p>Click <strong>Copy AI System Prompt</strong> in GPUSims and paste it into the AI chat. This provides the current conversation with the schema format, resource layouts, shader bindings, and output rules; it does not retrain the model.</p></li>
+                        <li><strong>Request a simulation schema</strong><p>Describe the physical or mathematical system you want. A concise request is enough to begin, but difficult simulations often require the problem to be decomposed and discussed through several focused iterations.</p></li>
+                        <li><strong>Generate the WGSL skeleton</strong><p>Paste the schema into GPUSims, generate the skeleton, and give that skeleton to the AI for implementation. Treat the first implementation as a testable proposal rather than a final answer.</p></li>
                         <li><strong>Run the simulation</strong><p>Paste the completed WGSL code into GPUSims and click <strong>Run Simulation</strong>.</p></li>
                     </ol>
                     <div class="code-block"><div class="code-header"><span>Example schema request</span><button class="copy-code" type="button">Copy</button></div><pre><code>Create a schema for an N-body simulation.</code></pre></div>
@@ -115,7 +115,7 @@
                     <h2>How the simulation pipeline works</h2>
                     <p>GPUSims strictly separates the declarative simulation blueprint from the procedural GPU execution flow.</p>
                     <ol class="pipeline" aria-label="GPUSims pipeline"><li>Schema</li><li>WGSL skeleton</li><li>Shader logic</li><li>Execution</li></ol>
-                    <div class="callout"><span class="callout-title">Separation of responsibilities</span><p>The app manages WebGPU resources, pipelines, rendering, and boilerplate. AI focuses on translating mathematics and physics into executable simulation logic.</p></div>
+                    <div class="callout"><span class="callout-title">Separation of responsibilities</span><p>The app manages WebGPU resources, pipelines, rendering, and boilerplate. AI can then concentrate on proposing executable simulation logic, while the user and the application provide evidence for correcting it.</p></div>
 
                     <h3 id="schema">1. The schema declares the blueprint</h3>
                     <p>The JSON-like TypeScript schema declares uniforms, storage buffers, meshes, shader passes, UI controls, optional readback structures, canvases, and script execution.</p>
@@ -148,7 +148,7 @@ fn main(@builtin(global_invocation_id) id: vec3&lt;u32&gt;) {
 }</code></pre></div>
 
                     <h3>3. The AI implements the mathematics</h3>
-                    <p>The AI fills the designated compute, vertex, or fragment entry point without changing the app-generated bindings and layout.</p>
+                    <p>The AI attempts to fill the designated compute, vertex, or fragment entry point without changing the app-generated bindings and layout. Complex numerical methods may require alternative formulations or several revisions.</p>
 
                     <h3>4. GPUSims compiles and executes</h3>
                     <p>The browser creates the WebGPU pipelines, executes the passes, renders storage-buffer output, and displays UI controls and readback values.</p>
@@ -188,16 +188,16 @@ Expected ':' but found '.' at index 319</code></pre></div>
                     <figure class="figure"><div class="media-frame"><img src="../img/ui.png" alt="Simulation controls and numerical readback values" loading="lazy"></div><figcaption>Parameters and calculated values can be copied into the AI chat for evaluation.</figcaption></figure>
                     <div class="code-block"><div class="code-header"><span>Numerical-verification prompt</span><button class="copy-code" type="button">Copy</button></div><pre><code>Do these parameter values and calculation results look mathematically
 and physically reasonable? Explain any suspicious values.</code></pre></div>
-                    <p>For complex algorithms, ask the AI to add an additional debug canvas or extra readback values for intermediate stages.</p>
+                    <p>For complex algorithms, discuss the suspected failure with the AI. Ask it to compare alternative algorithms, predict what a diagnostic should reveal, and expose intermediate stages through additional readback values or debug canvases.</p>
                 </section>
 
                 <section id="visual-verification">
                     <p class="section-kicker">Verification</p>
                     <h2>Inspect the rendered result</h2>
-                    <p>Capture the current canvas, upload it to the AI, and provide the intended phenomenon and current parameter values.</p>
+                    <p>Capture the current canvas, upload it to the AI, and provide the intended phenomenon, current parameter values, and any numerical diagnostics. A visually convincing image alone is weak evidence.</p>
                     <div class="code-block"><div class="code-header"><span>Visual-verification prompt</span><button class="copy-code" type="button">Copy</button></div><pre><code>Is this image consistent with the intended physical model?
 Identify visual evidence of numerical or implementation errors.</code></pre></div>
-                    <div class="callout warning"><span class="callout-title">AI review is not formal validation</span><p>AI-assisted checks are useful for iteration, but complex, safety-critical, or publishable scientific models require knowledgeable human review and independent tests.</p></div>
+                    <div class="callout warning"><span class="callout-title">AI review is not formal validation</span><p>AI-assisted checks are useful for iteration, but the same model that generated an error may also overlook it during review. Complex, safety-critical, or publishable scientific models require knowledgeable human review, independent tests, and comparison with established results.</p></div>
                 </section>
 
                 <section id="article">
@@ -213,8 +213,8 @@ WGSL implementation.</code></pre></div>
                 <section id="automation">
                     <p class="section-kicker">Advanced workflow</p>
                     <h2>Automate the cycle with an agent</h2>
-                    <p>A local program can coordinate an official AI API, browser automation, and GPUSims to generate code, run simulations, return errors, inspect values and images, and create an article.</p>
-                    <ul><li>Generate the schema and shader.</li><li>Enter the code and run the application.</li><li>Return compilation and runtime errors for correction.</li><li>Inspect numerical readback and screenshots.</li><li>Create a thumbnail, metadata, and explanatory article.</li></ul>
+                    <p>A local program can coordinate an official AI API, browser automation, and GPUSims to propose code, run simulations, return errors, inspect values and images, and create an article. Automation does not guarantee that the resulting physical model is correct.</p>
+                    <ul><li>Generate an initial schema and shader.</li><li>Enter the code and run the application.</li><li>Return compilation and runtime errors for correction.</li><li>Inspect numerical readback and screenshots, and request targeted diagnostics.</li><li>Create a thumbnail, metadata, and explanatory article after the result passes the chosen checks.</li></ul>
                     <div class="callout warning"><span class="callout-title">Use official AI APIs</span><p>Do not assume that automating a provider's consumer chat website is permitted. Review the provider's current terms and use an official API for automated workflows.</p></div>
                 </section>
 
@@ -227,7 +227,7 @@ WGSL implementation.</code></pre></div>
                         <li>Traditional numerical libraries such as LAPACK are not directly available inside WGSL.</li>
                         <li>GPU algorithms must be designed around workgroups, buffers, memory bandwidth, and parallel execution.</li>
                     </ul>
-                    <p>These constraints make GPUSims best suited to learning, experimentation, visualization, and prototyping—not as a substitute for independently validated scientific software.</p>
+                    <p>These constraints make GPUSims best suited to learning, experimentation, visualization, and prototyping—not as a substitute for independently validated scientific software. Current frontier models also have substantial capability limits: in my tests, neither Gemini 3.1 Pro nor ChatGPT successfully completed the request “Create a two-dimensional simulation of incompressible fluid flowing past a circular obstacle. Visualize the velocity or vorticity field and show the formation of the wake.” Such failures should be documented rather than hidden, because they reveal where decomposition, diagnostics, domain knowledge, or better models are still required.</p>
                     <p>For the broader educational and AI-research motivation, <a href="vision.html">read the Project Vision</a>.</p>
                 </section>
             </article>

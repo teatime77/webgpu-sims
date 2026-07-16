@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="The educational and research vision behind GPUSims: learning mathematics and physics through executable simulation.">
+    <meta name="description" content="The educational and research vision behind GPUSims: structured human–AI conversations, executable simulation, and the study of learning from feedback.">
     <meta name="theme-color" content="#121212">
     <title>Project Vision — GPUSims</title>
     <link rel="stylesheet" href="../css/site.css">
@@ -20,41 +20,56 @@
         </div>
     </header>
     <main>
-        <section class="content-hero"><div class="content-hero-inner"><p class="eyebrow">Project vision</p><h1>Learn by building a mathematical world</h1><p>GPUSims explores how AI, executable simulation, numerical observation, and visual explanation can make difficult mathematics and physics more approachable.</p></div></section>
+        <section class="content-hero"><div class="content-hero-inner"><p class="eyebrow">Project vision</p><h1>Learn through executable experiments</h1><p>GPUSims explores how structured human–AI conversations, executable simulations, numerical observations, and visual evidence can support learning—and whether the resulting experience can eventually improve AI systems.</p></div></section>
         <article class="content-main">
             <section>
                 <p class="eyebrow">Motivation</p>
                 <h2>From equations to observable behavior</h2>
-                <p>Advanced physical theories are often introduced through dense notation and long derivations. A simulation adds another path: change a parameter, observe the response, inspect the numerical state, and then return to the equations with a concrete phenomenon in mind.</p>
-                <p>GPUSims does not remove the need for mathematics. It creates an interactive bridge between symbolic ideas, numerical algorithms, GPU implementation, and visible behavior.</p>
+                <p>Advanced physical theories are often introduced through dense notation and long derivations. A simulation adds another path: propose a model, change a parameter, observe the response, inspect the numerical state, and return to the equations with a concrete phenomenon or failure in mind.</p>
+                <p>GPUSims does not remove the need for mathematics or domain expertise. It creates an inspectable bridge between symbolic ideas, numerical algorithms, GPU implementation, visible behavior, and the conversation used to diagnose the result.</p>
                 <div class="content-card-grid">
-                    <article class="content-card"><h3>Visual intuition</h3><p>Fields, waves, particles, surfaces, and phase changes become objects that can be manipulated rather than diagrams that remain fixed on a page.</p></article>
-                    <article class="content-card"><h3>Progressive explanation</h3><p>AI can write an initial article and then answer increasingly focused questions about any equation, approximation, or code path.</p></article>
+                    <article class="content-card"><h3>Visual intuition</h3><p>Fields, waves, particles, surfaces, and phase changes become systems that can be manipulated, measured, and challenged rather than diagrams that remain fixed on a page.</p></article>
+                    <article class="content-card"><h3>Progressive explanation</h3><p>AI can draft an initial explanation, while the user can ask increasingly focused questions, propose alternative algorithms, and request intermediate values or debug views when the first result is inadequate.</p></article>
                 </div>
             </section>
             <section>
                 <p class="eyebrow">Human–AI collaboration</p>
                 <h2>A structured conversation with executable feedback</h2>
-                <p>Ordinary code generation ends when text is produced. GPUSims continues the process by compiling the generated code and producing evidence: errors, numerical values, and images.</p>
+                <p>Ordinary code generation ends when text is produced. GPUSims continues the process by compiling the generated code and producing evidence: errors, numerical values, and images. The user can then turn that evidence into a substantive conversation rather than a mechanical request for replacement code.</p>
                 <ol class="cycle" aria-label="Simulation feedback cycle"><li>Hypothesis</li><li>Execution</li><li>Observation</li><li>Correction</li></ol>
-                <p>The user can question each stage. Was the schema appropriate? Did the shader implement the intended equations? Are conserved quantities stable? Does the rendered geometry match the model?</p>
+                <p>The user can question each stage. Was the schema appropriate? Would another numerical method be more stable? Which intermediate quantity would distinguish competing explanations? Are conserved quantities stable? Does the rendered geometry match the model? These interventions may improve the performance of the human–AI system even when the underlying model weights do not change.</p>
+            </section>
+            <section>
+                <p class="eyebrow">Practical experience</p>
+                <h2>What made the collaboration effective</h2>
+                <p>While creating many different simulations through extended dialogues with AI, I found that successful results rarely came from a single prompt. Progress usually depended on an iterative collaboration in which the user helped frame the problem, interpret the evidence, and decide what to try next.</p>
+                <p>Several practices proved especially effective:</p>
+                <ul>
+                    <li>Starting with a simple model and increasing its complexity gradually, rather than attempting the most difficult version immediately.</li>
+                    <li>Reconsidering or replacing the numerical algorithm when the first approach was unstable, inaccurate, or poorly suited to the problem.</li>
+                    <li>Exposing intermediate calculations through numerical readback values or additional debug canvases, so that hidden failures could be examined directly.</li>
+                    <li>Specifying algorithms, boundary conditions, parameter ranges, and validation criteria in enough detail to give the AI a well-defined problem.</li>
+                    <li>Trying a different AI model when repeated attempts with the same model did not produce a reliable solution.</li>
+                </ul>
+                <p>This experience suggests that the user should understand enough of the simulation to question assumptions, request meaningful diagnostics, and judge whether a proposed correction addresses the actual problem. Simply delegating the entire task to the AI can conceal plausible-looking errors and deprive the conversation of the evidence needed for improvement.</p>
+                <p>The relevant unit of capability may therefore be the collaborative system formed by the user, the AI, the simulation environment, and the accumulated conversation. In this respect, the process resembles working with a human colleague: progress comes from proposing ideas, examining intermediate work, challenging explanations, dividing responsibilities, and revising decisions in response to evidence. This is different from treating learning only as the unilateral delivery of large amounts of data to a model. Structured collaboration may also produce higher-quality experience records that could later support external memory, evaluation, or training.</p>
             </section>
             <section>
                 <p class="eyebrow">Research question</p>
                 <h2>Can AI learn through simulation?</h2>
-                <p>Large language models learn powerful patterns from text, but a simulation offers a different kind of loop. An AI can propose a model, execute it, observe numerical and visual consequences, revise the implementation, and repeat the experiment.</p>
-                <div class="notice"><strong>This is a research direction, not a completed claim.</strong> GPUSims currently provides a practical environment for experimentation. Whether repeated simulation feedback produces a more grounded physical world model remains an open question.</div>
+                <p>Large language models learn powerful patterns from text, images, video, and code, but a simulation offers an active loop. Within a conversation, an AI can propose a model, execute it, observe numerical and visual consequences, discuss alternative explanations, revise the implementation, and repeat the experiment. The resulting improvement may come from in-context adaptation, account-level memory, accumulated human guidance, or external experience records rather than from changes to the model’s parameters.</p>
+                <div class="notice"><strong>This is a research direction, not a completed claim.</strong> GPUSims currently provides an inference-time experimental environment; it does not itself update model weights. The open questions are whether issue-focused simulation conversations produce transferable improvements, whether successful and failed trajectories can become persistent training data or external memory, and whether a less capable model can improve by working with a stronger model and executable feedback.</div>
             </section>
             <section>
                 <p class="eyebrow">Scope</p>
                 <h2>Accessible experimentation, not automatic truth</h2>
-                <p>Beautiful output can still be wrong. AI explanations can contain mistakes. WebGPU generally uses single-precision arithmetic, and educational simulations may omit important physical effects.</p>
-                <p>The project therefore emphasizes inspection and questioning. Users should compare results with theory, known limiting cases, conservation laws, independent calculations, and expert review when accuracy matters.</p>
+                <p>Beautiful output can still be wrong, and some requests remain beyond current models. In my tests, neither Gemini 3.1 Pro nor ChatGPT successfully completed this task: “Create a two-dimensional simulation of incompressible fluid flowing past a circular obstacle. Visualize the velocity or vorticity field and show the formation of the wake.” This negative result is important: a large gallery of successful simulations does not demonstrate general scientific competence.</p>
+                <p>The project therefore emphasizes inspection, discussion, and explicit failure analysis. Users should compare results with theory, known limiting cases, conservation laws, convergence tests, independent calculations, and expert review. Failed attempts should record the hypotheses considered, diagnostics requested, alternative algorithms proposed, and evidence that changed the conclusion.</p>
             </section>
             <section>
                 <p class="eyebrow">Long-term direction</p>
                 <h2>A browser-based laboratory for more people</h2>
-                <p>The goal is to let learners, teachers, programmers, and researchers begin with a question and quickly construct an inspectable mathematical experiment. GPUSims is intended as a doorway into deeper study—not a replacement for it.</p>
+                <p>The long-term goal is to let learners, teachers, programmers, and researchers construct inspectable mathematical experiments while also building a reusable record of scientific problem solving. A research system could compare a fresh model with one given prior simulation conversations, retrieve lessons from related failures, or let a stronger model critique a weaker model. Measurable improvement on unfamiliar tasks—not merely a successful conversation—would be the evidence needed to claim learning. GPUSims is intended as a platform for exploring that question, not as proof that it has already been answered.</p>
             </section>
         </article>
     </main>
