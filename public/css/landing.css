@@ -91,7 +91,7 @@
     position: relative;
     z-index: 1;
     max-width: 1050px;
-    padding-top: 105px;
+    padding-top: 20px;
     padding-bottom: 72px;
     text-align: center;
 }
@@ -346,7 +346,10 @@
 
 @media (max-width: 720px) {
     #landing-view .section-container { width: calc(100% - 28px); padding: 66px 0; }
-    #landing-view .hero-content { padding-top: 78px; padding-bottom: 52px; }
+    #landing-view .hero-content { 
+        padding-top: 20px; 
+        padding-bottom: 52px; 
+    }
     #landing-view .hero-section h1 { font-size: clamp(2.45rem, 13vw, 4rem); }
     #landing-view .hero-actions { flex-direction: column; align-items: stretch; }
     #landing-view .hero-prompt { display: block; }

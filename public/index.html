@@ -35,8 +35,6 @@
             </button>
             <nav class="site-nav" aria-label="Landing page navigation">
                 <button class="gallery-btn optional-nav" type="button">Gallery</button>
-                <a class="optional-nav" href="./docs/manual.html">Manual</a>
-                <a class="optional-nav" href="./docs/vision.html">Vision</a>
                 <button id="launch-app-btn" class="landing-nav-start primary-btn" type="button">Start Building</button>
             </nav>
         </div>
@@ -45,126 +43,221 @@
     <main class="landing-main">
         <section class="hero-section">
             <div class="section-container hero-content">
-                <p class="eyebrow">AI + WebGPU for mathematical exploration</p>
-                <h1>Create Math and Physics Simulations with <span class="text-accent">AI and WebGPU</span></h1>
+                <h1>Learn Math and Physics through Simulations <br/> with AI</h1>
                 <p class="hero-lead">
-                    Describe a mathematical or physical system and use a structured AI-assisted workflow to turn it into an interactive GPU experiment in your browser. Results depend on the model, the problem, and the quality of the verification process.
+                    You can create breathtakingly beautiful 3D simulations with the help of AI
+                    <br/>
+                    even without programming knowledge.
                 </p>
                 <div class="hero-actions">
                     <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
                     <button class="site-button primary primary-btn" type="button" data-launch-app>Start Building</button>
-                    <a class="site-button text" href="./docs/manual.html">Read the Manual</a>
                 </div>
-                <div class="hero-prompt" aria-label="Example simulation prompt">
-                    <span>Try a prompt:</span>
+                <div class="hero-prompt" aria-label="Example simulation request">
+                    <span>Example request:</span>
                     <code>Create a schema for an N-body simulation.</code>
                 </div>
             </div>
             <figure class="hero-media">
                 <div class="media-frame">
-                    <img src="./img/all.png" alt="A gallery of mathematics and physics simulations created with GPUSims" loading="eager">
+                    <img src="./img/all.png" alt="Examples of math and physics simulations in GPUSims" loading="eager">
                 </div>
-                <figcaption>A selection of browser-based simulations created with the GPUSims workflow.</figcaption>
+                <figcaption>The Gallery contains simulations that can be opened and controlled.</figcaption>
             </figure>
         </section>
 
-        <section class="section-container" aria-labelledby="how-it-works-title">
-            <div class="section-heading">
-                <p class="eyebrow">From an idea to a running model</p>
-                <h2 id="how-it-works-title">A structured workflow for AI-generated simulations</h2>
+        <section class="section-container showcase-layout" aria-labelledby="create-title">
+            <div class="showcase-copy">
+                <h2 id="create-title">Move between GPUSims and an AI chat</h2>
+                <p>
+                    Click <strong>Start Building</strong>. Complete the numbered steps in order. GPUSims creates the fixed parts of the GPU program, while the AI writes the simulation-specific parts.
+                </p>
+                <ol class="showcase-points">
+                    <li>Click <strong>Copy AI System Prompt</strong> and paste it into a new AI chat.</li>
+                    <li>Ask the AI to create a simulation schema.</li>
+                    <li>Paste the complete schema into the GPUSims schema editor.</li>
+                    <li>Click <strong>Copy Shader Skeleton</strong> and paste the skeleton into the same AI chat.</li>
+                    <li>Paste the AI's complete shader code into the shader editor.</li>
+                    <li>Click <strong>Run Simulation</strong>.</li>
+                </ol>
+                <div class="hero-prompt" aria-label="Example schema request">
+                    <span>Example:</span>
+                    <code>Create a schema for an N-body simulation.</code>
+                </div>
             </div>
-            <p class="section-intro">
-                GPUSims handles WebGPU resources, bindings, pipelines, and rendering so the AI can concentrate on proposing the mathematical model and shader logic. The generated result must still be tested and revised.
-            </p>
-            <ol class="process-grid">
-                <li>
-                    <span class="process-number">01 · Describe</span>
-                    <h3>State the phenomenon</h3>
-                    <p>Explain the system, controls, and visual behavior you want to explore.</p>
-                </li>
-                <li>
-                    <span class="process-number">02 · Generate</span>
-                    <h3>Create a structured blueprint</h3>
-                    <p>AI proposes a declarative schema; GPUSims turns it into a matching WGSL skeleton that can be implemented, compiled, and inspected.</p>
-                </li>
-                <li>
-                    <span class="process-number">03 · Run</span>
-                    <h3>Execute in the browser</h3>
-                    <p>Paste the implemented shader, compile it, and run the GPU simulation interactively.</p>
-                </li>
-                <li>
-                    <span class="process-number">04 · Explore</span>
-                    <h3>Inspect and improve</h3>
-                    <p>Use errors, numerical readback, and captured images to refine the model.</p>
-                </li>
-            </ol>
-            <p class="section-link"><a class="site-button text" href="./docs/manual.html#quick-start">See the complete guided workflow →</a></p>
+            <figure class="showcase-figure">
+                <div class="media-frame">
+                    <img src="./img/workflow.png" alt="Instructions and code moving between GPUSims and an AI chat" loading="lazy">
+                </div>
+                <figcaption>The user copies the system prompt, schema, shader skeleton, completed shader, errors, values, and images between GPUSims and the AI chat.</figcaption>
+            </figure>
         </section>
 
         <section class="difference-section">
             <div class="section-container">
                 <div class="section-heading">
-                    <p class="eyebrow">Why GPUSims is different</p>
-                    <h2>More than one-shot code generation</h2>
+                    <h2>What you paste into each editor</h2>
                 </div>
                 <p class="section-intro">
-                    The application gives AI a controlled architecture and gives users observable evidence for diagnosis, correction, and learning instead of treating generated code as automatically correct.
+                    You do not need to understand every line before starting. The important point is to keep the two kinds of code separate and paste each one into the correct editor.
                 </p>
                 <div class="difference-grid">
                     <article class="difference-card">
-                        <span class="card-icon" aria-hidden="true">{ }</span>
-                        <h3>Structured generation</h3>
-                        <p>A schema and generated skeleton keep resource layouts, shader bindings, and rendering modes synchronized.</p>
+                        <span class="card-icon" aria-hidden="true">TS</span>
+                        <h3>Schema: the list of parts</h3>
+                        <p>The schema tells GPUSims which values, data buffers, controls, and shader steps the simulation needs.</p>
+                        <div class="hero-prompt" aria-label="Short TypeScript schema example">
+                            <code>const schema: SimulationSchema = {<br>&nbsp;&nbsp;name: "N-body simulation",<br>&nbsp;&nbsp;resources: { /* data used by the simulation */ },<br>&nbsp;&nbsp;shaders: [ /* GPU calculation steps */ ],<br>&nbsp;&nbsp;uis: [ /* sliders and menus */ ]<br>};</code>
+                        </div>
                     </article>
                     <article class="difference-card">
-                        <span class="card-icon" aria-hidden="true">↻</span>
-                        <h3>Observable debugging</h3>
-                        <p>Compilation messages, numerical results, and captured images support an iterative correction loop.</p>
+                        <span class="card-icon" aria-hidden="true">GPU</span>
+                        <h3>Shader: the calculation</h3>
+                        <p>GPUSims generates the declarations. The AI fills in the mathematical instructions inside the generated shader.</p>
+                        <div class="hero-prompt" aria-label="Short Shader skeleton example">
+                            <code>@compute @workgroup_size(64, 1, 1)<br>fn main(@builtin(global_invocation_id) id: vec3&lt;u32&gt;) {<br>&nbsp;&nbsp;// The AI writes the simulation calculation here.<br>}</code>
+                        </div>
                     </article>
                     <article class="difference-card">
-                        <span class="card-icon" aria-hidden="true">∑</span>
-                        <h3>Explanation and learning</h3>
-                        <p>After a simulation runs, AI can draft an explanation of the visible phenomena, mathematics, numerical method, and WGSL implementation. The explanation should be questioned and checked like the simulation itself.</p>
+                        <span class="card-icon" aria-hidden="true">!</span>
+                        <h3>Keep them separate</h3>
+                        <p>Paste the TypeScript schema into the schema editor. Paste Shader into the shader editor. When asking for a correction, request the complete schema or the complete shader, not both together.</p>
                     </article>
                 </div>
             </div>
         </section>
 
-        <section class="section-container showcase-layout" aria-labelledby="showcase-title">
+        <section class="section-container showcase-layout" aria-labelledby="controls-title">
             <div class="showcase-copy">
-                <p class="eyebrow">A visual laboratory in your browser</p>
-                <h2 id="showcase-title">Build, observe, question, and revise</h2>
+                <h2 id="controls-title">Use the simulation page</h2>
                 <p>
-                    GPUSims supports interactive graphics and GPU computation across many areas of mathematics and physics. Current AI models can build many useful examples, but difficult coupled solvers may still fail and may require alternative algorithms, intermediate readback values, additional debug canvases, and informed human guidance.
+                    After the code compiles, the simulation page shows the main canvas. It may also show sliders, menus, calculated values, and an explanatory article.
                 </p>
                 <ul class="showcase-points">
-                    <li>Explore published simulations before writing any code.</li>
-                    <li>Adjust parameters and inspect numerical readback values.</li>
-                    <li>Capture the rendering, ask the AI to examine it, and compare the visual result with numerical evidence and known physical behavior.</li>
+                    <li>Change one slider or menu at a time and watch what changes.</li>
+                    <li>Use <strong>Restart</strong> to start the simulation again.</li>
+                    <li>Use <strong>Edit Code</strong> to return to the schema and shader editors.</li>
+                    <li>Use <strong>Capture Image</strong> to record the current canvas.</li>
+                    <li>Use <strong>Thumbnail</strong> to choose the Gallery image.</li>
+                    <li>Drag with the left mouse button to rotate a 3D view.</li>
+                    <li>Drag with the right mouse button to move the viewpoint.</li>
                 </ul>
-                <div class="showcase-actions">
-                    <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
-                    <a class="site-button text" href="./docs/vision.html">Read the Project Vision →</a>
+            </div>
+            <figure class="showcase-figure">
+                <div class="media-frame">
+                    <img src="./img/run.png" alt="A simulation running in GPUSims with controls beside the canvas" loading="lazy">
+                </div>
+                <figcaption>The available controls depend on the simulation.</figcaption>
+            </figure>
+        </section>
+
+        <section class="difference-section">
+            <div class="section-container showcase-layout">
+                <div class="showcase-copy">
+                    <h2>When the simulation does not run</h2>
+                    <p>
+                        GPUSims may show a parsing, compilation, validation, or execution error. Copy the complete message instead of rewriting it in your own words.
+                    </p>
+                    <ul class="showcase-points">
+                        <li>Click <strong>Copy Error Message</strong>.</li>
+                        <li>Paste the message into the AI chat.</li>
+                        <li>Ask for the complete corrected schema or complete corrected shader.</li>
+                        <li>Paste the correction into the proper editor and run it again.</li>
+                    </ul>
+                    <div class="hero-prompt" aria-label="Error correction prompt">
+                        <code>Fix this error.<br><br>Expected ':' but found '.' at index 319</code>
+                    </div>
+                </div>
+                <figure class="showcase-figure">
+                    <div class="media-frame">
+                        <img src="./img/err.png" alt="An error message displayed by GPUSims" loading="lazy">
+                    </div>
+                    <figcaption>Copy the complete error message rather than paraphrasing it.</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <section class="section-container showcase-layout" aria-labelledby="numbers-title">
+            <div class="showcase-copy">
+                <h2 id="numbers-title">Look for numbers that do not make sense</h2>
+                <p>
+                    A simulation can run without showing an error and still be mathematically wrong. Some simulations display values such as energy, error size, particle count, or a calculated result.
+                </p>
+                <ul class="showcase-points">
+                    <li>Copy the current control values and calculated values.</li>
+                    <li>Paste them into the AI chat.</li>
+                    <li>Ask which values are expected and which look suspicious.</li>
+                    <li>Compare the answer with a textbook, trusted reference, calculation, or teacher.</li>
+                </ul>
+                <div class="hero-prompt" aria-label="Numerical verification prompt">
+                    <code>Do these parameter values and calculation results look mathematically and physically reasonable? Explain any suspicious values.</code>
                 </div>
             </div>
             <figure class="showcase-figure">
                 <div class="media-frame">
-                    <img src="./img/workflow.png" alt="Workflow between a GPUSims user and an AI assistant" loading="lazy">
+                    <img src="./img/ui.png" alt="Simulation controls and numerical results in GPUSims" loading="lazy">
                 </div>
-                <figcaption>The guided workflow keeps the user in control of each generation and execution step.</figcaption>
+                <figcaption>Parameters and calculated values can be copied into the AI chat for evaluation.</figcaption>
             </figure>
         </section>
 
-        <section class="final-cta-section">
-            <div class="section-container final-cta">
-                <p class="eyebrow">Begin with one idea</p>
-                <h2>What physical world would you like to build?</h2>
-                <p>Start with a tractable system, inspect what the AI creates, and treat both successful and failed attempts as a path into deeper mathematics, physics, and AI-assisted scientific reasoning.</p>
-                <div class="hero-actions">
-                    <button class="site-button primary primary-btn" type="button" data-launch-app>Start Building</button>
-                    <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
+        <section class="difference-section">
+            <div class="section-container">
+                <div class="section-heading">
+                    <h2>A realistic-looking picture can still be wrong</h2>
+                </div>
+                <p class="section-intro">
+                    Use <strong>Capture Image</strong>, upload the image to the AI chat, and include the original request and the current control values. The image is one piece of evidence, not proof that the simulation is correct.
+                </p>
+                <div class="hero-prompt" aria-label="Visual verification prompt">
+                    <code>Is this image consistent with the intended physical model? Identify visual evidence of numerical or implementation errors.</code>
+                </div>
+                <div class="difference-grid">
+                    <article class="difference-card">
+                        <span class="card-icon" aria-hidden="true">1</span>
+                        <h3>State what should happen</h3>
+                        <p>Tell the AI which physical or mathematical behavior the simulation is supposed to show.</p>
+                    </article>
+                    <article class="difference-card">
+                        <span class="card-icon" aria-hidden="true">2</span>
+                        <h3>Include the settings</h3>
+                        <p>Provide the slider and menu values used when the image was captured.</p>
+                    </article>
+                    <article class="difference-card">
+                        <span class="card-icon" aria-hidden="true">3</span>
+                        <h3>Check another source</h3>
+                        <p>Compare the result with equations, known special cases, conservation rules, trusted references, or a teacher's review.</p>
+                    </article>
                 </div>
             </div>
+        </section>
+
+        <section class="section-container showcase-layout" aria-labelledby="article-title">
+            <div class="showcase-copy">
+                <h2 id="article-title">Ask what the simulation shows</h2>
+                <p>
+                    After the simulation works, you can ask the AI to explain the visible behavior, the mathematics, the calculation method, and the shader code. Read the explanation and ask about anything you do not understand.
+                </p>
+                <div class="hero-prompt" aria-label="Article generation prompt">
+                    <code>Please write an article explaining the phenomena observable in this simulation, the underlying mathematics, the numerical method, and the shader implementation.</code>
+                </div>
+                <ul class="showcase-points">
+                    <li>Use <strong>Edit Article</strong> to write or revise the Markdown article.</li>
+                    <li>Give the simulation a title and record the AI model used.</li>
+                    <li>Choose a thumbnail before publishing.</li>
+                    <li>Sign in with Google and click <strong>Publish</strong> to publish it.</li>
+                </ul>
+                <div class="showcase-actions">
+                    <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
+                    <button class="site-button primary primary-btn" type="button" data-launch-app>Start Building</button>
+                </div>
+            </div>
+            <figure class="showcase-figure">
+                <div class="media-frame">
+                    <img src="./img/workflow.png" alt="The GPUSims workflow between the user and an AI chat" loading="lazy">
+                </div>
+                <figcaption>The same conversation can be used to create the code, fix errors, inspect results, and write the explanation.</figcaption>
+            </figure>
         </section>
     </main>
 
@@ -172,13 +265,12 @@
         <div class="site-footer-inner">
             <span>&copy; 2026 GPUSims. Released under the MIT License.</span>
             <nav class="site-footer-links" aria-label="Footer navigation">
-                <a href="./docs/manual.html">Manual</a>
-                <a href="./docs/vision.html">Vision</a>
                 <a href="./docs/acknowledgments.html">Acknowledgments</a>
             </nav>
         </div>
     </footer>
 </div>
+
 
 <div id="main-view" class="view">
 
@@ -239,12 +331,12 @@
         </li>
 
         <li>
-            <p>Click to generate and copy the WGSL Skeleton, paste &amp; run in the AI chat..</p>
-            <button id="create-copy-skeleton-btn">Copy WGSL Skeleton</button>
+            <p>Click to generate and copy the shader Skeleton, paste &amp; run in the AI chat..</p>
+            <button id="create-copy-skeleton-btn">Copy Shader Skeleton</button>
         </li>
 
         <li id="wgsl-li">
-            <p>Copy the finalized WGSL code by the AI and paste it below.</p><br/>
+            <p>Copy the finalized shader code by the AI and paste it below.</p><br/>
             <br/>
         </li>
 
@@ -276,7 +368,7 @@
         </span>
         <span class="at-right" style="display: flex; flex-direction: row; gap:20px">
             <button id="restart-btn">Restart</button>
-            <button id="wizard2-btn">Edit Code</button>
+            <button id="wizard2-btn" class="primary-btn" >Edit Code</button>
             <button id="download-btn" style="display: none;">Download</button>
 
 
