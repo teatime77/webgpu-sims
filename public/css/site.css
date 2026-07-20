@@ -62,7 +62,6 @@
     color: #c7d2fe;
 }
 
-.site-page img,
 #landing-view img {
     max-width: 100%;
 }
@@ -129,7 +128,6 @@
     gap: 8px;
 }
 
-.site-nav a,
 .site-nav button {
     display: inline-flex;
     min-height: 42px;
@@ -147,7 +145,6 @@
     cursor: pointer;
 }
 
-.site-nav a:hover,
 .site-nav button:hover {
     border-color: var(--border-hover);
     background: rgba(39, 39, 42, .76);
@@ -205,20 +202,6 @@
     color: #fff;
 }
 
-.site-button.text,
-#landing-view .site-button.text {
-    min-height: 44px;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--accent-soft);
-}
-
-.site-button.text:hover,
-#landing-view .site-button.text:hover {
-    border-color: var(--border-idle);
-    background: rgba(39, 39, 42, .5);
-    color: #fff;
-}
 
 .eyebrow {
     margin: 0 0 12px;
@@ -230,9 +213,6 @@
     text-transform: uppercase;
 }
 
-.text-accent {
-    color: var(--accent-bright);
-}
 
 .site-footer {
     border-top: 1px solid var(--border-idle);
@@ -273,7 +253,7 @@
     .site-header-inner { width: calc(100% - 24px); }
     .site-brand, #landing-view .site-brand { padding: 7px 4px; font-size: 21px; }
     .site-nav .optional-nav { display: none; }
-    .site-nav a, .site-nav button { min-height: 38px; padding: 7px 10px; font-size: .82rem; }
+    .site-nav button { min-height: 38px; padding: 7px 10px; font-size: .82rem; }
     .site-footer-inner { display: block; width: calc(100% - 28px); text-align: center; }
     .site-footer-links { justify-content: center; margin-top: 14px; }
 }

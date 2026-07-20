@@ -103,18 +103,6 @@ header > .at-right {
   grid-area: 1 / 1;
 }
 
-.one-row {
-  display: grid;
-  align-items: center; /* 縦方向の中央揃え */
-  padding: 0 16px;     /* 左右が画面端にピッタリくっつかないように少し余白を設ける（お好みで） */
-}
-
-/* headerの直下にある3つのクラスを、すべて同じ「1行目・1列目」に重ねて配置する */
-.one-row > .at-left,
-.one-row > .at-center,
-.one-row > .at-right {
-  grid-area: 1 / 1;
-}
 
 /* それぞれ独立して横方向の配置場所を指定 */
 .at-left {
@@ -168,50 +156,6 @@ header > .at-right {
     display: none;
 } */
 
-/* >>>>>================================================== accordion */
-
-/* Style the main container */
-.accordion {
-  width: 100%;
-  font-family: sans-serif;
-}
-
-/* Style the clickable header */
-details summary {
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
-  cursor: pointer;
-  font-weight: bold;
-  list-style: none; /* Removes the default arrow in standard browsers */
-}
-
-/* Remove default arrow in WebKit (Safari/Chrome) */
-details summary::-webkit-details-marker {
-  display: none;
-}
-
-/* Add our custom +/- icon BEFORE the text */
-details summary::before {
-  content: "+";
-  display: inline-block;
-  font-size: 1.2rem;
-  width: 20px;
-  margin-right: 10px;
-  text-align: center;
-}
-
-/* Change icon to '-' when open */
-details[open] summary::before {
-  content: "-";
-}
-
-/* Style the content area */
-details .content {
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
-}
-
-/* <<<<<================================================== accordion */
 
 #article-view {
     /* FIXED: Matches exactly 3 direct children (header, controls, editor wrapper) */
@@ -345,13 +289,6 @@ details .content {
   margin-top: auto; 
 }
 
-.box-meta {
-  font-size: 0.85rem;
-  color: #888;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
 
 /* >>>>>================================================== Wizard */
 
@@ -365,11 +302,6 @@ details .content {
   box-sizing: border-box;     /* Ensures the 20px padding doesn't push the height past 100vh */
 }
 
-.vibe-coding-wizard h1 {
-  text-align: center;
-  color: var(--text-main);
-  margin-bottom: 32px;
-}
 
 .wizard-steps {
   list-style-position: inside;
@@ -421,14 +353,6 @@ details .content {
   color: var(--text-main);
 }
 
-.vibe-coding-wizard .hint-box p {
-  display: block;
-  margin-bottom: 8px;
-}
-
-.vibe-coding-wizard .hint-box p:last-child {
-  margin-bottom: 0;
-}
 
 /* <<<<<================================================== Toast */
 

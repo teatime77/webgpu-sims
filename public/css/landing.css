@@ -1,7 +1,5 @@
 /* ========================================================
    GPUSIMS LANDING PAGE
-   The landing page sells the product; detailed instructions
-   live in docs/manual.html.
    ======================================================== */
 
 #landing-view {
@@ -48,8 +46,7 @@
 }
 
 #landing-view .section-heading h2,
-#landing-view .showcase-copy h2,
-#landing-view .final-cta h2 {
+#landing-view .showcase-copy h2 {
     margin: 0;
     color: #fff;
     font-size: clamp(2rem, 4vw, 3.25rem);
@@ -173,51 +170,7 @@
     text-align: center;
 }
 
-/* Four-step product explanation */
-#landing-view .process-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
-    margin: 44px 0 0;
-    padding: 0;
-    list-style: none;
-}
 
-#landing-view .process-grid li {
-    position: relative;
-    min-width: 0;
-    border: 1px solid var(--border-idle);
-    border-right: 0;
-    padding: 27px 23px;
-    background: rgba(39,39,42,.72);
-}
-
-#landing-view .process-grid li:first-child { border-radius: 16px 0 0 16px; }
-#landing-view .process-grid li:last-child { border-right: 1px solid var(--border-idle); border-radius: 0 16px 16px 0; }
-#landing-view .process-grid li:not(:last-child)::after {
-    position: absolute;
-    z-index: 2;
-    top: 50%;
-    right: -12px;
-    width: 22px;
-    height: 22px;
-    border-top: 1px solid #6366f1;
-    border-right: 1px solid #6366f1;
-    background: #27272a;
-    content: "";
-    transform: translateY(-50%) rotate(45deg);
-}
-
-#landing-view .process-number {
-    display: inline-flex;
-    margin-bottom: 17px;
-    color: var(--accent-soft);
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: .78rem;
-    font-weight: 800;
-}
-
-#landing-view .process-grid h3,
 #landing-view .difference-card h3 {
     margin: 0 0 10px;
     color: #fff;
@@ -225,16 +178,12 @@
     line-height: 1.3;
 }
 
-#landing-view .process-grid p,
 #landing-view .difference-card p {
     margin: 0;
     color: #aaaab3;
     font-size: .95rem;
 }
 
-#landing-view .section-link {
-    margin-top: 28px;
-}
 
 /* Differentiators */
 #landing-view .difference-section {
@@ -315,31 +264,8 @@
     margin-top: 28px;
 }
 
-/* Final CTA */
-#landing-view .final-cta-section {
-    border-top: 1px solid var(--border-idle);
-    background:
-        radial-gradient(circle at 50% 120%, rgba(79,70,229,.35), transparent 48%),
-        #171719;
-}
-
-#landing-view .final-cta {
-    max-width: 790px;
-    text-align: center;
-}
-
-#landing-view .final-cta p:not(.eyebrow) {
-    max-width: 650px;
-    margin: 20px auto 0;
-    color: var(--text-muted);
-}
 
 @media (max-width: 900px) {
-    #landing-view .process-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-    #landing-view .process-grid li,
-    #landing-view .process-grid li:first-child,
-    #landing-view .process-grid li:last-child { border: 1px solid var(--border-idle); border-radius: 14px; }
-    #landing-view .process-grid li::after { display: none; }
     #landing-view .showcase-layout { grid-template-columns: 1fr; gap: 36px; }
     #landing-view .showcase-copy { max-width: 760px; }
 }
@@ -355,7 +281,6 @@
     #landing-view .hero-prompt { display: block; }
     #landing-view .hero-prompt code { display: block; margin-top: 7px; overflow-wrap: anywhere; }
     #landing-view .hero-media { width: calc(100% - 28px); padding-bottom: 62px; }
-    #landing-view .process-grid,
     #landing-view .difference-grid { grid-template-columns: 1fr; }
     #landing-view .showcase-layout { display: block; }
     #landing-view .showcase-figure { margin: 34px 0 0; }
