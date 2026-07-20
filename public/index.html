@@ -66,32 +66,6 @@
             </figure>
         </section>
 
-        <section class="section-container showcase-layout" aria-labelledby="create-title">
-            <div class="showcase-copy">
-                <h2 id="create-title">Move between GPUSims and an AI chat</h2>
-                <p>
-                    Click <strong>Start Building</strong>. Complete the numbered steps in order. GPUSims creates the fixed parts of the GPU program, while the AI writes the simulation-specific parts.
-                </p>
-                <ol class="showcase-points">
-                    <li>Click <strong>Copy AI System Prompt</strong> and paste it into a new AI chat.</li>
-                    <li>Ask the AI to create a simulation schema.</li>
-                    <li>Paste the complete schema into the GPUSims schema editor.</li>
-                    <li>Click <strong>Copy Shader Skeleton</strong> and paste the skeleton into the same AI chat.</li>
-                    <li>Paste the AI's complete shader code into the shader editor.</li>
-                    <li>Click <strong>Run Simulation</strong>.</li>
-                </ol>
-                <div class="hero-prompt" aria-label="Example schema request">
-                    <span>Example:</span>
-                    <code>Create a schema for an N-body simulation.</code>
-                </div>
-            </div>
-            <figure class="showcase-figure">
-                <div class="media-frame">
-                    <img src="./img/workflow.png" alt="Instructions and code moving between GPUSims and an AI chat" loading="lazy">
-                </div>
-                <figcaption>The user copies the system prompt, schema, shader skeleton, completed shader, errors, values, and images between GPUSims and the AI chat.</figcaption>
-            </figure>
-        </section>
 
         <section class="difference-section">
             <div class="section-container">
@@ -207,57 +181,12 @@
                     <h2>A realistic-looking picture can still be wrong</h2>
                 </div>
                 <p class="section-intro">
-                    Use <strong>Capture Image</strong>, upload the image to the AI chat, and include the original request and the current control values. The image is one piece of evidence, not proof that the simulation is correct.
+                    Use <strong>Capture Image</strong>, upload the image to the AI chat, and include the original request and the current control values. 
                 </p>
                 <div class="hero-prompt" aria-label="Visual verification prompt">
                     <code>Is this image consistent with the intended physical model? Identify visual evidence of numerical or implementation errors.</code>
                 </div>
-                <div class="difference-grid">
-                    <article class="difference-card">
-                        <span class="card-icon" aria-hidden="true">1</span>
-                        <h3>State what should happen</h3>
-                        <p>Tell the AI which physical or mathematical behavior the simulation is supposed to show.</p>
-                    </article>
-                    <article class="difference-card">
-                        <span class="card-icon" aria-hidden="true">2</span>
-                        <h3>Include the settings</h3>
-                        <p>Provide the slider and menu values used when the image was captured.</p>
-                    </article>
-                    <article class="difference-card">
-                        <span class="card-icon" aria-hidden="true">3</span>
-                        <h3>Check another source</h3>
-                        <p>Compare the result with equations, known special cases, conservation rules, trusted references, or a teacher's review.</p>
-                    </article>
-                </div>
             </div>
-        </section>
-
-        <section class="section-container showcase-layout" aria-labelledby="article-title">
-            <div class="showcase-copy">
-                <h2 id="article-title">Ask what the simulation shows</h2>
-                <p>
-                    After the simulation works, you can ask the AI to explain the visible behavior, the mathematics, the calculation method, and the shader code. Read the explanation and ask about anything you do not understand.
-                </p>
-                <div class="hero-prompt" aria-label="Article generation prompt">
-                    <code>Please write an article explaining the phenomena observable in this simulation, the underlying mathematics, the numerical method, and the shader implementation.</code>
-                </div>
-                <ul class="showcase-points">
-                    <li>Use <strong>Edit Article</strong> to write or revise the Markdown article.</li>
-                    <li>Give the simulation a title and record the AI model used.</li>
-                    <li>Choose a thumbnail before publishing.</li>
-                    <li>Sign in with Google and click <strong>Publish</strong> to publish it.</li>
-                </ul>
-                <div class="showcase-actions">
-                    <button class="gallery-btn site-button secondary" type="button">Browse Gallery</button>
-                    <button class="site-button primary primary-btn" type="button" data-launch-app>Start Building</button>
-                </div>
-            </div>
-            <figure class="showcase-figure">
-                <div class="media-frame">
-                    <img src="./img/workflow.png" alt="The GPUSims workflow between the user and an AI chat" loading="lazy">
-                </div>
-                <figcaption>The same conversation can be used to create the code, fix errors, inspect results, and write the explanation.</figcaption>
-            </figure>
         </section>
     </main>
 
